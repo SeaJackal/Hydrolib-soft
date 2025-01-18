@@ -14,7 +14,8 @@ enable_testing()
 find_package(GTest REQUIRED)
 include(GoogleTest)
 
-add_executable(TestRingBuffer tests/test_hydrolib_ring_queue.cpp)
+file(GLOB TESTS tests/*.cpp)
+add_executable(TestRingBuffer ${TESTS})
 set_target_properties(TestRingBuffer
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Testing"

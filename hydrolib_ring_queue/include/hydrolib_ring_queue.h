@@ -27,6 +27,8 @@ typedef struct
 
 void hydrolib_RingQueue_Init(hydrolib_RingQueue *self, void *buffer, uint16_t byte_capacity);
 
+void hydrolib_RingQueue_Clear(hydrolib_RingQueue *self);
+
 hydrolib_ReturnCode hydrolib_RingQueue_PushByte(hydrolib_RingQueue *self, uint8_t byte);
 hydrolib_ReturnCode hydrolib_RingQueue_Push(hydrolib_RingQueue *self, const void *data, uint16_t data_length);
 hydrolib_ReturnCode hydrolib_RingQueue_PullByte(hydrolib_RingQueue *self, uint8_t *byte);

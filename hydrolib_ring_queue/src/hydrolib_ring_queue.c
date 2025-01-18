@@ -11,6 +11,13 @@ void hydrolib_RingQueue_Init(hydrolib_RingQueue *self, void *buffer, uint16_t by
     self->length = 0;
 }
 
+void hydrolib_RingQueue_Clear(hydrolib_RingQueue *self)
+{
+    self->head = 0;
+    self->tail = 0;
+    self->length = 0;
+}
+
 hydrolib_ReturnCode hydrolib_RingQueue_PushByte(hydrolib_RingQueue *self, uint8_t byte)
 {
     if (self->length + 1 > self->capacity)
