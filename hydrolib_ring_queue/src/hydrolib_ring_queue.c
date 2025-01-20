@@ -137,6 +137,71 @@ hydrolib_ReturnCode hydrolib_RingQueue_Read(hydrolib_RingQueue *self,
     return HYDROLIB_RETURN_OK;
 }
 
+uint16_t hydrolib_RingQueue_FindByte(hydrolib_RingQueue *self, uint8_t target_byte, uint16_t shift)
+{
+    for (uint16_t i = shift; i < self->length; i++)
+    {
+        uint16_t current_index = (self->head + i) % self->capacity;
+        if (self->buffer[current_index] == target_byte)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+uint16_t hydrolib_RingQueue_Find2BytesLE(hydrolib_RingQueue *self, uint16_t target_bytes, uint16_t shift)
+{
+    for (uint16_t i = shift; i < self->length; i++)
+    {
+        uint16_t current_index = (self->head + i) % self->capacity;
+        uint16_t current_data;
+        if (current_index == self->capacity - 1)
+        {
+            current_data = self->buffer[current_index] | self->buffer[0] << 8;
+        }
+        else
+        {
+            current_data = *(uint16_t *)(self->buffer + current_index);
+        }
+        if (current_data == target_bytes)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+uint16_t hydrolib_RingQueue_Find4BytesLE(hydrolib_RingQueue *self, uint32_t target_bytes, uint16_t shift)
+{
+    for (uint16_t i = shift; i < self->length; i++)
+    {
+        uint16_t current_index = (self->head + i) % self->capacity;
+        uint32_t current_data;
+        if (current_index == self->capacity - 1)
+        {
+            current_data = self->buffer[current_index] | *((uint32_t *)self->buffer) << 8;
+        }
+        else if (current_index == self->capacity - 2)
+        {
+            current_data = *(uint16_t *)(self->buffer + current_index) | *((uint32_t *)self->buffer) << 16;
+        }
+        else if (current_index == self->capacity - 3)
+        {
+            current_data = *(uint32_t *)(self->buffer + current_index - 1) >> 8 | self->buffer[0] << 24;
+        }
+        else
+        {
+            current_data = *(uint32_t *)(self->buffer + current_index);
+        }
+        if (current_data == target_bytes)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
 uint16_t hydrolib_RingQueue_GetLength(hydrolib_RingQueue *self)
 {
     return self->length;
