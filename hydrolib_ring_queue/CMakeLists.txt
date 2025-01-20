@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(HydrolibRingBuffer VERSION 1.0)
+project(HydrolibRingQueue VERSION 1.0)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 include_directories(include)
 
-add_library(HydrolibRingBuffer src/hydrolib_ring_queue.c)
+add_library(HydrolibRingQueue src/hydrolib_ring_queue.c)
 
 enable_testing()
 
@@ -23,5 +23,5 @@ set_target_properties(TestRingBuffer
 target_compile_features(TestRingBuffer PUBLIC cxx_std_20)
 target_compile_options(TestRingBuffer PRIVATE -Wall -Wextra -Wpedantic -Wc++20-compat -Wno-format-security
     -Woverloaded-virtual -Wsuggest-override)
-target_link_libraries(TestRingBuffer HydrolibRingBuffer GTest::gtest GTest::gtest_main -pthread)
+target_link_libraries(TestRingBuffer HydrolibRingQueue GTest::gtest GTest::gtest_main -pthread)
 gtest_discover_tests(TestRingBuffer)
