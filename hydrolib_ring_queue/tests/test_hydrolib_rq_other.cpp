@@ -84,3 +84,26 @@ TEST_P(TestHydrolibRingQueue, Clear)
     bool is_empty = hydrolib_RingQueue_IsEmpty(&ring_buffer);
     EXPECT_TRUE(is_empty);
 }
+
+TEST_P(TestHydrolibRingQueue, Drop)
+{
+    uint16_t drop_number = GetParam();
+    for (uint16_t i = 0; i < buffer_capacity; i++)
+    {
+        hydrolib_ReturnCode filling_status = hydrolib_RingQueue_PushByte(&ring_buffer, i);
+        EXPECT_EQ(filling_status, hydrolib_ReturnCode::HYDROLIB_RETURN_OK);
+    }
+    hydrolib_ReturnCode drop_status = hydrolib_RingQueue_Drop(&ring_buffer, drop_number);
+    EXPECT_EQ(drop_status, hydrolib_ReturnCode::HYDROLIB_RETURN_OK);
+
+    uint16_t length = hydrolib_RingQueue_GetLength(&ring_buffer);
+    EXPECT_EQ(buffer_capacity-drop_number, length);
+
+    uint8_t read_byte = -1;
+    hydrolib_ReturnCode read_status = hydrolib_RingQueue_ReadByte(&ring_buffer, &read_byte, 0);
+    EXPECT_EQ(read_status, hydrolib_ReturnCode::HYDROLIB_RETURN_OK);
+    EXPECT_EQ(drop_number, read_byte);
+
+    hydrolib_ReturnCode wrong_drop_status = hydrolib_RingQueue_Drop(&ring_buffer, buffer_capacity+1);
+    EXPECT_EQ(wrong_drop_status, hydrolib_ReturnCode::HYDROLIB_RETURN_FAIL);
+}

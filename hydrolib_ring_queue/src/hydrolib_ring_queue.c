@@ -18,6 +18,17 @@ void hydrolib_RingQueue_Clear(hydrolib_RingQueue *self)
     self->length = 0;
 }
 
+hydrolib_ReturnCode hydrolib_RingQueue_Drop(hydrolib_RingQueue *self, uint16_t number)
+{
+    if (number > self->length)
+    {
+        return HYDROLIB_RETURN_FAIL;
+    }
+    self->head = (self->head + number) % self->capacity;
+    self->length -= number;
+    return HYDROLIB_RETURN_OK;
+}
+
 hydrolib_ReturnCode hydrolib_RingQueue_PushByte(hydrolib_RingQueue *self, uint8_t byte)
 {
     if (self->length + 1 > self->capacity)
