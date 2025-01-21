@@ -9,6 +9,8 @@ include_directories(include)
 
 add_library(HydrolibRingQueue src/hydrolib_ring_queue.c)
 
+target_include_directories(HydrolibRingQueue PUBLIC include)
+
 enable_testing()
 
 find_package(GTest REQUIRED)
