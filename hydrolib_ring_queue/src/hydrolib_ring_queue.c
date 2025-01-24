@@ -109,15 +109,58 @@ hydrolib_ReturnCode hydrolib_RingQueue_ReadByte(hydrolib_RingQueue *self, uint8_
     {
         return HYDROLIB_RETURN_FAIL;
     }
-    uint16_t forward_length = self->capacity - self->head;
-    if (forward_length > shift)
+
+    uint16_t buffer_index = (self->head + shift) % self->capacity;
+    *data = self->buffer[buffer_index];
+
+    return HYDROLIB_RETURN_OK;
+}
+
+hydrolib_ReturnCode hydrolib_RingQueue_Read2BytesLE(hydrolib_RingQueue *self, uint16_t *data, uint16_t shift)
+{
+    if (shift >= self->length - 1)
     {
-        *data = self->buffer[self->head + shift];
+        return HYDROLIB_RETURN_FAIL;
+    }
+    uint16_t buffer_index = (self->head + shift) % self->capacity;
+
+    if (buffer_index == self->capacity - 1)
+    {
+        *data = self->buffer[buffer_index] | self->buffer[0] << 8;
     }
     else
     {
-        *data = self->buffer[shift - forward_length];
+        *data = *(uint16_t *)(self->buffer + buffer_index);
     }
+
+    return HYDROLIB_RETURN_OK;
+}
+
+hydrolib_ReturnCode hydrolib_RingQueue_Read4BytesLE(hydrolib_RingQueue *self, uint32_t *data, uint16_t shift)
+{
+    if (shift >= self->length - 3)
+    {
+        return HYDROLIB_RETURN_FAIL;
+    }
+    uint16_t buffer_index = (self->head + shift) % self->capacity;
+
+    if (buffer_index == self->capacity - 1)
+    {
+        *data = self->buffer[buffer_index] | *((uint32_t *)self->buffer) << 8;
+    }
+    else if (buffer_index == self->capacity - 2)
+    {
+        *data = *(uint16_t *)(self->buffer + buffer_index) | *((uint32_t *)self->buffer) << 16;
+    }
+    else if (buffer_index == self->capacity - 3)
+    {
+        *data = *(uint32_t *)(self->buffer + buffer_index - 1) >> 8 | self->buffer[0] << 24;
+    }
+    else
+    {
+        *data = *(uint32_t *)(self->buffer + buffer_index);
+    }
+
     return HYDROLIB_RETURN_OK;
 }
 
