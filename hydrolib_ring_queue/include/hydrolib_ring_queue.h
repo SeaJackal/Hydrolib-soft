@@ -4,15 +4,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "hydrolib_common.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef enum
-{
-    HYDROLIB_RETURN_OK = 0,
-    HYDROLIB_RETURN_FAIL
-} hydrolib_ReturnCode;
 
 typedef struct
 {

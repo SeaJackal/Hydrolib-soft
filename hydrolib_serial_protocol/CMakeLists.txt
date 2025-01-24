@@ -11,7 +11,7 @@ include_directories(include)
 
 add_library(HydrolibSerialProtocol src/hydrolib_serial_protocol.c)
 
-target_link_libraries(HydrolibSerialProtocol HydrolibRingQueue)
+target_link_libraries(HydrolibSerialProtocol HydrolibCommon HydrolibRingQueue)
 
 enable_testing()
 

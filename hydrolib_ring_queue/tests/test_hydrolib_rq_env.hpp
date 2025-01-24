@@ -1,7 +1,7 @@
 #ifndef TEST_HYDROLIB_RQ_ENV_H_
 #define TEST_HYDROLIB_RQ_ENV_H_
 
-#include <hydrolib_ring_queue.h>
+#include "hydrolib_ring_queue.h"
 
 #include <gtest/gtest.h>
 

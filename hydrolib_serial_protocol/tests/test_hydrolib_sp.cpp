@@ -33,7 +33,7 @@ TEST(TestHydrolibSerialProtocol, ReceivingTest)
     bool result = hydrolib_SerialProtocol_ReadMessage(&handler, read_buffer, &data_length);
     int cmp_result = strcmp(test_data, (char *)read_buffer);
     EXPECT_TRUE(result);
-    EXPECT_EQ(strlen(test_data)+1, data_length);
+    EXPECT_EQ(strlen(test_data) + 1, data_length);
     EXPECT_EQ(0, cmp_result);
 }
 
@@ -50,10 +50,13 @@ bool ReceiveFunc(uint8_t *byte)
 
 bool TransmitFunc(uint8_t *byte)
 {
+    (void)byte;
     return true;
 }
 
 uint8_t CRCfunc(const uint8_t *buffer, uint16_t length)
 {
+    (void)buffer;
+    (void)length;
     return 0;
 }

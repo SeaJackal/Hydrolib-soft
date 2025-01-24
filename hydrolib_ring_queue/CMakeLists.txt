@@ -11,6 +11,8 @@ add_library(HydrolibRingQueue src/hydrolib_ring_queue.c)
 
 target_include_directories(HydrolibRingQueue PUBLIC include)
 
+target_link_libraries(HydrolibRingQueue HydrolibCommon)
+
 enable_testing()
 
 find_package(GTest REQUIRED)

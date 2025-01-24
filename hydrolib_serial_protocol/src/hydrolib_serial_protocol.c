@@ -1,4 +1,4 @@
-#include <hydrolib_serial_protocol.h>
+#include "hydrolib_serial_protocol.h"
 
 #define HEADER_BYTE 0xAA
 
