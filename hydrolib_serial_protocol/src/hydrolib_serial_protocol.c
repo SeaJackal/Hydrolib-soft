@@ -3,6 +3,7 @@
 #define HEADER_BYTE 0xAA
 
 void SearchForMessage(hydrolib_SerialProtocolHandler *self);
+uint8_t FindHeader(hydrolib_SerialProtocolHandler *self);
 
 void hydrolib_SerialProtocol_Init(hydrolib_SerialProtocolHandler *self, uint8_t address,
                                   hydrolib_SerialProtocol_InterfaceFunc receive_byte_func,
@@ -51,8 +52,8 @@ void SearchForMessage(hydrolib_SerialProtocolHandler *self)
 {
     while (1)
     {
-        uint16_t index = hydrolib_RingQueue_FindByte(&self->rx_ring_buffer, self->self_address, 0);
-        if (index != (uint16_t)(-1))
+        uint8_t index = FindHeader(self);
+        if (index != (uint8_t)(-1))
         {
             uint8_t message_length;
             hydrolib_ReturnCode read_status =
@@ -100,4 +101,28 @@ void SearchForMessage(hydrolib_SerialProtocolHandler *self)
             break;
         }
     }
+}
+
+uint8_t FindHeader(hydrolib_SerialProtocolHandler *self)
+{
+    hydrolib_ReturnCode finding_read_status = HYDROLIB_RETURN_OK;
+    uint16_t index = 0;
+    while (finding_read_status == HYDROLIB_RETURN_OK)
+    {
+        uint8_t read_byte;
+        finding_read_status = hydrolib_RingQueue_ReadByte(&self->rx_ring_buffer, &read_byte, index);
+        if (read_byte == self->self_address)
+        {
+            break;
+        }
+        else
+        {
+            index++;
+        }
+    }
+    if (finding_read_status != HYDROLIB_RETURN_OK)
+    {
+        return -1;
+    }
+    return index;
 }
