@@ -14,14 +14,14 @@
 
 #define CRC_LENGTH 1
 
-void SearchAndParseMessage(hydrolib_SerialProtocolHandler *self);
+static void SearchAndParseMessage_(hydrolib_SerialProtocolHandler *self);
 
-bool MoveToHeader(hydrolib_SerialProtocolHandler *self);
-hydrolib_ReturnCode ParseMessage(hydrolib_SerialProtocolHandler *self);
-void ProcessCommand(hydrolib_SerialProtocolHandler *self);
+static bool MoveToHeader_(hydrolib_SerialProtocolHandler *self);
+static hydrolib_ReturnCode ParseMessage_(hydrolib_SerialProtocolHandler *self);
+static void ProcessCommand_(hydrolib_SerialProtocolHandler *self);
 
-hydrolib_ReturnCode ParseMemoryAccess(hydrolib_SerialProtocolHandler *self);
-hydrolib_ReturnCode CheckCRCfromMessage(hydrolib_SerialProtocolHandler *self);
+static hydrolib_ReturnCode ParseMemoryAccess_(hydrolib_SerialProtocolHandler *self);
+static hydrolib_ReturnCode CheckCRCfromMessage_(hydrolib_SerialProtocolHandler *self);
 
 hydrolib_ReturnCode hydrolib_SerialProtocol_Init(hydrolib_SerialProtocolHandler *self, uint8_t address,
                                                  hydrolib_SerialProtocol_InterfaceFunc receive_byte_func,
@@ -79,7 +79,7 @@ void hydrolib_SerialProtocol_DoWork(hydrolib_SerialProtocolHandler *self)
         {
             return;
         }
-        SearchAndParseMessage(self);
+        SearchAndParseMessage_(self);
     }
 }
 
@@ -109,17 +109,17 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_TransmitWrite(hydrolib_SerialProtoco
     return HYDROLIB_RETURN_OK;
 }
 
-void SearchAndParseMessage(hydrolib_SerialProtocolHandler *self)
+static void SearchAndParseMessage_(hydrolib_SerialProtocolHandler *self)
 {
     while (1)
     {
-        bool header_searching_status = MoveToHeader(self);
+        bool header_searching_status = MoveToHeader_(self);
         if (!header_searching_status)
         {
             return;
         }
 
-        hydrolib_ReturnCode message_correct_check = ParseMessage(self);
+        hydrolib_ReturnCode message_correct_check = ParseMessage_(self);
         switch (message_correct_check)
         {
         case HYDROLIB_RETURN_NO_DATA:
@@ -137,11 +137,11 @@ void SearchAndParseMessage(hydrolib_SerialProtocolHandler *self)
             break;
         }
 
-        ProcessCommand(self);
+        ProcessCommand_(self);
     }
 }
 
-bool MoveToHeader(hydrolib_SerialProtocolHandler *self)
+static bool MoveToHeader_(hydrolib_SerialProtocolHandler *self)
 {
     uint16_t index = 0;
     hydrolib_ReturnCode finding_read_status =
@@ -167,7 +167,7 @@ bool MoveToHeader(hydrolib_SerialProtocolHandler *self)
     return false;
 }
 
-hydrolib_ReturnCode ParseMessage(hydrolib_SerialProtocolHandler *self)
+static hydrolib_ReturnCode ParseMessage_(hydrolib_SerialProtocolHandler *self)
 {
     self->current_command = self->current_rx_message[0] & COMMAND_MASK;
 
@@ -176,7 +176,7 @@ hydrolib_ReturnCode ParseMessage(hydrolib_SerialProtocolHandler *self)
     switch (self->current_command)
     {
     case _HYDROLIB_SP_COMMAND_READ:
-        parse_access_status = ParseMemoryAccess(self);
+        parse_access_status = ParseMemoryAccess_(self);
         if (parse_access_status != HYDROLIB_RETURN_OK)
         {
             return parse_access_status;
@@ -195,7 +195,7 @@ hydrolib_ReturnCode ParseMessage(hydrolib_SerialProtocolHandler *self)
         break;
 
     case _HYDROLIB_SP_COMMAND_WRITE:
-        parse_access_status = ParseMemoryAccess(self);
+        parse_access_status = ParseMemoryAccess_(self);
         if (parse_access_status != HYDROLIB_RETURN_OK)
         {
             return parse_access_status;
@@ -220,7 +220,7 @@ hydrolib_ReturnCode ParseMessage(hydrolib_SerialProtocolHandler *self)
         return HYDROLIB_RETURN_FAIL;
     }
 
-    hydrolib_ReturnCode check_crc_status = CheckCRCfromMessage(self);
+    hydrolib_ReturnCode check_crc_status = CheckCRCfromMessage_(self);
     if (check_crc_status != HYDROLIB_RETURN_OK)
     {
         self->current_rx_message_length = 0;
@@ -228,7 +228,7 @@ hydrolib_ReturnCode ParseMessage(hydrolib_SerialProtocolHandler *self)
     return check_crc_status;
 }
 
-void ProcessCommand(hydrolib_SerialProtocolHandler *self)
+static void ProcessCommand_(hydrolib_SerialProtocolHandler *self)
 {
     switch (self->current_command)
     {
@@ -242,7 +242,7 @@ void ProcessCommand(hydrolib_SerialProtocolHandler *self)
     }
 }
 
-hydrolib_ReturnCode ParseMemoryAccess(hydrolib_SerialProtocolHandler *self)
+static hydrolib_ReturnCode ParseMemoryAccess_(hydrolib_SerialProtocolHandler *self)
 {
     hydrolib_ReturnCode read_status;
 
@@ -270,7 +270,7 @@ hydrolib_ReturnCode ParseMemoryAccess(hydrolib_SerialProtocolHandler *self)
     return HYDROLIB_RETURN_OK;
 }
 
-hydrolib_ReturnCode CheckCRCfromMessage(hydrolib_SerialProtocolHandler *self)
+static hydrolib_ReturnCode CheckCRCfromMessage_(hydrolib_SerialProtocolHandler *self)
 {
     uint8_t current_crc;
     hydrolib_ReturnCode read_status =
