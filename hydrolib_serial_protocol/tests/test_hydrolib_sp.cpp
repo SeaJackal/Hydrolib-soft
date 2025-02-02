@@ -82,16 +82,29 @@ TEST_F(TestHydrolibSerialProtocol, MemWritingTest)
 {
     uint8_t mem_address = 0;
     uint8_t writing_length = 10;
-    hydrolib_SerialProtocol_TransmitWrite(&transmitter, DEVICE_ADDRESS_RECEIVER,
-                                          mem_address, writing_length, test_data);
-    for (uint8_t i = 0; i < HYDROLIB_SP_MAX_MESSAGE_LENGTH; i++)
+    for (uint8_t j = 0; j < 10; j++)
     {
-        hydrolib_SerialProtocol_DoWork(&transmitter);
-        hydrolib_SerialProtocol_DoWork(&receiver);
-    }
-    for (uint8_t i = 0; i < writing_length; i++)
-    {
-        EXPECT_EQ(test_data[i], rx_public_memory[mem_address + i]);
+        hydrolib_ReturnCode transmit_status =
+            hydrolib_SerialProtocol_TransmitWrite(&transmitter, DEVICE_ADDRESS_RECEIVER,
+                                                  mem_address, writing_length, test_data);
+        if (mem_address + writing_length > 0xFF)
+        {
+            EXPECT_EQ(HYDROLIB_RETURN_FAIL, transmit_status);
+        }
+        else
+        {
+            EXPECT_EQ(HYDROLIB_RETURN_OK, transmit_status);
+        }
+
+        for (uint8_t i = 0; i < HYDROLIB_SP_MAX_MESSAGE_LENGTH; i++)
+        {
+            hydrolib_SerialProtocol_DoWork(&transmitter);
+            hydrolib_SerialProtocol_DoWork(&receiver);
+        }
+        for (uint8_t i = 0; i < writing_length; i++)
+        {
+            EXPECT_EQ(test_data[i], rx_public_memory[mem_address + i]);
+        }
     }
 }
 

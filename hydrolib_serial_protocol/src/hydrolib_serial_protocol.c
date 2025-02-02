@@ -59,14 +59,18 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_Init(hydrolib_SerialProtocolHandler 
 
 void hydrolib_SerialProtocol_DoWork(hydrolib_SerialProtocolHandler *self)
 {
-    if (self->transmit_byte_func(self->current_tx_message + self->tx_pos))
+    if (self->current_tx_message_length != 0)
     {
-        self->tx_pos++;
-    }
+        if (self->transmit_byte_func(self->current_tx_message + self->tx_pos))
+        {
+            self->tx_pos++;
+        }
 
-    if (self->tx_pos == self->current_rx_message_length)
-    {
-        self->current_tx_message_length = 0;
+        if (self->tx_pos == self->current_tx_message_length)
+        {
+            self->current_tx_message_length = 0;
+            self->tx_pos = 0;
+        }
     }
 
     uint8_t read_byte;
@@ -89,6 +93,17 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_TransmitWrite(hydrolib_SerialProtoco
                                                           uint8_t *buffer)
 {
     if (self->current_tx_message_length)
+    {
+        return HYDROLIB_RETURN_BUSY;
+    }
+
+    if (length == 0)
+    {
+        return HYDROLIB_RETURN_FAIL;
+    }
+
+    uint16_t access_border = memory_address + length;
+    if (access_border > PUBLIC_MEMORY_MAX_INDEX)
     {
         return HYDROLIB_RETURN_FAIL;
     }

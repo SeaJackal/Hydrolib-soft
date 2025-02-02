@@ -9,6 +9,7 @@ RUN apt update -q \
     && apt upgrade -q -y \
     && apt install -y --no-install-recommends \
     build-essential \
+    gdb \
     cmake \
     libgtest-dev \
     && apt clean \
