@@ -59,7 +59,22 @@ bool DummyTransmitFunc(uint8_t *byte)
 
 uint8_t CRCfunc(const uint8_t *buffer, uint16_t length)
 {
-    (void)buffer;
-    (void)length;
-    return 0xAA;
+    uint16_t pol = 0x0700;
+    uint16_t crc = buffer[0] << 8;
+    for (uint8_t i = 1; i < length; i++)
+    {
+        crc |= buffer[i];
+        for (uint8_t j = 0; j < 8; j++)
+        {
+            if (crc & 0x8000)
+            {
+                crc = (crc << 1 ^ pol);
+            }
+            else
+            {
+                crc = crc << 1;
+            }
+        }
+    }
+    return crc >> 8;
 }

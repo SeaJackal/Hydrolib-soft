@@ -20,7 +20,7 @@ extern "C"
 
 typedef enum
 {
-    _HYDROLIB_SP_COMMAND_WRITE = 0,
+    _HYDROLIB_SP_COMMAND_WRITE = 1,
     _HYDROLIB_SP_COMMAND_READ
 } _hydrolib_SerialProtocol_Command;
 
