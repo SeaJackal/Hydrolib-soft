@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 
-#define PUBLIC_MEMORY_LENGTH 200
+#define PUBLIC_MEMORY_LENGTH 20
 
 #define DEVICE_ADDRESS_RECEIVER 0
 #define DEVICE_ADDRESS_TRANSMITTER 1
@@ -19,8 +19,7 @@ bool DummyReceiveFunc(uint8_t *byte);
 bool DummyTransmitFunc(uint8_t *byte);
 uint8_t CRCfunc(const uint8_t *buffer, uint16_t length);
 
-class TestHydrolibSerialProtocol : public ::testing::Test,
-                                   public ::testing::WithParamInterface<uint16_t>
+class TestHydrolibSerialProtocol : public ::testing::Test
 {
 protected:
     TestHydrolibSerialProtocol()
@@ -59,6 +58,18 @@ protected:
     uint8_t tx_buffer[HYDROLIB_SP_MAX_MESSAGE_LENGTH];
 };
 
+class TestHydrolibSPmemoryAccess : public TestHydrolibSerialProtocol,
+                                   public ::testing::WithParamInterface<std::tuple<uint16_t, uint16_t>>
+{
+};
+
+INSTANTIATE_TEST_CASE_P(
+    Test,
+    TestHydrolibSPmemoryAccess,
+    ::testing::Combine(
+        ::testing::Range<uint16_t>(0, PUBLIC_MEMORY_LENGTH),
+        ::testing::Range<uint16_t>(1, PUBLIC_MEMORY_LENGTH)));
+
 TEST_F(TestHydrolibSerialProtocol, RawReceivingTest)
 {
     for (uint8_t i = 0; i < sizeof(_hydrolib_SP_MessageHeaderMemAccess) + 1; i++)
@@ -78,18 +89,20 @@ TEST_F(TestHydrolibSerialProtocol, RawReceivingTest)
     }
 }
 
-TEST_F(TestHydrolibSerialProtocol, MemWritingTest)
+TEST_P(TestHydrolibSPmemoryAccess, MemWritingTest)
 {
-    uint8_t mem_address = 0;
-    uint8_t writing_length = 10;
+    auto param = GetParam();
+    uint8_t mem_address = std::get<0>(param);
+    uint8_t writing_length = std::get<1>(param);
     for (uint8_t j = 0; j < 10; j++)
     {
         hydrolib_ReturnCode transmit_status =
             hydrolib_SerialProtocol_TransmitWrite(&transmitter, DEVICE_ADDRESS_RECEIVER,
                                                   mem_address, writing_length, test_data);
-        if (mem_address + writing_length > 0xFF)
+        if (mem_address + writing_length > PUBLIC_MEMORY_LENGTH)
         {
             EXPECT_EQ(HYDROLIB_RETURN_FAIL, transmit_status);
+            continue;
         }
         else
         {

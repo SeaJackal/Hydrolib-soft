@@ -103,7 +103,7 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_TransmitWrite(hydrolib_SerialProtoco
     }
 
     uint16_t access_border = memory_address + length;
-    if (access_border > PUBLIC_MEMORY_MAX_INDEX)
+    if (access_border > self->public_memory_capacity)
     {
         return HYDROLIB_RETURN_FAIL;
     }
@@ -277,7 +277,7 @@ static hydrolib_ReturnCode ParseMemoryAccess_(hydrolib_SerialProtocolHandler *se
 
     uint16_t current_access_border =
         self->header_rx_mem_access->memory_address + self->header_rx_mem_access->memory_access_length;
-    if (current_access_border > PUBLIC_MEMORY_MAX_INDEX)
+    if (current_access_border > self->public_memory_capacity)
     {
         return HYDROLIB_RETURN_FAIL;
     }
