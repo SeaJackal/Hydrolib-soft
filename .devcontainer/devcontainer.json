@@ -21,7 +21,8 @@
 				"josetr.cmake-language-support-vscode",
 				"ms-vscode.cmake-tools",
 				"ms-vscode-remote.remote-containers",
-				"ms-azuretools.vscode-docker"
+				"ms-azuretools.vscode-docker",
+                "cschlosser.doxdocgen"
             ],
         }
     },

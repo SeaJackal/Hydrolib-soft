@@ -79,10 +79,6 @@ void hydrolib_SerialProtocol_DoWork(hydrolib_SerialProtocolHandler *self)
     if (read_status)
     {
         hydrolib_RingQueue_PushByte(&self->rx_ring_buffer, read_byte);
-        if (self->current_rx_message_length != 0)
-        {
-            return;
-        }
         SearchAndParseMessage_(self);
     }
 }

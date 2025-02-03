@@ -12,5 +12,6 @@ RUN apt update -q \
     gdb \
     cmake \
     libgtest-dev \
+    doxygen \
     && apt clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
