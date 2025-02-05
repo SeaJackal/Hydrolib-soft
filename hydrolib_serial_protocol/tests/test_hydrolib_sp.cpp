@@ -11,8 +11,6 @@ TEST_F(TestHydrolibSerialProtocol, RawReceivingTest)
     {
         hydrolib_SerialProtocol_DoWork(&receiver);
     }
-    uint8_t data_length = receiver.current_rx_message_length;
-    EXPECT_EQ(sizeof(_hydrolib_SP_MessageHeaderMemAccess) + 1, data_length);
     for (uint8_t i = 0; i < sizeof(_hydrolib_SP_MessageHeaderMemAccess) + 1; i++)
     {
         EXPECT_EQ(raw_tx_buffer[i], receiver.current_rx_message[i]);

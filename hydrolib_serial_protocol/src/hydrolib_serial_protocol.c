@@ -17,11 +17,10 @@
 static void SearchAndParseMessage_(hydrolib_SerialProtocolHandler *self);
 
 static bool MoveToHeader_(hydrolib_SerialProtocolHandler *self);
-static hydrolib_ReturnCode ParseMessage_(hydrolib_SerialProtocolHandler *self);
+static hydrolib_ReturnCode ParseHeader_(hydrolib_SerialProtocolHandler *self);
 static void ProcessCommand_(hydrolib_SerialProtocolHandler *self);
 
 static hydrolib_ReturnCode ParseMemoryAccess_(hydrolib_SerialProtocolHandler *self);
-static hydrolib_ReturnCode CheckCRCfromMessage_(hydrolib_SerialProtocolHandler *self);
 
 hydrolib_ReturnCode hydrolib_SerialProtocol_Init(hydrolib_SerialProtocolHandler *self, uint8_t address,
                                                  hydrolib_SerialProtocol_InterfaceFunc receive_byte_func,
@@ -45,6 +44,8 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_Init(hydrolib_SerialProtocolHandler 
 
     self->current_rx_message_length = 0;
     self->current_tx_message_length = 0;
+
+    self->current_rx_processed_length = 0;
 
     self->public_memory = public_memory;
     self->public_memory_capacity = public_memory_capacity;
@@ -130,25 +131,53 @@ static void SearchAndParseMessage_(hydrolib_SerialProtocolHandler *self)
             return;
         }
 
-        hydrolib_ReturnCode message_correct_check = ParseMessage_(self);
-        switch (message_correct_check)
+        if (self->current_rx_message_length == 0)
         {
-        case HYDROLIB_RETURN_NO_DATA:
-            return;
+            hydrolib_ReturnCode message_correct_check = ParseHeader_(self);
+            switch (message_correct_check)
+            {
+            case HYDROLIB_RETURN_NO_DATA:
+                return;
 
-        case HYDROLIB_RETURN_FAIL:
-            hydrolib_RingQueue_Drop(&self->rx_ring_buffer, 1);
-            continue;
+            case HYDROLIB_RETURN_FAIL:
+                hydrolib_RingQueue_Drop(&self->rx_ring_buffer, 1);
+                continue;
 
-        case HYDROLIB_RETURN_OK:
+            default:
+                break;
+            }
+        }
+
+        for (; self->current_rx_processed_length < self->current_rx_message_length; self->current_rx_processed_length++)
+        {
+            hydrolib_ReturnCode read_status =
+                hydrolib_RingQueue_ReadByte(&self->rx_ring_buffer,
+                                            &self->current_rx_message[self->current_rx_processed_length],
+                                            self->current_rx_processed_length);
+            if (read_status != HYDROLIB_RETURN_OK)
+            {
+                return;
+            }
+        }
+        uint8_t target_crc = self->get_crc_func(self->current_rx_message,
+                                                self->current_rx_message_length - CRC_LENGTH);
+        if (self->current_rx_message[self->current_rx_message_length - CRC_LENGTH] == target_crc)
+        {
             hydrolib_RingQueue_Drop(&self->rx_ring_buffer, self->current_rx_message_length);
-            break;
-
-        default:
-            break;
+        }
+        else
+        {
+            hydrolib_RingQueue_Drop(&self->rx_ring_buffer, 1);
+            self->current_rx_message_length = 0;
+            self->current_rx_processed_length = 0;
+            return;
         }
 
         ProcessCommand_(self);
+
+        self->current_rx_message_length = 0;
+        self->current_rx_processed_length = 0;
+        return;
     }
 }
 
@@ -178,7 +207,7 @@ static bool MoveToHeader_(hydrolib_SerialProtocolHandler *self)
     return false;
 }
 
-static hydrolib_ReturnCode ParseMessage_(hydrolib_SerialProtocolHandler *self)
+static hydrolib_ReturnCode ParseHeader_(hydrolib_SerialProtocolHandler *self)
 {
     self->current_command = self->current_rx_message[0] & COMMAND_MASK;
 
@@ -194,15 +223,7 @@ static hydrolib_ReturnCode ParseMessage_(hydrolib_SerialProtocolHandler *self)
         }
 
         self->current_rx_message_length = sizeof(_hydrolib_SP_MessageHeaderMemAccess) + CRC_LENGTH;
-        read_status =
-            hydrolib_RingQueue_ReadByte(&self->rx_ring_buffer,
-                                        &self->current_rx_message[sizeof(_hydrolib_SP_MessageHeaderMemAccess)],
-                                        sizeof(_hydrolib_SP_MessageHeaderMemAccess));
-        if (read_status != HYDROLIB_RETURN_OK)
-        {
-            self->current_rx_message_length = 0;
-            return HYDROLIB_RETURN_NO_DATA;
-        }
+        self->current_rx_processed_length = sizeof(_hydrolib_SP_MessageHeaderMemAccess);
         break;
 
     case _HYDROLIB_SP_COMMAND_WRITE:
@@ -215,28 +236,14 @@ static hydrolib_ReturnCode ParseMessage_(hydrolib_SerialProtocolHandler *self)
         self->current_rx_message_length =
             sizeof(_hydrolib_SP_MessageHeaderMemAccess) +
             self->header_rx_mem_access->memory_access_length + CRC_LENGTH;
-
-        for (uint8_t i = sizeof(_hydrolib_SP_MessageHeaderMemAccess); i < self->current_rx_message_length; i++)
-        {
-            read_status = hydrolib_RingQueue_ReadByte(&self->rx_ring_buffer, &self->current_rx_message[i], i);
-            if (read_status != HYDROLIB_RETURN_OK)
-            {
-                self->current_rx_message_length = 0;
-                return HYDROLIB_RETURN_NO_DATA;
-            }
-        }
+        self->current_rx_processed_length = sizeof(_hydrolib_SP_MessageHeaderMemAccess);
         break;
 
     default:
         return HYDROLIB_RETURN_FAIL;
     }
 
-    hydrolib_ReturnCode check_crc_status = CheckCRCfromMessage_(self);
-    if (check_crc_status != HYDROLIB_RETURN_OK)
-    {
-        self->current_rx_message_length = 0;
-    }
-    return check_crc_status;
+    return HYDROLIB_RETURN_OK;
 }
 
 static void ProcessCommand_(hydrolib_SerialProtocolHandler *self)
@@ -279,28 +286,4 @@ static hydrolib_ReturnCode ParseMemoryAccess_(hydrolib_SerialProtocolHandler *se
     }
 
     return HYDROLIB_RETURN_OK;
-}
-
-static hydrolib_ReturnCode CheckCRCfromMessage_(hydrolib_SerialProtocolHandler *self)
-{
-    uint8_t current_crc;
-    hydrolib_ReturnCode read_status =
-        hydrolib_RingQueue_ReadByte(&self->rx_ring_buffer,
-                                    &current_crc,
-                                    self->current_rx_message_length - CRC_LENGTH);
-    if (read_status != HYDROLIB_RETURN_OK)
-    {
-        return HYDROLIB_RETURN_NO_DATA;
-    }
-
-    uint8_t target_crc = self->get_crc_func(self->current_rx_message,
-                                            self->current_rx_message_length - CRC_LENGTH);
-    if (current_crc == target_crc)
-    {
-        return HYDROLIB_RETURN_OK;
-    }
-    else
-    {
-        return HYDROLIB_RETURN_FAIL;
-    }
 }

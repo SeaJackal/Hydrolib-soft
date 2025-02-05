@@ -86,6 +86,7 @@ typedef struct
     hydrolib_SerialProtocol_CRCfunc get_crc_func;
 
     uint16_t current_rx_message_length;
+    uint16_t current_rx_processed_length;
     uint8_t current_rx_message[HYDROLIB_SP_MAX_MESSAGE_LENGTH];
 
     _hydrolib_SerialProtocol_Command current_command;
