@@ -177,7 +177,8 @@ hydrolib_ReturnCode hydrolib_RingQueue_Read(hydrolib_RingQueue *self,
         if (shift + data_length > forward_length)
         {
             memcpy(data, self->buffer + self->head + shift, forward_length - shift);
-            memcpy(data, self->buffer, data_length - (forward_length - shift));
+            memcpy(data + forward_length - shift,
+                   self->buffer, data_length - (forward_length - shift));
         }
         else
         {

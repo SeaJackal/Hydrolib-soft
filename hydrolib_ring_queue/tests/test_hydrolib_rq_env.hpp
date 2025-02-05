@@ -7,8 +7,7 @@
 
 #define DEFAULT_CAPACITY 16
 
-class TestHydrolibRingQueue : public ::testing::Test,
-                              public ::testing::WithParamInterface<uint16_t>
+class TestHydrolibRingQueue : public ::testing::Test
 {
 protected:
     TestHydrolibRingQueue()
@@ -26,6 +25,11 @@ protected:
     {
         delete buffer;
     }
+};
+
+class TestHydrolibRingQueueCommon : public TestHydrolibRingQueue,
+                                    public ::testing::WithParamInterface<uint16_t>
+{
 };
 
 #endif

@@ -2,5 +2,5 @@
 
 INSTANTIATE_TEST_CASE_P(
     Test,
-    TestHydrolibRingQueue,
+    TestHydrolibRingQueueCommon,
     ::testing::Range<uint16_t>(0, 16));

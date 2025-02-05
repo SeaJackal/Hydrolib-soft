@@ -1,6 +1,6 @@
 #include "test_hydrolib_rq_env.hpp"
 
-TEST_P(TestHydrolibRingQueue, FindByte)
+TEST_P(TestHydrolibRingQueueCommon, FindByte)
 {
     uint16_t shift = GetParam();
 
@@ -40,7 +40,7 @@ TEST_P(TestHydrolibRingQueue, FindByte)
     EXPECT_EQ((uint16_t)(-1), found_index);
 }
 
-TEST_P(TestHydrolibRingQueue, Find2BytesLE)
+TEST_P(TestHydrolibRingQueueCommon, Find2BytesLE)
 {
     uint16_t shift = GetParam();
 
@@ -81,7 +81,7 @@ TEST_P(TestHydrolibRingQueue, Find2BytesLE)
     EXPECT_EQ((uint16_t)(-1), found_index);
 }
 
-TEST_P(TestHydrolibRingQueue, Find4BytesLE)
+TEST_P(TestHydrolibRingQueueCommon, Find4BytesLE)
 {
     uint16_t shift = GetParam();
 

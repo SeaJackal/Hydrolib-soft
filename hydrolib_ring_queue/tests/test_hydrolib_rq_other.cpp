@@ -49,7 +49,7 @@ TEST_F(TestHydrolibRingQueue, IsFull)
     EXPECT_TRUE(is_full_after_push);
 }
 
-TEST_P(TestHydrolibRingQueue, Length)
+TEST_P(TestHydrolibRingQueueCommon, Length)
 {
     uint16_t push_number = GetParam();
     for (uint16_t i = 0; i < push_number; i++)
@@ -71,7 +71,7 @@ TEST_P(TestHydrolibRingQueue, Length)
     }
 }
 
-TEST_P(TestHydrolibRingQueue, Clear)
+TEST_P(TestHydrolibRingQueueCommon, Clear)
 {
     uint16_t push_number = GetParam();
     for (uint16_t i = 0; i < push_number; i++)
@@ -85,7 +85,7 @@ TEST_P(TestHydrolibRingQueue, Clear)
     EXPECT_TRUE(is_empty);
 }
 
-TEST_P(TestHydrolibRingQueue, Drop)
+TEST_P(TestHydrolibRingQueueCommon, Drop)
 {
     uint16_t drop_number = GetParam();
     for (uint16_t i = 0; i < buffer_capacity; i++)

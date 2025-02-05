@@ -1,6 +1,6 @@
 #include "test_hydrolib_rq_env.hpp"
 
-TEST_P(TestHydrolibRingQueue, PullAndPushBytes)
+TEST_P(TestHydrolibRingQueueCommon, PullAndPushBytes)
 {
     uint16_t pull_number = GetParam() + 1;
 
