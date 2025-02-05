@@ -125,15 +125,15 @@ static void SearchAndParseMessage_(hydrolib_SerialProtocolHandler *self)
 {
     while (1)
     {
-        bool header_searching_status = MoveToHeader_(self);
-        if (!header_searching_status)
-        {
-            return;
-        }
-
         if (self->current_rx_message_length == 0)
         {
-            hydrolib_ReturnCode message_correct_check = ParseHeader_(self);
+            bool header_searching_status = MoveToHeader_(self);
+            if (!header_searching_status)
+            {
+                return;
+            }
+
+                    hydrolib_ReturnCode message_correct_check = ParseHeader_(self);
             switch (message_correct_check)
             {
             case HYDROLIB_RETURN_NO_DATA:
@@ -148,16 +148,14 @@ static void SearchAndParseMessage_(hydrolib_SerialProtocolHandler *self)
             }
         }
 
-        for (; self->current_rx_processed_length < self->current_rx_message_length; self->current_rx_processed_length++)
+        hydrolib_ReturnCode read_status =
+            hydrolib_RingQueue_Read(&self->rx_ring_buffer,
+                                    self->current_rx_message + self->current_rx_processed_length,
+                                    self->current_rx_message_length - self->current_rx_processed_length,
+                                    self->current_rx_processed_length);
+        if (read_status != HYDROLIB_RETURN_OK)
         {
-            hydrolib_ReturnCode read_status =
-                hydrolib_RingQueue_ReadByte(&self->rx_ring_buffer,
-                                            &self->current_rx_message[self->current_rx_processed_length],
-                                            self->current_rx_processed_length);
-            if (read_status != HYDROLIB_RETURN_OK)
-            {
-                return;
-            }
+            return;
         }
         uint8_t target_crc = self->get_crc_func(self->current_rx_message,
                                                 self->current_rx_message_length - CRC_LENGTH);
@@ -262,15 +260,13 @@ static void ProcessCommand_(hydrolib_SerialProtocolHandler *self)
 
 static hydrolib_ReturnCode ParseMemoryAccess_(hydrolib_SerialProtocolHandler *self)
 {
-    hydrolib_ReturnCode read_status;
-
-    for (int8_t i = 1; i < sizeof(_hydrolib_SP_MessageHeaderMemAccess); i++)
+    hydrolib_ReturnCode read_status =
+        hydrolib_RingQueue_Read(&self->rx_ring_buffer,
+                                self->current_rx_message + 1,
+                                sizeof(_hydrolib_SP_MessageHeaderMemAccess), 1);
+    if (read_status != HYDROLIB_RETURN_OK)
     {
-        read_status = hydrolib_RingQueue_ReadByte(&self->rx_ring_buffer, &self->current_rx_message[i], i);
-        if (read_status != HYDROLIB_RETURN_OK)
-        {
-            return HYDROLIB_RETURN_NO_DATA;
-        }
+        return HYDROLIB_RETURN_NO_DATA;
     }
 
     if (self->header_rx_mem_access->memory_access_length == 0)
