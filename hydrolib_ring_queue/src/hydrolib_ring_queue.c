@@ -262,6 +262,11 @@ uint16_t hydrolib_RingQueue_GetLength(hydrolib_RingQueue *self)
     return self->length;
 }
 
+uint16_t hydrolib_RingQueue_GetCapacity(hydrolib_RingQueue *self)
+{
+    return self->capacity;
+}
+
 bool hydrolib_RingQueue_IsEmpty(hydrolib_RingQueue *self)
 {
     return self->length == 0;

@@ -38,6 +38,7 @@ uint16_t hydrolib_RingQueue_Find2BytesLE(hydrolib_RingQueue *self, uint16_t targ
 uint16_t hydrolib_RingQueue_Find4BytesLE(hydrolib_RingQueue *self, uint32_t target_bytes, uint16_t shift);
 
 uint16_t hydrolib_RingQueue_GetLength(hydrolib_RingQueue *self);
+uint16_t hydrolib_RingQueue_GetCapacity(hydrolib_RingQueue *self);
 bool hydrolib_RingQueue_IsEmpty(hydrolib_RingQueue *self);
 bool hydrolib_RingQueue_IsFull(hydrolib_RingQueue *self);
 

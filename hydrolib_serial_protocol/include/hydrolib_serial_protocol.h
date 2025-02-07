@@ -33,7 +33,7 @@ extern "C"
 #define HYDROLIB_SP_MAX_MESSAGE_LENGTH 255
 #define HYDROLIB_SP_RX_BUFFER_RESERVE 10
 
-#define HYDROLIB_SP_TX_BUFFER_CAPACITY HYDROLIB_SP_MAX_MESSAGE_LENGTH
+#define HYDROLIB_SP_TX_BUFFER_CAPACITY 2 * HYDROLIB_SP_MAX_MESSAGE_LENGTH
 #define HYDROLIB_SP_RX_BUFFER_CAPACITY 2 * HYDROLIB_SP_MAX_MESSAGE_LENGTH + \
                                            HYDROLIB_SP_RX_BUFFER_RESERVE
                                            
@@ -79,6 +79,7 @@ typedef struct
     uint8_t tx_buffer[HYDROLIB_SP_TX_BUFFER_CAPACITY];
 
     hydrolib_RingQueue rx_ring_buffer;
+    hydrolib_RingQueue tx_ring_buffer;
 
     hydrolib_SerialProtocol_InterfaceFunc receive_byte_func;
     hydrolib_SerialProtocol_InterfaceFunc transmit_byte_func;
@@ -92,11 +93,6 @@ typedef struct
     _hydrolib_SerialProtocol_Command current_command;
 
     _hydrolib_SP_MessageHeaderMemAccess* header_rx_mem_access;
-    _hydrolib_SP_MessageHeaderMemAccess* header_tx_mem_access;
-
-    uint16_t current_tx_message_length;
-    uint8_t current_tx_message[HYDROLIB_SP_MAX_MESSAGE_LENGTH];
-    uint16_t tx_pos;
 
     uint8_t *public_memory;
     uint16_t public_memory_capacity;
