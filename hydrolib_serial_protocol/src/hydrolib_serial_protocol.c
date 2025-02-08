@@ -29,7 +29,7 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_Init(hydrolib_SerialProtocolHandler 
                                                  uint8_t *public_memory,
                                                  uint16_t public_memory_capacity)
 {
-    if (self->self_address >= 1 << (ADDRESS_BITS_NUMBER + 1))
+    if (address >= 1 << (ADDRESS_BITS_NUMBER + 1))
     {
         self = NULL;
         return HYDROLIB_RETURN_FAIL;
