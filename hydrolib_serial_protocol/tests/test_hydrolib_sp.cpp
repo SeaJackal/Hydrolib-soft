@@ -40,6 +40,9 @@ TEST_P(TestHydrolibSPmemoryAccess, MemWritingTest)
         for (uint8_t i = 0; i < HYDROLIB_SP_MAX_MESSAGE_LENGTH; i++)
         {
             hydrolib_SerialProtocol_DoWork(&transmitter);
+        }
+        for (uint8_t i = 0; i < HYDROLIB_SP_MAX_MESSAGE_LENGTH; i++)
+        {
             hydrolib_SerialProtocol_DoWork(&receiver);
         }
         for (uint8_t i = 0; i < writing_length; i++)
