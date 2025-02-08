@@ -40,7 +40,8 @@ extern "C"
 typedef enum
 {
     _HYDROLIB_SP_COMMAND_WRITE = 1,
-    _HYDROLIB_SP_COMMAND_READ
+    _HYDROLIB_SP_COMMAND_READ,
+    _HYDROLIB_SP_COMMAND_RESPOND
 } _hydrolib_SerialProtocol_Command;
 
 #pragma pack(push, 1)
@@ -48,9 +49,16 @@ typedef enum
 typedef struct
 {
     uint8_t device_address;
+    uint8_t self_address;
     uint8_t memory_address;
     uint8_t memory_access_length;
 } _hydrolib_SP_MessageHeaderMemAccess;
+
+typedef struct
+{
+    uint8_t device_address;
+    uint8_t self_address;
+} _hydrolib_SP_MessageHeaderResponce;
 
 #pragma pack(pop)
 

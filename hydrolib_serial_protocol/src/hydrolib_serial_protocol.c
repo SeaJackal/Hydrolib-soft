@@ -256,6 +256,33 @@ static void ProcessCommand_(hydrolib_SerialProtocolHandler *self)
                self->current_rx_message + sizeof(_hydrolib_SP_MessageHeaderMemAccess),
                self->header_rx_mem_access->memory_access_length);
         break;
+    case _HYDROLIB_SP_COMMAND_READ:
+        uint8_t current_tx_message_length =
+            sizeof(_hydrolib_SP_MessageHeaderResponce) +
+            self->header_rx_mem_access->memory_access_length + CRC_LENGTH;
+        uint8_t available_length = hydrolib_RingQueue_GetCapacity(&self->tx_ring_buffer) -
+                                   hydrolib_RingQueue_GetLength(&self->tx_ring_buffer);
+
+        if (available_length < current_tx_message_length)
+        {
+            return;
+        }
+
+        uint8_t current_tx_message[HYDROLIB_SP_MAX_MESSAGE_LENGTH];
+        _hydrolib_SP_MessageHeaderResponce *tx_header =
+            (_hydrolib_SP_MessageHeaderResponce *)&current_tx_message;
+
+        tx_header->device_address =
+            (self->header_rx_mem_access->self_address << (8 - ADDRESS_BITS_NUMBER)) | _HYDROLIB_SP_COMMAND_RESPOND;
+        tx_header->self_address = self->self_address;
+
+        memcpy(current_tx_message + sizeof(_hydrolib_SP_MessageHeaderResponce),
+               buffer, length);
+
+        current_tx_message[current_tx_message_length - CRC_LENGTH] =
+            self->get_crc_func(current_tx_message, current_tx_message_length - CRC_LENGTH);
+
+        hydrolib_RingQueue_Push(&self->tx_ring_buffer, current_tx_message, current_tx_message_length);
     default:
         break;
     }
