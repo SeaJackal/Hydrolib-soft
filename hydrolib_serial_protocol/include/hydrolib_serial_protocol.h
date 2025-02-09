@@ -98,9 +98,14 @@ typedef struct
     uint16_t current_rx_processed_length;
     uint8_t current_rx_message[HYDROLIB_SP_MAX_MESSAGE_LENGTH];
 
+    uint8_t responcing_device;
+    uint8_t* responce_buffer;
+    uint8_t responce_data_length;
+
     _hydrolib_SerialProtocol_Command current_command;
 
     _hydrolib_SP_MessageHeaderMemAccess* header_rx_mem_access;
+    _hydrolib_SP_MessageHeaderResponce* header_rx_responce;
 
     uint8_t *public_memory;
     uint16_t public_memory_capacity;

@@ -20,7 +20,8 @@ static bool MoveToHeader_(hydrolib_SerialProtocolHandler *self);
 static hydrolib_ReturnCode ParseHeader_(hydrolib_SerialProtocolHandler *self);
 static void ProcessCommand_(hydrolib_SerialProtocolHandler *self);
 
-static hydrolib_ReturnCode ParseMemoryAccess_(hydrolib_SerialProtocolHandler *self);
+static hydrolib_ReturnCode ParseMemoryAccessHeader_(hydrolib_SerialProtocolHandler *self);
+static hydrolib_ReturnCode ParseResponceHeader_(hydrolib_SerialProtocolHandler *self);
 
 hydrolib_ReturnCode hydrolib_SerialProtocol_Init(hydrolib_SerialProtocolHandler *self, uint8_t address,
                                                  hydrolib_SerialProtocol_InterfaceFunc receive_byte_func,
@@ -50,8 +51,12 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_Init(hydrolib_SerialProtocolHandler 
     self->public_memory = public_memory;
     self->public_memory_capacity = public_memory_capacity;
 
+    self->responce_buffer = NULL;
+
     self->header_rx_mem_access =
         (_hydrolib_SP_MessageHeaderMemAccess *)self->current_rx_message;
+    self->header_rx_responce =
+        (_hydrolib_SP_MessageHeaderResponce *)self->current_rx_message;
 
     return HYDROLIB_RETURN_OK;
 }
@@ -110,6 +115,7 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_TransmitWrite(hydrolib_SerialProtoco
 
     tx_header->device_address =
         (device_address << (8 - ADDRESS_BITS_NUMBER)) | _HYDROLIB_SP_COMMAND_WRITE;
+    tx_header->self_address = self->self_address;
     tx_header->memory_address = memory_address;
     tx_header->memory_access_length = length;
 
@@ -191,7 +197,8 @@ static bool MoveToHeader_(hydrolib_SerialProtocolHandler *self)
     while (finding_read_status == HYDROLIB_RETURN_OK)
     {
         if (self->current_rx_message[0] == (self->self_address | _HYDROLIB_SP_COMMAND_WRITE) ||
-            self->current_rx_message[0] == (self->self_address | _HYDROLIB_SP_COMMAND_READ))
+            self->current_rx_message[0] == (self->self_address | _HYDROLIB_SP_COMMAND_READ) ||
+            self->current_rx_message[0] == (self->self_address | _HYDROLIB_SP_COMMAND_RESPOND))
         {
             hydrolib_RingQueue_Drop(&self->rx_ring_buffer, index);
             return true;
@@ -213,14 +220,14 @@ static hydrolib_ReturnCode ParseHeader_(hydrolib_SerialProtocolHandler *self)
     self->current_command = self->current_rx_message[0] & COMMAND_MASK;
 
     hydrolib_ReturnCode read_status;
-    hydrolib_ReturnCode parse_access_status;
+    hydrolib_ReturnCode parse_header_status;
     switch (self->current_command)
     {
     case _HYDROLIB_SP_COMMAND_READ:
-        parse_access_status = ParseMemoryAccess_(self);
-        if (parse_access_status != HYDROLIB_RETURN_OK)
+        parse_header_status = ParseMemoryAccessHeader_(self);
+        if (parse_header_status != HYDROLIB_RETURN_OK)
         {
-            return parse_access_status;
+            return parse_header_status;
         }
 
         self->current_rx_message_length = sizeof(_hydrolib_SP_MessageHeaderMemAccess) + CRC_LENGTH;
@@ -228,16 +235,29 @@ static hydrolib_ReturnCode ParseHeader_(hydrolib_SerialProtocolHandler *self)
         break;
 
     case _HYDROLIB_SP_COMMAND_WRITE:
-        parse_access_status = ParseMemoryAccess_(self);
-        if (parse_access_status != HYDROLIB_RETURN_OK)
+        parse_header_status = ParseMemoryAccessHeader_(self);
+        if (parse_header_status != HYDROLIB_RETURN_OK)
         {
-            return parse_access_status;
+            return parse_header_status;
         }
 
         self->current_rx_message_length =
             sizeof(_hydrolib_SP_MessageHeaderMemAccess) +
             self->header_rx_mem_access->memory_access_length + CRC_LENGTH;
         self->current_rx_processed_length = sizeof(_hydrolib_SP_MessageHeaderMemAccess);
+        break;
+
+    case _HYDROLIB_SP_COMMAND_RESPOND:
+        parse_header_status = ParseResponceHeader_(self);
+        if (parse_header_status != HYDROLIB_RETURN_OK)
+        {
+            return parse_header_status;
+        }
+
+        self->current_rx_message_length =
+            sizeof(_hydrolib_SP_MessageHeaderResponce) +
+            self->responce_data_length + CRC_LENGTH;
+        self->current_rx_processed_length = sizeof(_hydrolib_SP_MessageHeaderResponce);
         break;
 
     default:
@@ -256,6 +276,7 @@ static void ProcessCommand_(hydrolib_SerialProtocolHandler *self)
                self->current_rx_message + sizeof(_hydrolib_SP_MessageHeaderMemAccess),
                self->header_rx_mem_access->memory_access_length);
         break;
+
     case _HYDROLIB_SP_COMMAND_READ:
         uint8_t current_tx_message_length =
             sizeof(_hydrolib_SP_MessageHeaderResponce) +
@@ -277,18 +298,27 @@ static void ProcessCommand_(hydrolib_SerialProtocolHandler *self)
         tx_header->self_address = self->self_address;
 
         memcpy(current_tx_message + sizeof(_hydrolib_SP_MessageHeaderResponce),
-               buffer, length);
+               self->public_memory + self->header_rx_mem_access->memory_address,
+               self->header_rx_mem_access->memory_access_length);
 
         current_tx_message[current_tx_message_length - CRC_LENGTH] =
             self->get_crc_func(current_tx_message, current_tx_message_length - CRC_LENGTH);
 
         hydrolib_RingQueue_Push(&self->tx_ring_buffer, current_tx_message, current_tx_message_length);
+        break;
+
+    case _HYDROLIB_SP_COMMAND_RESPOND:
+        memcpy(current_tx_message + sizeof(_hydrolib_SP_MessageHeaderResponce),
+               self->responce_buffer, self->responce_data_length);
+        self->responce_buffer = NULL;
+        break;
+
     default:
         break;
     }
 }
 
-static hydrolib_ReturnCode ParseMemoryAccess_(hydrolib_SerialProtocolHandler *self)
+static hydrolib_ReturnCode ParseMemoryAccessHeader_(hydrolib_SerialProtocolHandler *self)
 {
     hydrolib_ReturnCode read_status =
         hydrolib_RingQueue_Read(&self->rx_ring_buffer,
@@ -307,6 +337,30 @@ static hydrolib_ReturnCode ParseMemoryAccess_(hydrolib_SerialProtocolHandler *se
     uint16_t current_access_border =
         self->header_rx_mem_access->memory_address + self->header_rx_mem_access->memory_access_length;
     if (current_access_border > self->public_memory_capacity)
+    {
+        return HYDROLIB_RETURN_FAIL;
+    }
+
+    return HYDROLIB_RETURN_OK;
+}
+
+static hydrolib_ReturnCode ParseResponceHeader_(hydrolib_SerialProtocolHandler *self)
+{
+    if (!self->responce_buffer)
+    {
+        return HYDROLIB_RETURN_FAIL;
+    }
+
+    hydrolib_ReturnCode read_status =
+        hydrolib_RingQueue_Read(&self->rx_ring_buffer,
+                                self->current_rx_message + 1,
+                                sizeof(_hydrolib_SP_MessageHeaderResponce), 1);
+    if (read_status != HYDROLIB_RETURN_OK)
+    {
+        return HYDROLIB_RETURN_NO_DATA;
+    }
+
+    if (self->header_rx_responce->self_address != self->responcing_device)
     {
         return HYDROLIB_RETURN_FAIL;
     }
