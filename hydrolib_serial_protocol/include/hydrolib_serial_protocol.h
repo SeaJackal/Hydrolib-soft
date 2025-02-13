@@ -159,6 +159,11 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_TransmitWrite(hydrolib_SerialProtoco
                                                           uint8_t memory_address, uint8_t length,
                                                           uint8_t *buffer);
 
+hydrolib_ReturnCode hydrolib_SerialProtocol_TransmitRead(hydrolib_SerialProtocolHandler *self,
+                                                         uint8_t device_address,
+                                                         uint8_t memory_address, uint8_t length,
+                                                         uint8_t *buffer);
+
 /** @} */
 
 #ifdef __cplusplus

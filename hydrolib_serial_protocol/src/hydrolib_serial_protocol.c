@@ -130,6 +130,56 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_TransmitWrite(hydrolib_SerialProtoco
     return HYDROLIB_RETURN_OK;
 }
 
+hydrolib_ReturnCode hydrolib_SerialProtocol_TransmitRead(hydrolib_SerialProtocolHandler *self,
+                                                         uint8_t device_address,
+                                                         uint8_t memory_address, uint8_t length,
+                                                         uint8_t *buffer)
+{
+    if (!self->responce_buffer)
+    {
+        return HYDROLIB_RETURN_BUSY;
+    }
+
+    if (length == 0)
+    {
+        return HYDROLIB_RETURN_FAIL;
+    }
+
+    uint16_t access_border = memory_address + length;
+    if (access_border > self->public_memory_capacity)
+    {
+        return HYDROLIB_RETURN_FAIL;
+    }
+
+    uint8_t current_tx_message_length = sizeof(_hydrolib_SP_MessageHeaderMemAccess) + length + CRC_LENGTH;
+    uint8_t available_length = hydrolib_RingQueue_GetCapacity(&self->tx_ring_buffer) -
+                               hydrolib_RingQueue_GetLength(&self->tx_ring_buffer);
+
+    if (available_length < current_tx_message_length)
+    {
+        return HYDROLIB_RETURN_BUSY;
+    }
+
+    uint8_t current_tx_message[HYDROLIB_SP_MAX_MESSAGE_LENGTH];
+    _hydrolib_SP_MessageHeaderMemAccess *tx_header =
+        (_hydrolib_SP_MessageHeaderMemAccess *)&current_tx_message;
+
+    tx_header->device_address =
+        (device_address << (8 - ADDRESS_BITS_NUMBER)) | _HYDROLIB_SP_COMMAND_READ;
+    tx_header->self_address = self->self_address;
+    tx_header->memory_address = memory_address;
+    tx_header->memory_access_length = length;
+
+    current_tx_message[current_tx_message_length - CRC_LENGTH] =
+        self->get_crc_func(current_tx_message, current_tx_message_length - CRC_LENGTH);
+
+    hydrolib_RingQueue_Push(&self->tx_ring_buffer, current_tx_message, current_tx_message_length);
+
+    self->responce_buffer = buffer;
+
+    return HYDROLIB_RETURN_OK;
+}
+
 static void SearchAndParseMessage_(hydrolib_SerialProtocolHandler *self)
 {
     while (1)
