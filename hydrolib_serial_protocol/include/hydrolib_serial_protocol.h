@@ -89,16 +89,15 @@ typedef struct
     hydrolib_RingQueue rx_ring_buffer;
     hydrolib_RingQueue tx_ring_buffer;
 
-    hydrolib_SerialProtocol_InterfaceFunc receive_byte_func;
     hydrolib_SerialProtocol_InterfaceFunc transmit_byte_func;
 
-    hydrolib_SerialProtocol_CRCfunc get_crc_func;
+    bool got_rx;
 
     uint16_t current_rx_message_length;
     uint16_t current_rx_processed_length;
     uint8_t current_rx_message[HYDROLIB_SP_MAX_MESSAGE_LENGTH];
 
-    uint8_t responcing_device;
+    uint8_t responding_device;
     uint8_t* responce_buffer;
     uint8_t responce_data_length;
 
@@ -116,20 +115,16 @@ typedef struct
  
  @param[out] self Pointer to the initializing handler
  @param[in] address Device address which serial protocol will react to
- @param[in] receive_byte_func Hardware interaction function for byte receiving
  @param[in] transmit_byte_func Hardware interaction function for byte transmiting
- @param[in] get_crc_func Hardware interaction function for getting crc8
  @param[in] public_memory Pointer to the memory correspondent can interact with
  @param[in] public_memory_capacity Capacity of the public memory
  @return Returns HYDROLIB_RETURN_FAIL if some args are not valid
  and HYDROLIB_RETURN_OK else
  */
 hydrolib_ReturnCode hydrolib_SerialProtocol_Init(hydrolib_SerialProtocolHandler *self, uint8_t address,
-                                                    hydrolib_SerialProtocol_InterfaceFunc receive_byte_func,
-                                                    hydrolib_SerialProtocol_InterfaceFunc transmit_byte_func,
-                                                    hydrolib_SerialProtocol_CRCfunc get_crc_func,
-                                                    uint8_t *public_memory,
-                                                    uint16_t public_memory_capacity);
+                                                 hydrolib_SerialProtocol_InterfaceFunc transmit_byte_func,
+                                                 uint8_t *public_memory,
+                                                 uint16_t public_memory_capacity);
 
 /**
  @brief Function for current messages processing
@@ -143,6 +138,9 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_Init(hydrolib_SerialProtocolHandler 
  */
 void hydrolib_SerialProtocol_DoWork(hydrolib_SerialProtocolHandler *self);
 
+hydrolib_ReturnCode hydrolib_SerialProtocol_Receive(hydrolib_SerialProtocolHandler *self,
+                                                    void* data, uint8_t length);
+
 /**
  @brief Writing to the corespondent's public memory
  
@@ -150,14 +148,14 @@ void hydrolib_SerialProtocol_DoWork(hydrolib_SerialProtocolHandler *self);
  @param[in] device_address Corespondent's address
  @param[in] memory_address Memory address to write
  @param[in] length Length of payload
- @param[in] buffer Pointer to payload
+ @param[in] data Pointer to payload
  @return Returns HYDROLIB_RETURN_BUSY if last message is't transmit yet,
  HYDROLIB_RETURN_FAIL if there is a mistake in parametres and HYDROLIB_RETURN_OK else
  */
 hydrolib_ReturnCode hydrolib_SerialProtocol_TransmitWrite(hydrolib_SerialProtocolHandler *self,
                                                           uint8_t device_address,
                                                           uint8_t memory_address, uint8_t length,
-                                                          uint8_t *buffer);
+                                                          uint8_t *data);
 
 hydrolib_ReturnCode hydrolib_SerialProtocol_TransmitRead(hydrolib_SerialProtocolHandler *self,
                                                          uint8_t device_address,

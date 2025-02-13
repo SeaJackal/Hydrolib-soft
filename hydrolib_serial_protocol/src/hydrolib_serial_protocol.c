@@ -23,10 +23,10 @@ static void ProcessCommand_(hydrolib_SerialProtocolHandler *self);
 static hydrolib_ReturnCode ParseMemoryAccessHeader_(hydrolib_SerialProtocolHandler *self);
 static hydrolib_ReturnCode ParseResponceHeader_(hydrolib_SerialProtocolHandler *self);
 
+static uint8_t CRCfunc_(const uint8_t *buffer, uint16_t length);
+
 hydrolib_ReturnCode hydrolib_SerialProtocol_Init(hydrolib_SerialProtocolHandler *self, uint8_t address,
-                                                 hydrolib_SerialProtocol_InterfaceFunc receive_byte_func,
                                                  hydrolib_SerialProtocol_InterfaceFunc transmit_byte_func,
-                                                 hydrolib_SerialProtocol_CRCfunc get_crc_func,
                                                  uint8_t *public_memory,
                                                  uint16_t public_memory_capacity)
 {
@@ -39,10 +39,9 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_Init(hydrolib_SerialProtocolHandler 
     hydrolib_RingQueue_Init(&self->rx_ring_buffer, self->rx_buffer, HYDROLIB_SP_RX_BUFFER_CAPACITY);
     hydrolib_RingQueue_Init(&self->tx_ring_buffer, self->tx_buffer, HYDROLIB_SP_TX_BUFFER_CAPACITY);
 
-    self->receive_byte_func = receive_byte_func;
     self->transmit_byte_func = transmit_byte_func;
 
-    self->get_crc_func = get_crc_func;
+    self->got_rx = false;
 
     self->current_rx_message_length = 0;
 
@@ -74,20 +73,32 @@ void hydrolib_SerialProtocol_DoWork(hydrolib_SerialProtocolHandler *self)
         }
     }
 
-    uint8_t read_byte;
-    bool read_status = self->receive_byte_func(&read_byte);
-
-    if (read_status)
+    if (self->got_rx)
     {
-        hydrolib_RingQueue_PushByte(&self->rx_ring_buffer, read_byte);
         SearchAndParseMessage_(self);
+        self->got_rx = false;
+    }
+}
+
+hydrolib_ReturnCode hydrolib_SerialProtocol_Receive(hydrolib_SerialProtocolHandler *self,
+                                                    void *data, uint8_t length)
+{
+    hydrolib_ReturnCode push_status = hydrolib_RingQueue_Push(&self->rx_ring_buffer, data, length);
+    if (push_status != HYDROLIB_RETURN_OK)
+    {
+        return HYDROLIB_RETURN_BUSY;
+    }
+    else
+    {
+        self->got_rx = true;
+        return HYDROLIB_RETURN_OK;
     }
 }
 
 hydrolib_ReturnCode hydrolib_SerialProtocol_TransmitWrite(hydrolib_SerialProtocolHandler *self,
                                                           uint8_t device_address,
                                                           uint8_t memory_address, uint8_t length,
-                                                          uint8_t *buffer)
+                                                          uint8_t *data)
 {
     if (length == 0)
     {
@@ -120,10 +131,10 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_TransmitWrite(hydrolib_SerialProtoco
     tx_header->memory_access_length = length;
 
     memcpy(current_tx_message + sizeof(_hydrolib_SP_MessageHeaderMemAccess),
-           buffer, length);
+           data, length);
 
     current_tx_message[current_tx_message_length - CRC_LENGTH] =
-        self->get_crc_func(current_tx_message, current_tx_message_length - CRC_LENGTH);
+        CRCfunc_(current_tx_message, current_tx_message_length - CRC_LENGTH);
 
     hydrolib_RingQueue_Push(&self->tx_ring_buffer, current_tx_message, current_tx_message_length);
 
@@ -171,7 +182,7 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_TransmitRead(hydrolib_SerialProtocol
     tx_header->memory_access_length = length;
 
     current_tx_message[current_tx_message_length - CRC_LENGTH] =
-        self->get_crc_func(current_tx_message, current_tx_message_length - CRC_LENGTH);
+        CRCfunc_(current_tx_message, current_tx_message_length - CRC_LENGTH);
 
     hydrolib_RingQueue_Push(&self->tx_ring_buffer, current_tx_message, current_tx_message_length);
 
@@ -216,7 +227,7 @@ static void SearchAndParseMessage_(hydrolib_SerialProtocolHandler *self)
         {
             return;
         }
-        uint8_t target_crc = self->get_crc_func(self->current_rx_message,
+        uint8_t target_crc = CRCfunc_(self->current_rx_message,
                                                 self->current_rx_message_length - CRC_LENGTH);
         if (self->current_rx_message[self->current_rx_message_length - CRC_LENGTH] == target_crc)
         {
@@ -352,7 +363,7 @@ static void ProcessCommand_(hydrolib_SerialProtocolHandler *self)
                self->header_rx_mem_access->memory_access_length);
 
         current_tx_message[current_tx_message_length - CRC_LENGTH] =
-            self->get_crc_func(current_tx_message, current_tx_message_length - CRC_LENGTH);
+            CRCfunc_(current_tx_message, current_tx_message_length - CRC_LENGTH);
 
         hydrolib_RingQueue_Push(&self->tx_ring_buffer, current_tx_message, current_tx_message_length);
         break;
@@ -410,10 +421,32 @@ static hydrolib_ReturnCode ParseResponceHeader_(hydrolib_SerialProtocolHandler *
         return HYDROLIB_RETURN_NO_DATA;
     }
 
-    if (self->header_rx_responce->self_address != self->responcing_device)
+    if (self->header_rx_responce->self_address != self->responding_device)
     {
         return HYDROLIB_RETURN_FAIL;
     }
 
     return HYDROLIB_RETURN_OK;
+}
+
+static uint8_t CRCfunc_(const uint8_t *buffer, uint16_t length)
+{
+    uint16_t pol = 0x0700;
+    uint16_t crc = buffer[0] << 8;
+    for (uint8_t i = 1; i < length; i++)
+    {
+        crc |= buffer[i];
+        for (uint8_t j = 0; j < 8; j++)
+        {
+            if (crc & 0x8000)
+            {
+                crc = (crc << 1 ^ pol);
+            }
+            else
+            {
+                crc = crc << 1;
+            }
+        }
+    }
+    return crc >> 8;
 }

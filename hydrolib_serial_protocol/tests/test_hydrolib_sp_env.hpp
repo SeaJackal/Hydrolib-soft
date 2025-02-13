@@ -14,7 +14,8 @@
 #define DEVICE_ADDRESS_RECEIVER 0
 #define DEVICE_ADDRESS_TRANSMITTER 1
 
-extern hydrolib_RingQueue txrx_ring_queue;
+extern uint8_t txrx_buffer[2 * HYDROLIB_SP_MAX_MESSAGE_LENGTH];
+extern uint16_t txrx_length;
 
 bool ReceiveFunc(uint8_t *byte);
 bool TransmitFunc(uint8_t *byte);
@@ -30,7 +31,6 @@ protected:
     hydrolib_SerialProtocolHandler transmitter;
     hydrolib_SerialProtocolHandler receiver;
 
-    uint8_t raw_tx_buffer[HYDROLIB_SP_MAX_MESSAGE_LENGTH];
     uint8_t test_data[PUBLIC_MEMORY_LENGTH];
     uint8_t tx_public_memory[PUBLIC_MEMORY_LENGTH];
     uint8_t rx_public_memory[PUBLIC_MEMORY_LENGTH];

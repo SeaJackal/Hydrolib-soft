@@ -1,22 +1,5 @@
 #include "test_hydrolib_sp_env.hpp"
 
-TEST_F(TestHydrolibSerialProtocol, RawReceivingTest)
-{
-    for (uint8_t i = 0; i < sizeof(_hydrolib_SP_MessageHeaderMemAccess) + 1; i++)
-    {
-        hydrolib_RingQueue_PushByte(&txrx_ring_queue, raw_tx_buffer[i]);
-    }
-
-    for (uint8_t i = 0; i < HYDROLIB_SP_MAX_MESSAGE_LENGTH; i++)
-    {
-        hydrolib_SerialProtocol_DoWork(&receiver);
-    }
-    for (uint8_t i = 0; i < sizeof(_hydrolib_SP_MessageHeaderMemAccess) + 1; i++)
-    {
-        EXPECT_EQ(raw_tx_buffer[i], receiver.current_rx_message[i]);
-    }
-}
-
 TEST_P(TestHydrolibSPmemoryAccess, MemWritingTest)
 {
     auto param = GetParam();
@@ -41,10 +24,11 @@ TEST_P(TestHydrolibSPmemoryAccess, MemWritingTest)
         {
             hydrolib_SerialProtocol_DoWork(&transmitter);
         }
-        for (uint8_t i = 0; i < HYDROLIB_SP_MAX_MESSAGE_LENGTH; i++)
-        {
-            hydrolib_SerialProtocol_DoWork(&receiver);
-        }
+        hydrolib_ReturnCode receive_status =
+            hydrolib_SerialProtocol_Receive(&receiver, txrx_buffer, txrx_length);
+        EXPECT_EQ(HYDROLIB_RETURN_OK, receive_status);
+        txrx_length = 0;
+        hydrolib_SerialProtocol_DoWork(&receiver);
         for (uint8_t i = 0; i < writing_length; i++)
         {
             EXPECT_EQ(test_data[i], rx_public_memory[mem_address + i]);
@@ -77,11 +61,14 @@ TEST_P(TestHydrolibSPmemoryAccess, MemWritingWithNoizeTest)
         {
             hydrolib_SerialProtocol_DoWork(&transmitter);
         }
-        for (uint8_t i = 0; i < HYDROLIB_SP_MAX_MESSAGE_LENGTH; i++)
-        {
-            TransmitFunc(&j);
-            hydrolib_SerialProtocol_DoWork(&receiver);
-        }
+        TransmitFunc(&j);
+
+        hydrolib_ReturnCode receive_status =
+            hydrolib_SerialProtocol_Receive(&receiver, txrx_buffer, txrx_length);
+        EXPECT_EQ(HYDROLIB_RETURN_OK, receive_status);
+        txrx_length = 0;
+        hydrolib_SerialProtocol_DoWork(&receiver);
+
         for (uint8_t i = 0; i < writing_length; i++)
         {
             EXPECT_EQ(test_data[i], rx_public_memory[mem_address + i]);
