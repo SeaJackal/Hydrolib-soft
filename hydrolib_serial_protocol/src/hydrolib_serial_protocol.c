@@ -81,7 +81,7 @@ void hydrolib_SerialProtocol_DoWork(hydrolib_SerialProtocolHandler *self)
 }
 
 hydrolib_ReturnCode hydrolib_SerialProtocol_Receive(hydrolib_SerialProtocolHandler *self,
-                                                    void *data, uint8_t length)
+                                                    const void *data, uint8_t length)
 {
     hydrolib_ReturnCode push_status = hydrolib_RingQueue_Push(&self->rx_ring_buffer, data, length);
     if (push_status != HYDROLIB_RETURN_OK)

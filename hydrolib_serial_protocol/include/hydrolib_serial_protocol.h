@@ -68,11 +68,6 @@ typedef struct
  
  */
 typedef bool (*hydrolib_SerialProtocol_InterfaceFunc)(uint8_t *byte);
-/**
- @brief Type for CRC8 function which library use to sugn messages
- 
- */
-typedef uint8_t (*hydrolib_SerialProtocol_CRCfunc)(const uint8_t *buffer, uint16_t length);
 
 /**
  @brief Serial protocol manager handler structure which contains all information
@@ -131,15 +126,24 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_Init(hydrolib_SerialProtocolHandler 
  
  @param[in,out] self Pointer to the serial protocol handler
 
- This function receives one byte if enable and transmits one byte of current message if enable each call.
+ This function transmits one byte of current message if enable each call.
  If there is valid message in receiving buffer it processes this message:
     - for write command payload will be writen into public memory
     - for read command pass
  */
 void hydrolib_SerialProtocol_DoWork(hydrolib_SerialProtocolHandler *self);
 
+/**
+ @brief Writing to the corespondent's public memory
+ 
+ @param[in,out] self Pointer to the serial protocol handler
+ @param[in] data Received data for the processing
+ @param[in] length Length of received data
+ @return Returns HYDROLIB_RETURN_BUSY if last message is't transmit yet,
+ HYDROLIB_RETURN_FAIL if there is a mistake in parametres and HYDROLIB_RETURN_OK else
+ */
 hydrolib_ReturnCode hydrolib_SerialProtocol_Receive(hydrolib_SerialProtocolHandler *self,
-                                                    void* data, uint8_t length);
+                                                    const void* data, uint8_t length);
 
 /**
  @brief Writing to the corespondent's public memory
