@@ -134,13 +134,12 @@ hydrolib_ReturnCode hydrolib_SerialProtocol_Init(hydrolib_SerialProtocolHandler 
 void hydrolib_SerialProtocol_DoWork(hydrolib_SerialProtocolHandler *self);
 
 /**
- @brief Writing to the corespondent's public memory
+ @brief Putting data to receivers buffer
  
  @param[in,out] self Pointer to the serial protocol handler
  @param[in] data Received data for the processing
  @param[in] length Length of received data
- @return Returns HYDROLIB_RETURN_BUSY if last message is't transmit yet,
- HYDROLIB_RETURN_FAIL if there is a mistake in parametres and HYDROLIB_RETURN_OK else
+ @return Returns HYDROLIB_RETURN_BUSY if last message is't processed yet and HYDROLIB_RETURN_OK else
  */
 hydrolib_ReturnCode hydrolib_SerialProtocol_Receive(hydrolib_SerialProtocolHandler *self,
                                                     const void* data, uint8_t length);
