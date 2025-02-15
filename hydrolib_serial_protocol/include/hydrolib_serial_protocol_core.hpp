@@ -46,7 +46,7 @@ namespace hydrolib
         class MessageProcessor
         {
         public:
-            class RxQueue
+            class RxQueueInterface
             {
             public:
                 virtual hydrolib_ReturnCode Read(void *buffer, uint32_t length, uint32_t shift) const = 0;
@@ -91,7 +91,7 @@ namespace hydrolib
         public:
             MessageProcessor(uint8_t address,
                              hydrolib_SP_Interface_TransmitFunc transmit_func,
-                             RxQueue &rx_queue,
+                             RxQueueInterface &rx_queue,
                              uint8_t *public_memory,
                              uint32_t public_memory_capacity);
 
@@ -100,7 +100,7 @@ namespace hydrolib
 
             hydrolib_SP_Interface_TransmitFunc transmit_func_;
 
-            RxQueue &rx_queue_;
+            RxQueueInterface &rx_queue_;
 
             uint16_t current_rx_message_length_;
             uint16_t current_rx_processed_length_;

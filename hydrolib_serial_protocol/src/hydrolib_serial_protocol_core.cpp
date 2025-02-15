@@ -18,7 +18,7 @@ using namespace hydrolib::serialProtocol;
 
 MessageProcessor::MessageProcessor(uint8_t address,
                                    hydrolib_SP_Interface_TransmitFunc transmit_func,
-                                   RxQueue &rx_queue,
+                                   RxQueueInterface &rx_queue,
                                    uint8_t *public_memory,
                                    uint32_t public_memory_capacity)
     : transmit_func_(transmit_func),

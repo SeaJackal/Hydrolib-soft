@@ -103,7 +103,7 @@ hydrolib_ReturnCode hydrolib_RingQueue_Pull(hydrolib_RingQueue *self, void *data
     return HYDROLIB_RETURN_OK;
 }
 
-hydrolib_ReturnCode hydrolib_RingQueue_ReadByte(hydrolib_RingQueue *self, uint8_t *data, uint16_t shift)
+hydrolib_ReturnCode hydrolib_RingQueue_ReadByte(const hydrolib_RingQueue *self, uint8_t *data, uint16_t shift)
 {
     if (shift >= self->length)
     {
@@ -164,7 +164,7 @@ hydrolib_ReturnCode hydrolib_RingQueue_Read4BytesLE(hydrolib_RingQueue *self, ui
     return HYDROLIB_RETURN_OK;
 }
 
-hydrolib_ReturnCode hydrolib_RingQueue_Read(hydrolib_RingQueue *self,
+hydrolib_ReturnCode hydrolib_RingQueue_Read(const hydrolib_RingQueue *self,
                                             void *data, uint16_t data_length, uint16_t shift)
 {
     if (shift + data_length > self->length)

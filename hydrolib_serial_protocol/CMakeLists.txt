@@ -9,9 +9,9 @@ set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
 include_directories(include)
 
-add_library(HydrolibSerialProtocol src/hydrolib_serial_protocol_core.cpp)
+add_library(HydrolibSerialProtocol src/hydrolib_serial_protocol_core.cpp src/hydrolib_serial_protocol_pack.cpp)
 
-target_link_libraries(HydrolibSerialProtocol HydrolibCommon)
+target_link_libraries(HydrolibSerialProtocol HydrolibCommon HydrolibRingQueue)
 
 enable_testing()
 
@@ -19,7 +19,7 @@ find_package(GTest REQUIRED)
 include(GoogleTest)
 
 file(GLOB TESTS tests/*.cpp)
-add_executable(TestSerialProtocol tests/test_hydrolib_sp_core_env.cpp)
+add_executable(TestSerialProtocol tests/test_hydrolib_sp_core_env.cpp tests/test_hydrolib_sp_pack.cpp)
 set_target_properties(TestSerialProtocol
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Testing"
