@@ -17,11 +17,11 @@ using namespace hydrolib::serialProtocol;
 #define CRC_LENGTH 1
 
 MessageProcessor::MessageProcessor(uint8_t address,
-                                   hydrolib_SP_Interface_TransmitFunc transmit_func,
+                                   TxQueueInterface &tx_queue,
                                    RxQueueInterface &rx_queue,
                                    uint8_t *public_memory,
                                    uint32_t public_memory_capacity)
-    : transmit_func_(transmit_func),
+    : tx_queue_(tx_queue),
       rx_queue_(rx_queue),
       current_rx_message_length_(0),
       current_rx_processed_length_(0),
@@ -121,7 +121,7 @@ hydrolib_ReturnCode MessageProcessor::TransmitWrite(uint8_t device_address,
     current_tx_message[current_tx_message_length - CRC_LENGTH] =
         CRCfunc_(current_tx_message, current_tx_message_length - CRC_LENGTH);
 
-    transmit_func_(current_tx_message, current_tx_message_length);
+    tx_queue_.Push(current_tx_message, current_tx_message_length);
 
     return HYDROLIB_RETURN_OK;
 }
@@ -155,7 +155,7 @@ hydrolib_ReturnCode MessageProcessor::TransmitRead(uint8_t device_address,
     current_tx_message[current_tx_message_length - CRC_LENGTH] =
         CRCfunc_(current_tx_message, current_tx_message_length - CRC_LENGTH);
 
-    transmit_func_(current_tx_message, current_tx_message_length);
+    tx_queue_.Push(current_tx_message, current_tx_message_length);
 
     responce_buffer_ = buffer;
 
@@ -341,7 +341,7 @@ void MessageProcessor::ProcessCommand_()
         current_tx_message[current_tx_message_length - CRC_LENGTH] =
             CRCfunc_(current_tx_message, current_tx_message_length - CRC_LENGTH);
 
-        transmit_func_(current_tx_message, current_tx_message_length);
+        tx_queue_.Push(current_tx_message, current_tx_message_length);
     }
     break;
 

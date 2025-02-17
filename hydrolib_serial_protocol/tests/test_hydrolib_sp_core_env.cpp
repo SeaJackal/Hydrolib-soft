@@ -14,7 +14,8 @@ namespace test_core
 #define DEVICE_ADDRESS_RECEIVER 0
 #define DEVICE_ADDRESS_TRANSMITTER 1
 
-    class TestRxQueue : public MessageProcessor::RxQueueInterface
+    class TestRxQueue : public MessageProcessor::RxQueueInterface,
+                        public MessageProcessor::TxQueueInterface
     {
     private:
         std::deque<uint8_t> queue;
@@ -54,12 +55,13 @@ namespace test_core
             queue.clear();
         }
 
-        void Write(uint8_t *data, uint32_t length)
+        hydrolib_ReturnCode Push(void *data, uint32_t length) override
         {
             for (uint32_t i = 0; i < length; i++)
             {
-                queue.push_back(data[i]);
+                queue.push_back(reinterpret_cast<uint8_t *>(data)[i]);
             }
+            return HYDROLIB_RETURN_OK;
         }
 
         void WriteByte(uint8_t data)
@@ -68,27 +70,16 @@ namespace test_core
         }
     };
 
-    TestRxQueue txrx_queue;
-    TestRxQueue rxtx_queue;
-
-    void Transmit(uint8_t *data, uint32_t length)
-    {
-        txrx_queue.Write(data, length);
-    }
-
-    void DummyTransmit(uint8_t *data, uint32_t length)
-    {
-        (void)data;
-        (void)length;
-    }
-
     class TestHydrolibSerialProtocolCore : public ::testing::Test
     {
     protected:
-        TestHydrolibSerialProtocolCore() : transmitter(DEVICE_ADDRESS_TRANSMITTER, Transmit, rxtx_queue, nullptr, 0),
-                                           receiver(DEVICE_ADDRESS_RECEIVER, DummyTransmit, txrx_queue, public_memory, PUBLIC_MEMORY_LENGTH)
+        TestHydrolibSerialProtocolCore() : transmitter(DEVICE_ADDRESS_TRANSMITTER, txrx_queue, rxtx_queue, nullptr, 0),
+                                           receiver(DEVICE_ADDRESS_RECEIVER, rxtx_queue, txrx_queue, public_memory, PUBLIC_MEMORY_LENGTH)
         {
         }
+
+        TestRxQueue txrx_queue;
+        TestRxQueue rxtx_queue;
 
         MessageProcessor transmitter;
         MessageProcessor receiver;

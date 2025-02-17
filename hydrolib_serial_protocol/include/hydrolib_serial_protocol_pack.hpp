@@ -3,6 +3,7 @@
 
 #include "hydrolib_serial_protocol_core.hpp"
 #include "hydrolib_ring_queue.h"
+#include "hydrolib_common.h"
 
 #define HYDROLIB_SP_RX_BUFFER_RESERVE 10
 
@@ -32,9 +33,22 @@ namespace hydrolib::serialProtocol
             hydrolib_ReturnCode Push(void *data, uint32_t length);
         };
 
+        class TxQueue_ : public TxQueueInterface
+        {
+        public:
+            TxQueue_();
+
+        private:
+            hydrolib_RingQueue rx_queue;
+            uint8_t buffer[HYDROLIB_SP_RX_BUFFER_CAPACITY];
+
+        public:
+            hydrolib_ReturnCode Push(void *data, uint32_t length) override;
+        };
+
     public:
         SerialProtocolHandler(uint8_t address,
-                              hydrolib_SP_Interface_TransmitFunc transmit_func,
+                              TxQueueInterface &tx_queue,
                               uint8_t *public_memory,
                               uint32_t public_memory_capacity);
 

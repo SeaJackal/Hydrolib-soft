@@ -14,27 +14,45 @@ namespace test_pack
 #define DEVICE_ADDRESS_RECEIVER 0
 #define DEVICE_ADDRESS_TRANSMITTER 1
 
-    SerialProtocolHandler *receiver_link;
-
-    void Transmit(uint8_t *data, uint32_t length)
+    class TestTxQueue : public MessageProcessor::TxQueueInterface
     {
-        receiver_link->Receive(data, length);
-    }
+    public:
+        TestTxQueue(SerialProtocolHandler &receiver) : receiver_(receiver)
+        {
+        }
 
-    void DummyTransmit(uint8_t *data, uint32_t length)
+    private:
+        SerialProtocolHandler &receiver_;
+
+    public:
+        hydrolib_ReturnCode Push(void *buffer, uint32_t length) override
+        {
+            return receiver_.Receive(buffer, length);
+        }
+    };
+
+    class DummyTxQueue : public MessageProcessor::TxQueueInterface
     {
-        (void)data;
-        (void)length;
-    }
+    public:
+        hydrolib_ReturnCode Push(void *buffer, uint32_t length) override
+        {
+            (void)buffer;
+            (void)length;
+            return HYDROLIB_RETURN_FAIL;
+        }
+    };
 
     class TestHydrolibSerialProtocolPack : public ::testing::Test
     {
     protected:
-        TestHydrolibSerialProtocolPack() : transmitter(DEVICE_ADDRESS_TRANSMITTER, Transmit, nullptr, 0),
-                                           receiver(DEVICE_ADDRESS_RECEIVER, DummyTransmit, public_memory, PUBLIC_MEMORY_LENGTH)
+        TestHydrolibSerialProtocolPack() : tx_queue(receiver),
+                                           transmitter(DEVICE_ADDRESS_TRANSMITTER, tx_queue, nullptr, 0),
+                                           receiver(DEVICE_ADDRESS_RECEIVER, dummy_tx_queue, public_memory, PUBLIC_MEMORY_LENGTH)
         {
-            receiver_link = &receiver;
         }
+        
+        TestTxQueue tx_queue;
+        DummyTxQueue dummy_tx_queue;
 
         SerialProtocolHandler transmitter;
         SerialProtocolHandler receiver;
@@ -90,14 +108,14 @@ namespace test_pack
             {
                 continue;
             }
-            Transmit(&j, 1);
+            tx_queue.Push(&j, 1);
             hydrolib_ReturnCode transmit_status =
                 transmitter.TransmitWrite(DEVICE_ADDRESS_RECEIVER,
                                           mem_address, writing_length, test_data);
 
             EXPECT_EQ(HYDROLIB_RETURN_OK, transmit_status);
 
-            Transmit(&j, 1);
+            tx_queue.Push(&j, 1);
 
             receiver.ProcessRx();
             for (uint8_t i = 0; i < writing_length; i++)

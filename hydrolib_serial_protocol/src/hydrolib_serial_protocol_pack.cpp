@@ -28,10 +28,10 @@ namespace hydrolib::serialProtocol
     }
 
     SerialProtocolHandler::SerialProtocolHandler(uint8_t address,
-                                                 hydrolib_SP_Interface_TransmitFunc transmit_func,
+                                                 TxQueueInterface &tx_queue,
                                                  uint8_t *public_memory,
                                                  uint32_t public_memory_capacity) : MessageProcessor(address,
-                                                                                                     transmit_func,
+                                                                                                     tx_queue,
                                                                                                      rx_queue,
                                                                                                      public_memory,
                                                                                                      public_memory_capacity),

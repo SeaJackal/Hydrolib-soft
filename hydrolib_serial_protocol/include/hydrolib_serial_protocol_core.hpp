@@ -32,13 +32,6 @@ namespace hydrolib
 #define HYDROLIB_SP_MAX_MESSAGE_LENGTH 255
 
         /**
-         @brief Type for byte read/write functions which library uses
-            for hardware interactions
-
-            */
-        typedef void (*hydrolib_SP_Interface_TransmitFunc)(uint8_t *data, uint32_t length);
-
-        /**
          @brief Serial protocol manager handler structure which contains all information
             about session
 
@@ -52,6 +45,12 @@ namespace hydrolib
                 virtual hydrolib_ReturnCode Read(void *buffer, uint32_t length, uint32_t shift) const = 0;
                 virtual void Drop(uint32_t number) = 0;
                 virtual void Clear() = 0;
+            };
+
+            class TxQueueInterface
+            {
+            public:
+                virtual hydrolib_ReturnCode Push(void *buffer, uint32_t length) = 0;
             };
 
         private:
@@ -90,7 +89,7 @@ namespace hydrolib
 
         public:
             MessageProcessor(uint8_t address,
-                             hydrolib_SP_Interface_TransmitFunc transmit_func,
+                             TxQueueInterface &tx_queue,
                              RxQueueInterface &rx_queue,
                              uint8_t *public_memory,
                              uint32_t public_memory_capacity);
@@ -98,8 +97,7 @@ namespace hydrolib
         private:
             uint8_t self_address_;
 
-            hydrolib_SP_Interface_TransmitFunc transmit_func_;
-
+            TxQueueInterface &tx_queue_;
             RxQueueInterface &rx_queue_;
 
             uint16_t current_rx_message_length_;
