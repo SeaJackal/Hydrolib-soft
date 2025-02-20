@@ -49,8 +49,12 @@ namespace test_pack
                                            transmitter(DEVICE_ADDRESS_TRANSMITTER, tx_queue, nullptr, 0),
                                            receiver(DEVICE_ADDRESS_RECEIVER, dummy_tx_queue, public_memory, PUBLIC_MEMORY_LENGTH)
         {
+            for (int i = 0; i < 0xFF; i++)
+            {
+                test_data[i] = i;
+            }
         }
-        
+
         TestTxQueue tx_queue;
         DummyTxQueue dummy_tx_queue;
 

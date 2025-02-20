@@ -76,6 +76,10 @@ namespace test_core
         TestHydrolibSerialProtocolCore() : transmitter(DEVICE_ADDRESS_TRANSMITTER, txrx_queue, rxtx_queue, nullptr, 0),
                                            receiver(DEVICE_ADDRESS_RECEIVER, rxtx_queue, txrx_queue, public_memory, PUBLIC_MEMORY_LENGTH)
         {
+            for (int i = 0; i < 0xFF; i++)
+            {
+                test_data[i] = i;
+            }
         }
 
         TestRxQueue txrx_queue;
