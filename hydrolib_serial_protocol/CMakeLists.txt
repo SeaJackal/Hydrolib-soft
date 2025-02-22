@@ -7,9 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
-include_directories(include)
-
 add_library(HydrolibSerialProtocol src/hydrolib_serial_protocol_core.cpp src/hydrolib_serial_protocol_pack.cpp)
+
+target_include_directories(HydrolibSerialProtocol PUBLIC include)
 
 target_link_libraries(HydrolibSerialProtocol HydrolibCommon HydrolibRingQueue)
 
