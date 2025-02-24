@@ -190,7 +190,6 @@ hydrolib_ReturnCode MessageProcessor::ParseHeader_()
 {
     current_command_ = static_cast<Command_>(current_rx_message_[0] & COMMAND_MASK);
 
-    hydrolib_ReturnCode read_status;
     hydrolib_ReturnCode parse_header_status;
     switch (current_command_)
     {

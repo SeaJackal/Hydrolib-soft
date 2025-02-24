@@ -35,7 +35,7 @@ namespace hydrolib::serialProtocol
                                                                                                      rx_queue,
                                                                                                      public_memory,
                                                                                                      public_memory_capacity),
-                                                                                    rx_queue() {};
+                                                                                    rx_queue() {}
 
     hydrolib_ReturnCode SerialProtocolHandler::Receive(void *buffer, uint32_t length)
     {
