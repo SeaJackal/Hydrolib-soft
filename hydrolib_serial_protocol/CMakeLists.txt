@@ -20,7 +20,7 @@ if(BUILD_TESTING)
     include(GoogleTest)
 
     file(GLOB TESTS tests/*.cpp)
-    add_executable(TestSerialProtocol tests/test_hydrolib_sp_core_env.cpp tests/test_hydrolib_sp_pack.cpp)
+    add_executable(TestSerialProtocol ${TESTS})
     set_target_properties(TestSerialProtocol
         PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Testing"
