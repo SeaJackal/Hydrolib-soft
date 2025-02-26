@@ -130,7 +130,7 @@ hydrolib_ReturnCode MessageProcessor::TransmitRead(uint8_t device_address,
                                                    uint32_t memory_address, uint32_t length,
                                                    uint8_t *buffer)
 {
-    if (!responce_buffer_)
+    if (responce_buffer_)
     {
         return HYDROLIB_RETURN_BUSY;
     }
@@ -140,7 +140,7 @@ hydrolib_ReturnCode MessageProcessor::TransmitRead(uint8_t device_address,
         return HYDROLIB_RETURN_FAIL;
     }
 
-    uint8_t current_tx_message_length = sizeof(MessageHeader_::MemoryAccess) + length + CRC_LENGTH;
+    uint8_t current_tx_message_length = sizeof(MessageHeader_::MemoryAccess) + CRC_LENGTH;
 
     uint8_t current_tx_message[HYDROLIB_SP_MAX_MESSAGE_LENGTH];
     MessageHeader_::MemoryAccess *tx_header =
@@ -158,6 +158,7 @@ hydrolib_ReturnCode MessageProcessor::TransmitRead(uint8_t device_address,
     tx_queue_.Push(current_tx_message, current_tx_message_length);
 
     responce_buffer_ = buffer;
+    responce_data_length_ = length;
 
     return HYDROLIB_RETURN_OK;
 }
@@ -330,7 +331,7 @@ void MessageProcessor::ProcessCommand_()
             reinterpret_cast<MessageHeader_::Responce *>(&current_tx_message);
 
         tx_header->device_address =
-            (current_header_->memory_access_header.self_address << (8 - ADDRESS_BITS_NUMBER)) | Command_::HYDROLIB_SP_COMMAND_RESPOND;
+            (current_header_->memory_access_header.self_address) | Command_::HYDROLIB_SP_COMMAND_RESPOND;
         tx_header->self_address = self_address_;
 
         memcpy(current_tx_message + sizeof(MessageHeader_::Responce),
@@ -346,9 +347,9 @@ void MessageProcessor::ProcessCommand_()
 
     case Command_::HYDROLIB_SP_COMMAND_RESPOND:
     {
-        uint8_t current_tx_message[HYDROLIB_SP_MAX_MESSAGE_LENGTH];
-        memcpy(current_tx_message + sizeof(MessageHeader_::Responce),
-               responce_buffer_, responce_data_length_);
+        memcpy(responce_buffer_,
+               current_rx_message_ + sizeof(MessageHeader_::Responce),
+               responce_data_length_);
         responce_buffer_ = nullptr;
     }
     break;
