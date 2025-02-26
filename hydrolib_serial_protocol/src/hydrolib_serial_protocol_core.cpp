@@ -37,23 +37,23 @@ MessageProcessor::MessageProcessor(uint8_t address,
     self_address_ = address << (8 - ADDRESS_BITS_NUMBER);
 }
 
-void MessageProcessor::ProcessRx()
+bool MessageProcessor::ProcessRx()
 {
     while (1)
     {
-        if (current_rx_message_length_ == 0)
+        if (current_rx_processed_length_ == 0)
         {
             bool header_searching_status = MoveToHeader_();
             if (!header_searching_status)
             {
-                return;
+                return false;
             }
 
             hydrolib_ReturnCode message_correct_check = ParseHeader_();
             switch (message_correct_check)
             {
             case HYDROLIB_RETURN_NO_DATA:
-                return;
+                return false;
 
             case HYDROLIB_RETURN_FAIL:
                 rx_queue_.Drop(1);
@@ -70,7 +70,7 @@ void MessageProcessor::ProcessRx()
                            current_rx_processed_length_);
         if (read_status != HYDROLIB_RETURN_OK)
         {
-            return;
+            return false;
         }
         uint8_t target_crc = CRCfunc_(current_rx_message_,
                                       current_rx_message_length_ - CRC_LENGTH);
@@ -83,14 +83,14 @@ void MessageProcessor::ProcessRx()
             rx_queue_.Drop(1);
             current_rx_message_length_ = 0;
             current_rx_processed_length_ = 0;
-            return;
+            continue;
         }
 
         ProcessCommand_();
 
         current_rx_message_length_ = 0;
         current_rx_processed_length_ = 0;
-        return;
+        return true;
     }
 }
 

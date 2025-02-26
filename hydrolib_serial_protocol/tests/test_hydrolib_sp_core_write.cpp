@@ -45,9 +45,10 @@ namespace test_core
 
             EXPECT_EQ(HYDROLIB_RETURN_OK, transmit_status);
 
-            txrx_queue.WriteByte(j);
-
-            receiver.ProcessRx();
+            while (!receiver.ProcessRx())
+            {
+                txrx_queue.WriteByte(j);
+            }
             for (uint8_t i = 0; i < writing_length; i++)
             {
                 EXPECT_EQ(test_data[i], public_memory[mem_address + i]);

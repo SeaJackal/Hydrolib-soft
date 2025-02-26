@@ -116,7 +116,7 @@ namespace hydrolib
             uint32_t public_memory_capacity_;
 
         public:
-            void ProcessRx();
+            bool ProcessRx();
             hydrolib_ReturnCode TransmitWrite(uint8_t device_address,
                                               uint32_t memory_address, uint32_t length,
                                               uint8_t *data);
