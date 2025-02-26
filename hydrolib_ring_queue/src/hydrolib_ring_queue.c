@@ -58,7 +58,7 @@ hydrolib_ReturnCode hydrolib_RingQueue_Push(hydrolib_RingQueue *self, const void
     else
     {
         memcpy(self->buffer + self->tail, data, forward_length);
-        memcpy(self->buffer, data + forward_length, data_length - forward_length);
+        memcpy(self->buffer, (uint8_t *)data + forward_length, data_length - forward_length);
     }
     self->tail = (self->tail + data_length) % self->capacity;
     self->length += data_length;
@@ -95,7 +95,7 @@ hydrolib_ReturnCode hydrolib_RingQueue_Pull(hydrolib_RingQueue *self, void *data
     else
     {
         memcpy(data, self->buffer + self->head, forward_length);
-        memcpy(data + forward_length, self->buffer, data_length - forward_length);
+        memcpy((uint8_t *)data + forward_length, self->buffer, data_length - forward_length);
     }
     self->head = (self->head + data_length) % self->capacity;
     self->length -= data_length;
@@ -103,7 +103,7 @@ hydrolib_ReturnCode hydrolib_RingQueue_Pull(hydrolib_RingQueue *self, void *data
     return HYDROLIB_RETURN_OK;
 }
 
-hydrolib_ReturnCode hydrolib_RingQueue_ReadByte(hydrolib_RingQueue *self, uint8_t *data, uint16_t shift)
+hydrolib_ReturnCode hydrolib_RingQueue_ReadByte(const hydrolib_RingQueue *self, uint8_t *data, uint16_t shift)
 {
     if (shift >= self->length)
     {
@@ -164,7 +164,7 @@ hydrolib_ReturnCode hydrolib_RingQueue_Read4BytesLE(hydrolib_RingQueue *self, ui
     return HYDROLIB_RETURN_OK;
 }
 
-hydrolib_ReturnCode hydrolib_RingQueue_Read(hydrolib_RingQueue *self,
+hydrolib_ReturnCode hydrolib_RingQueue_Read(const hydrolib_RingQueue *self,
                                             void *data, uint16_t data_length, uint16_t shift)
 {
     if (shift + data_length > self->length)
@@ -177,7 +177,7 @@ hydrolib_ReturnCode hydrolib_RingQueue_Read(hydrolib_RingQueue *self,
         if (shift + data_length > forward_length)
         {
             memcpy(data, self->buffer + self->head + shift, forward_length - shift);
-            memcpy(data + forward_length - shift,
+            memcpy((uint8_t *)data + forward_length - shift,
                    self->buffer, data_length - (forward_length - shift));
         }
         else
