@@ -56,15 +56,24 @@ namespace test_core
 
             rxtx_queue.WriteByte(j);
 
-            while (!receiver.ProcessRx())
+            for (uint8_t i = 0; i < HYDROLIB_SP_MAX_MESSAGE_LENGTH; i++)
             {
+                if (receiver.ProcessRx())
+                {
+                    break;
+                }
                 txrx_queue.WriteByte(j);
             }
 
-            while (!transmitter.ProcessRx())
+            for (uint8_t i = 0; i < HYDROLIB_SP_MAX_MESSAGE_LENGTH; i++)
             {
+                if (transmitter.ProcessRx())
+                {
+                    break;
+                }
                 rxtx_queue.WriteByte(j);
             }
+
             for (uint8_t i = 0; i < reading_length; i++)
             {
                 EXPECT_EQ(public_memory[mem_address + i], reading_buffer[i]);

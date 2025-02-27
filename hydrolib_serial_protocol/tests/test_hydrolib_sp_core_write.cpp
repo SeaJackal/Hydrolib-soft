@@ -45,8 +45,12 @@ namespace test_core
 
             EXPECT_EQ(HYDROLIB_RETURN_OK, transmit_status);
 
-            while (!receiver.ProcessRx())
+            for (uint8_t i = 0; i < HYDROLIB_SP_MAX_MESSAGE_LENGTH; i++)
             {
+                if (receiver.ProcessRx())
+                {
+                    break;
+                }
                 txrx_queue.WriteByte(j);
             }
             for (uint8_t i = 0; i < writing_length; i++)

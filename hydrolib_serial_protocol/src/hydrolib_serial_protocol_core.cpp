@@ -159,6 +159,7 @@ hydrolib_ReturnCode MessageProcessor::TransmitRead(uint8_t device_address,
 
     responce_buffer_ = buffer;
     responce_data_length_ = length;
+    responding_device_ = (device_address << (8 - ADDRESS_BITS_NUMBER));
 
     return HYDROLIB_RETURN_OK;
 }

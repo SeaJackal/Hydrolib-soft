@@ -11,8 +11,8 @@ namespace test_core
 
 #define PUBLIC_MEMORY_LENGTH 20
 
-#define DEVICE_ADDRESS_RECEIVER 0
-#define DEVICE_ADDRESS_TRANSMITTER 1
+#define DEVICE_ADDRESS_RECEIVER 3
+#define DEVICE_ADDRESS_TRANSMITTER 4
 
     class TestRxQueue : public MessageProcessor::RxQueueInterface,
                         public MessageProcessor::TxQueueInterface

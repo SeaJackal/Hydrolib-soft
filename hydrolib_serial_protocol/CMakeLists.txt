@@ -28,6 +28,9 @@ if(BUILD_TESTING)
     target_compile_features(TestSerialProtocol PUBLIC cxx_std_20)
     target_compile_options(TestSerialProtocol PRIVATE -Wall -Wextra -Wpedantic -Wc++20-compat -Wno-format-security
         -Woverloaded-virtual -Wsuggest-override)
+    # target_compile_options(TestSerialProtocol PRIVATE -Wall -Wextra -Wpedantic -Wc++20-compat -Wno-format-security
+    #     -Woverloaded-virtual -Wsuggest-override -fsanitize=address -fsanitize=undefined)
+    # target_link_options(TestSerialProtocol PRIVATE -fsanitize=address -fsanitize=undefined)
     target_link_libraries(TestSerialProtocol HydrolibSerialProtocol GTest::gtest GTest::gtest_main -pthread)
     gtest_discover_tests(TestSerialProtocol)
 endif()
