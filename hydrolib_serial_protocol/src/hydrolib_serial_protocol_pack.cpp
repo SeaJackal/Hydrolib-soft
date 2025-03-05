@@ -29,13 +29,12 @@ namespace hydrolib::serialProtocol
 
     SerialProtocolHandler::SerialProtocolHandler(uint8_t address,
                                                  TxQueueInterface &tx_queue,
-                                                 uint8_t *public_memory,
-                                                 uint32_t public_memory_capacity) : MessageProcessor(address,
-                                                                                                     tx_queue,
-                                                                                                     rx_queue,
-                                                                                                     public_memory,
-                                                                                                     public_memory_capacity),
-                                                                                    rx_queue() {}
+                                                 PublicMemoryInterface &public_memory)
+        : MessageProcessor(address,
+                           tx_queue,
+                           rx_queue,
+                           public_memory),
+          rx_queue() {}
 
     hydrolib_ReturnCode SerialProtocolHandler::Receive(void *buffer, uint32_t length)
     {

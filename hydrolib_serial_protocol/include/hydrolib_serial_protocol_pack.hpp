@@ -49,8 +49,7 @@ namespace hydrolib::serialProtocol
     public:
         SerialProtocolHandler(uint8_t address,
                               TxQueueInterface &tx_queue,
-                              uint8_t *public_memory,
-                              uint32_t public_memory_capacity);
+                              PublicMemoryInterface &public_memory);
 
     private:
         RxQueue_ rx_queue;

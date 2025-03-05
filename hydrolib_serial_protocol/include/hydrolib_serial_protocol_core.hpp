@@ -53,6 +53,16 @@ namespace hydrolib
                 virtual hydrolib_ReturnCode Push(void *buffer, uint32_t length) = 0;
             };
 
+            class PublicMemoryInterface
+            {
+            public:
+                virtual hydrolib_ReturnCode Read(void *buffer, uint32_t address,
+                                                 uint32_t length) = 0;
+                virtual hydrolib_ReturnCode Write(const void *buffer, uint32_t address,
+                                                  uint32_t length) = 0;
+                virtual uint32_t Size() = 0;
+            };
+
         private:
             enum Command_
             {
@@ -91,8 +101,7 @@ namespace hydrolib
             MessageProcessor(uint8_t address,
                              TxQueueInterface &tx_queue,
                              RxQueueInterface &rx_queue,
-                             uint8_t *public_memory,
-                             uint32_t public_memory_capacity);
+                             PublicMemoryInterface &public_memory);
 
         private:
             uint8_t self_address_;
@@ -112,8 +121,7 @@ namespace hydrolib
 
             MessageHeader_ *current_header_;
 
-            uint8_t *public_memory_;
-            uint32_t public_memory_capacity_;
+            PublicMemoryInterface &public_memory_;
 
         public:
             bool ProcessRx();

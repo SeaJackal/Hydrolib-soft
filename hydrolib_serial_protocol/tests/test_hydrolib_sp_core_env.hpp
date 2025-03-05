@@ -32,6 +32,19 @@ namespace test_core
         void WriteByte(uint8_t data);
     };
 
+    class TestPublicMemory : public MessageProcessor::PublicMemoryInterface
+    {
+    public:
+        hydrolib_ReturnCode Read(void *buffer, uint32_t address,
+                                 uint32_t length) override;
+        hydrolib_ReturnCode Write(const void *buffer, uint32_t address,
+                                  uint32_t length) override;
+        uint32_t Size() override;
+
+    public:
+        uint8_t buffer[PUBLIC_MEMORY_LENGTH];
+    };
+
     class TestHydrolibSerialProtocolCore : public ::testing::Test
     {
     protected:
@@ -42,7 +55,7 @@ namespace test_core
         MessageProcessor transmitter;
         MessageProcessor receiver;
 
-        uint8_t public_memory[PUBLIC_MEMORY_LENGTH];
+        TestPublicMemory public_memory;
 
         uint8_t test_data[0xFF];
     };

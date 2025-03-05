@@ -12,7 +12,7 @@ namespace test_core
         uint8_t reading_buffer[PUBLIC_MEMORY_LENGTH];
         for (int i = 0; i < PUBLIC_MEMORY_LENGTH; i++)
         {
-            public_memory[i] = i;
+            public_memory.buffer[i] = i;
         }
         for (uint8_t j = 0; j < 10; j++)
         {
@@ -28,7 +28,7 @@ namespace test_core
             transmitter.ProcessRx();
             for (uint8_t i = 0; i < reading_length; i++)
             {
-                EXPECT_EQ(public_memory[mem_address + i], reading_buffer[i]);
+                EXPECT_EQ(public_memory.buffer[mem_address + i], reading_buffer[i]);
             }
         }
     }
@@ -41,7 +41,7 @@ namespace test_core
         uint8_t reading_buffer[PUBLIC_MEMORY_LENGTH];
         for (int i = 0; i < PUBLIC_MEMORY_LENGTH; i++)
         {
-            public_memory[i] = i;
+            public_memory.buffer[i] = i;
         }
         for (uint8_t j = 0; j < 10; j++)
         {
@@ -76,7 +76,7 @@ namespace test_core
 
             for (uint8_t i = 0; i < reading_length; i++)
             {
-                EXPECT_EQ(public_memory[mem_address + i], reading_buffer[i]);
+                EXPECT_EQ(public_memory.buffer[mem_address + i], reading_buffer[i]);
             }
         }
     }

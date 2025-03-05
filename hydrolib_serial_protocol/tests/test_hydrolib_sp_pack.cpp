@@ -42,12 +42,36 @@ namespace test_pack
         }
     };
 
+    class TestPublicMemory : public MessageProcessor::PublicMemoryInterface
+    {
+    public:
+        hydrolib_ReturnCode Read(void *buffer, uint32_t address,
+                                 uint32_t length) override
+        {
+            memcpy(buffer, this->buffer + address, length);
+            return HYDROLIB_RETURN_OK;
+        }
+        hydrolib_ReturnCode Write(const void *buffer, uint32_t address,
+                                  uint32_t length) override
+        {
+            memcpy(this->buffer + address, buffer, length);
+            return HYDROLIB_RETURN_OK;
+        }
+        uint32_t Size() override
+        {
+            return PUBLIC_MEMORY_LENGTH;
+        }
+
+    public:
+        uint8_t buffer[PUBLIC_MEMORY_LENGTH];
+    };
+
     class TestHydrolibSerialProtocolPack : public ::testing::Test
     {
     protected:
         TestHydrolibSerialProtocolPack() : tx_queue(receiver),
-                                           transmitter(DEVICE_ADDRESS_TRANSMITTER, tx_queue, nullptr, 0),
-                                           receiver(DEVICE_ADDRESS_RECEIVER, dummy_tx_queue, public_memory, PUBLIC_MEMORY_LENGTH)
+                                           transmitter(DEVICE_ADDRESS_TRANSMITTER, tx_queue, public_memory),
+                                           receiver(DEVICE_ADDRESS_RECEIVER, dummy_tx_queue, public_memory)
         {
             for (int i = 0; i < 0xFF; i++)
             {
@@ -61,7 +85,7 @@ namespace test_pack
         SerialProtocolHandler transmitter;
         SerialProtocolHandler receiver;
 
-        uint8_t public_memory[PUBLIC_MEMORY_LENGTH];
+        TestPublicMemory public_memory;
 
         uint8_t test_data[0xFF];
     };
@@ -96,7 +120,7 @@ namespace test_pack
             receiver.ProcessRx();
             for (uint8_t i = 0; i < writing_length; i++)
             {
-                EXPECT_EQ(test_data[i], public_memory[mem_address + i]);
+                EXPECT_EQ(test_data[i], public_memory.buffer[mem_address + i]);
             }
         }
     }
@@ -124,7 +148,7 @@ namespace test_pack
             receiver.ProcessRx();
             for (uint8_t i = 0; i < writing_length; i++)
             {
-                EXPECT_EQ(test_data[i], public_memory[mem_address + i]);
+                EXPECT_EQ(test_data[i], public_memory.buffer[mem_address + i]);
             }
         }
     }

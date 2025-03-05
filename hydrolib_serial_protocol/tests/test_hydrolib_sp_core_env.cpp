@@ -39,6 +39,23 @@ namespace test_core
         queue.clear();
     }
 
+    hydrolib_ReturnCode TestPublicMemory::Read(void *buffer, uint32_t address,
+                                               uint32_t length)
+    {
+        memcpy(buffer, this->buffer + address, length);
+        return HYDROLIB_RETURN_OK;
+    }
+    hydrolib_ReturnCode TestPublicMemory::Write(const void *buffer, uint32_t address,
+                                                uint32_t length)
+    {
+        memcpy(this->buffer + address, buffer, length);
+        return HYDROLIB_RETURN_OK;
+    }
+    uint32_t TestPublicMemory::Size()
+    {
+        return PUBLIC_MEMORY_LENGTH;
+    }
+
     hydrolib_ReturnCode TestRxQueue::Push(void *data, uint32_t length)
     {
         for (uint32_t i = 0; i < length; i++)
@@ -54,9 +71,9 @@ namespace test_core
     }
 
     TestHydrolibSerialProtocolCore::TestHydrolibSerialProtocolCore()
-        : transmitter(DEVICE_ADDRESS_TRANSMITTER, txrx_queue, rxtx_queue, nullptr, 0),
+        : transmitter(DEVICE_ADDRESS_TRANSMITTER, txrx_queue, rxtx_queue, public_memory),
           receiver(DEVICE_ADDRESS_RECEIVER, rxtx_queue, txrx_queue,
-                   public_memory, PUBLIC_MEMORY_LENGTH)
+                   public_memory)
     {
         for (int i = 0; i < 0xFF; i++)
         {

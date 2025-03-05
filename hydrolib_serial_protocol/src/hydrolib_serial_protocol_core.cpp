@@ -19,16 +19,14 @@ using namespace hydrolib::serialProtocol;
 MessageProcessor::MessageProcessor(uint8_t address,
                                    TxQueueInterface &tx_queue,
                                    RxQueueInterface &rx_queue,
-                                   uint8_t *public_memory,
-                                   uint32_t public_memory_capacity)
+                                   PublicMemoryInterface &public_memory)
     : tx_queue_(tx_queue),
       rx_queue_(rx_queue),
       current_rx_message_length_(0),
       current_rx_processed_length_(0),
       responce_buffer_(nullptr),
       current_header_(reinterpret_cast<MessageHeader_ *>(&current_rx_message_)),
-      public_memory_(public_memory),
-      public_memory_capacity_(public_memory_capacity)
+      public_memory_(public_memory)
 {
     if (address >= 1 << (ADDRESS_BITS_NUMBER + 1))
     {
@@ -257,7 +255,7 @@ hydrolib_ReturnCode MessageProcessor::ParseMemoryAccessHeader_()
     uint16_t current_access_border =
         current_header_->memory_access_header.memory_address +
         current_header_->memory_access_header.memory_access_length;
-    if (current_access_border > public_memory_capacity_)
+    if (current_access_border > public_memory_.Size())
     {
         return HYDROLIB_RETURN_FAIL;
     }
@@ -316,9 +314,9 @@ void MessageProcessor::ProcessCommand_()
     switch (current_command_)
     {
     case Command_::HYDROLIB_SP_COMMAND_WRITE:
-        memcpy(public_memory_ + current_header_->memory_access_header.memory_address,
-               current_rx_message_ + sizeof(MessageHeader_::MemoryAccess),
-               current_header_->memory_access_header.memory_access_length);
+        public_memory_.Write(current_rx_message_ + sizeof(MessageHeader_::MemoryAccess),
+                             current_header_->memory_access_header.memory_address,
+                             current_header_->memory_access_header.memory_access_length);
         break;
 
     case Command_::HYDROLIB_SP_COMMAND_READ:
@@ -335,9 +333,9 @@ void MessageProcessor::ProcessCommand_()
             (current_header_->memory_access_header.self_address) | Command_::HYDROLIB_SP_COMMAND_RESPOND;
         tx_header->self_address = self_address_;
 
-        memcpy(current_tx_message + sizeof(MessageHeader_::Responce),
-               public_memory_ + current_header_->memory_access_header.memory_address,
-               current_header_->memory_access_header.memory_access_length);
+        public_memory_.Read(current_tx_message + sizeof(MessageHeader_::Responce),
+                            current_header_->memory_access_header.memory_address,
+                            current_header_->memory_access_header.memory_access_length);
 
         current_tx_message[current_tx_message_length - CRC_LENGTH] =
             CRCfunc_(current_tx_message, current_tx_message_length - CRC_LENGTH);
