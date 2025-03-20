@@ -57,8 +57,10 @@ namespace hydrolib::Logger
     class LogDistributor
     {
     public:
-        constexpr static int32_t ALL_PUBLISHERS = -1;
         constexpr static int32_t ADDING_ERROR = -1;
+
+    private:
+        constexpr static int32_t ALL_PUBLISHERS_ = -1;
 
     private:
         constexpr static uint32_t MAX_SUBSCRIBERS_COUNT_ = 10;
@@ -85,7 +87,7 @@ namespace hydrolib::Logger
 
     public:
         int32_t AddSubscriber(SubscriberQueueInterface &queue, LogLevel level_filter,
-                              Logger &publisher);
+                              Logger *publisher);
         int32_t AddPublisher(Logger &publisher);
 
         void DistributeLog(Logger::Log &log);
@@ -139,6 +141,6 @@ namespace hydrolib::Logger
         uint32_t format_index_;
         uint32_t format_subindex_;
     };
-};
+}
 
 #endif

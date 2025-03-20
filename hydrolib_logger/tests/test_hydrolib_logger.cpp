@@ -45,7 +45,7 @@ TEST(TestHydrolibLogger, DistributorTest)
     LogQueue queue;
     Logger logger("Logger", &distributor);
 
-    distributor.AddSubscriber(queue, LogLevel::INFO, logger);
+    distributor.AddSubscriber(queue, LogLevel::INFO, &logger);
 
     translator.SetFormatString("[%s] [%l] %m\n");
 
