@@ -32,7 +32,7 @@ namespace hydrolib::strings
     class CString
     {
     public:
-        constexpr CString(char *str) : length_(0)
+        constexpr CString(const char *str) : length_(0)
         {
             while (str[length_])
             {

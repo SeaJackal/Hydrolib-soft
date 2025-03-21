@@ -12,7 +12,7 @@ namespace hydrolib::Logger
     int32_t LogDistributor::AddSubscriber(SubscriberQueueInterface &queue, LogLevel level_filter,
                                           Logger *publisher)
     {
-        if (subscribers_count_ == MAX_SUBSCRIBERS_COUNT_)
+        if (subscribers_count_ == MAX_SUBSCRIBERS_COUNT)
         {
             return ADDING_ERROR;
         }
@@ -34,7 +34,7 @@ namespace hydrolib::Logger
 
     int32_t LogDistributor::AddPublisher(Logger &publisher)
     {
-        if (publishers_count_ == MAX_PUBLISHERS_COUNT_)
+        if (publishers_count_ == MAX_PUBLISHERS_COUNT)
         {
             return ADDING_ERROR;
         }
@@ -61,7 +61,7 @@ namespace hydrolib::Logger
         }
     }
 
-    Logger::Logger(char *name, LogDistributor *distributor)
+    Logger::Logger(const char *name, LogDistributor *distributor)
         : name_(name),
           distributor_(distributor)
     {

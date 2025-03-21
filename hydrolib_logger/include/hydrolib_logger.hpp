@@ -39,7 +39,7 @@ namespace hydrolib::Logger
         };
 
     public:
-        explicit Logger(char *name, LogDistributor *distributor = nullptr);
+        explicit Logger(const char *name, LogDistributor *distributor = nullptr);
 
     public:
         hydrolib_ReturnCode WriteLog(LogLevel level, strings::StaticFormatableString message);
@@ -62,9 +62,9 @@ namespace hydrolib::Logger
     private:
         constexpr static int32_t ALL_PUBLISHERS_ = -1;
 
-    private:
-        constexpr static uint32_t MAX_SUBSCRIBERS_COUNT_ = 10;
-        constexpr static uint32_t MAX_PUBLISHERS_COUNT_ = 10;
+    public:
+        constexpr static uint32_t MAX_SUBSCRIBERS_COUNT = 10;
+        constexpr static uint32_t MAX_PUBLISHERS_COUNT = 10;
 
     public:
         class SubscriberQueueInterface
@@ -94,9 +94,9 @@ namespace hydrolib::Logger
 
     private:
         uint32_t publishers_count_;
-        Logger *publishers_[MAX_PUBLISHERS_COUNT_];
+        Logger *publishers_[MAX_PUBLISHERS_COUNT];
 
-        Subscriber_ subscribers_[MAX_SUBSCRIBERS_COUNT_];
+        Subscriber_ subscribers_[MAX_SUBSCRIBERS_COUNT];
         uint32_t subscribers_count_;
     };
 
