@@ -56,6 +56,8 @@ namespace hydrolib::Logger
 
     class LogDistributor
     {
+        friend class Logger;
+
     public:
         constexpr static int32_t ADDING_ERROR = -1;
 
@@ -88,9 +90,11 @@ namespace hydrolib::Logger
     public:
         int32_t AddSubscriber(SubscriberQueueInterface &queue, LogLevel level_filter,
                               Logger *publisher);
-        int32_t AddPublisher(Logger &publisher);
 
         void DistributeLog(Logger::Log &log);
+
+    private:
+        int32_t AddPublisher_(Logger &publisher);
 
     private:
         uint32_t publishers_count_;

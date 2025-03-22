@@ -32,20 +32,6 @@ namespace hydrolib::Logger
         return subscribers_count_ - 1;
     }
 
-    int32_t LogDistributor::AddPublisher(Logger &publisher)
-    {
-        if (publishers_count_ == MAX_PUBLISHERS_COUNT)
-        {
-            return ADDING_ERROR;
-        }
-        publishers_[publishers_count_] = &publisher;
-        publisher.id_ = publishers_count_;
-
-        publishers_count_++;
-
-        return publishers_count_ - 1;
-    }
-
     void LogDistributor::DistributeLog(Logger::Log &log)
     {
         for (int i = 0; i < subscribers_count_; i++)
@@ -67,7 +53,7 @@ namespace hydrolib::Logger
     {
         if (distributor)
         {
-            id_ = distributor->AddPublisher(*this);
+            id_ = distributor->AddPublisher_(*this);
         }
     }
 
@@ -257,5 +243,19 @@ namespace hydrolib::Logger
             format_index_++;
             return source_length;
         }
+    }
+
+    int32_t LogDistributor::AddPublisher_(Logger &publisher)
+    {
+        if (publishers_count_ == MAX_PUBLISHERS_COUNT)
+        {
+            return ADDING_ERROR;
+        }
+        publishers_[publishers_count_] = &publisher;
+        publisher.id_ = publishers_count_;
+
+        publishers_count_++;
+
+        return publishers_count_ - 1;
     }
 }
