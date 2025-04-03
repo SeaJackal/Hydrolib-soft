@@ -182,7 +182,7 @@ bool MessageProcessor::MoveToHeader_()
         finding_read_status = rx_queue_.Read(&current_rx_message_[0], MARKER_LENGTH, index);
     }
 
-    rx_queue_.Clear();
+    rx_queue_.Drop(index);
     return false;
 }
 

@@ -34,7 +34,7 @@ namespace hydrolib::Logger
 
     void LogDistributor::DistributeLog(Logger::Log &log)
     {
-        for (int i = 0; i < subscribers_count_; i++)
+        for (uint32_t i = 0; i < subscribers_count_; i++)
         {
             if (log.level >= subscribers_[i].level_filter)
             {
