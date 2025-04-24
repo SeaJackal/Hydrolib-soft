@@ -4,12 +4,12 @@
 
 namespace hydrolib::strings
 {
-    char *StaticFormatableString::GetString()
+    const char *StaticFormatableString::GetString() const
     {
         return string_;
     }
 
-    uint32_t StaticFormatableString::GetLength()
+    uint32_t StaticFormatableString::GetLength() const
     {
         return length_;
     }

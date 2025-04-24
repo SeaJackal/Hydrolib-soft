@@ -8,10 +8,12 @@ namespace hydrolib::strings
     class StaticFormatableString
     {
     public:
-        StaticFormatableString() {}
-        consteval StaticFormatableString(char *format_string)
+        StaticFormatableString()
         {
-            string_ = format_string;
+        }
+
+        consteval StaticFormatableString(char *format_string) : string_(format_string)
+        {
             length_ = 0;
             while (string_[length_] != '\0')
             {
@@ -20,11 +22,11 @@ namespace hydrolib::strings
         }
 
     public:
-        char *GetString();
-        uint32_t GetLength();
+        const char *GetString() const;
+        uint32_t GetLength() const;
 
     private:
-        char *string_;
+        const char *string_;
         uint32_t length_;
     };
 
@@ -32,7 +34,7 @@ namespace hydrolib::strings
     class CString
     {
     public:
-        constexpr CString(const char *str) : length_(0)
+        constexpr CString(const char *str) : length_(0) // TODO Add copy constructor
         {
             while (str[length_])
             {
@@ -47,7 +49,12 @@ namespace hydrolib::strings
             return string_;
         }
 
-        uint32_t GetLength()
+        const char *GetConstString() const
+        {
+            return string_;
+        }
+
+        uint32_t GetLength() const
         {
             return length_;
         }
