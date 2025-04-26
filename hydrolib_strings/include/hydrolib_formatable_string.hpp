@@ -26,6 +26,7 @@ namespace hydrolib::strings
         static constexpr unsigned MAX_PARAMETRES_COUNT = 10;
 
     public:
+        StaticFormatableString() : length_(0), param_count_(0) {};
         consteval StaticFormatableString(const char *string);
 
     public:
@@ -178,9 +179,8 @@ namespace hydrolib::strings
         unsigned next_param_index,
         unsigned translated_length) const
     {
-        (void)buffer;
-        (void)next_param_index;
-        (void)translated_length;
+        buffer.Push(reinterpret_cast<const uint8_t *>(string_ + translated_length),
+                    length_ - translated_length);
         return HYDROLIB_RETURN_OK;
     }
 

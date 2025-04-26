@@ -6,7 +6,7 @@ namespace hydrolib::observer
     template <typename T>
     concept Observer = requires(T observer, const void *data, const void *source) {
         observer.Notify(source, data);
-    };
+    };  // TODO Try to make template
 
     void NotifyAll(const void *source, const void *data)
     {

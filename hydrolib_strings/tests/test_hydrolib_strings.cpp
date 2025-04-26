@@ -28,11 +28,11 @@ public:
 
 TEST(TestHydrolibStrings, TestFormatableString)
 {
-    constexpr StaticFormatableString s("Inserting values: {}, {}, {}, {}");
+    constexpr StaticFormatableString s("Inserting values: {}, {}, {}, {} End");
     BytesReceiver stream;
     s.ToBytes(stream, 1, 20, -33, CString<4>("haha"));
     stream.buffer[stream.current_length] = '\0';
 
     EXPECT_EQ(0, strcmp(reinterpret_cast<char *>(stream.buffer),
-                        "Inserting values: 1, 20, -33, haha"));
+                        "Inserting values: 1, 20, -33, haha End"));
 }

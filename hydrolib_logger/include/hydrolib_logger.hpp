@@ -5,34 +5,45 @@
 
 #include "hydrolib_common.h"
 #include "hydrolib_observer.hpp"
-#include "hydrolib_strings.hpp"
+#include "hydrolib_formatable_string.hpp"
+#include "hydrolib_cstring.hpp"
 #include "hydrolib_log.hpp"
 
 namespace hydrolib::Logger
 {
-    template <observer::Observer auto &...OBSERVERS>
+    template <typename T, typename... Ts>
+    concept LogObserverConcept = requires(T observer, unsigned source_id, Log &log, Ts... params) {
+        observer.Notify(source_id, log, params...);
+    };
+
+    template <LogObserverConcept Observer>
     class Logger
     {
     public:
-        constexpr Logger(const char *name, unsigned id) : name_(name),
-                                                          id_(id)
+        constexpr Logger(const char *name, unsigned id, Observer &observer)
+            : name_(name),
+              id_(id),
+              observer_(observer)
         {
         }
 
     public:
-        void WriteLog(LogLevel level, strings::StaticFormatableString message)
+        template <typename... Ts>
+        void WriteLog(LogLevel level, strings::StaticFormatableString message, Ts... params)
         {
-            Log log;
-            log.message = message;
-            log.level = level;
-            log.process_name = &name_;
+            Log log{
+                .message = message,
+                .level = level,
+                .process_name = &name_};
 
-            observer::NotifyAll(&id_, &log, OBSERVERS...);
+            observer_.Notify(id_, log, params...);
         }
 
     private:
         const strings::CString<Log::MAX_NAME_LENGTH> name_;
         const unsigned id_;
+
+        Observer &observer_;
     };
 }
 

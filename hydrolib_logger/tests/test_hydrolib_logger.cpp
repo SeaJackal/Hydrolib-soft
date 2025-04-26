@@ -41,79 +41,74 @@ private:
     int length_;
 };
 
-class LogQueue
-{
-public:
-    LogQueue() : flag(false)
-    {
-    }
+// class LogQueue
+// {
+// public:
+//     LogQueue() : flag(false)
+//     {
+//     }
 
-public:
-    hydrolib_ReturnCode Push(const void *log)
-    {
-        memcpy(&log_, log, sizeof(Log));
-        flag = true;
-        return HYDROLIB_RETURN_OK;
-    }
+// public:
+//     hydrolib_ReturnCode Push(const void *log)
+//     {
+//         memcpy(&log_, log, sizeof(Log));
+//         flag = true;
+//         return HYDROLIB_RETURN_OK;
+//     }
 
-    hydrolib_ReturnCode Pull(void *log)
-    {
-        if (!flag)
-        {
-            return HYDROLIB_RETURN_NO_DATA;
-        }
-        memcpy(log, &log_, sizeof(Log));
-        flag = false;
-        return HYDROLIB_RETURN_OK;
-    }
+//     hydrolib_ReturnCode Pull(void *log)
+//     {
+//         if (!flag)
+//         {
+//             return HYDROLIB_RETURN_NO_DATA;
+//         }
+//         memcpy(log, &log_, sizeof(Log));
+//         flag = false;
+//         return HYDROLIB_RETURN_OK;
+//     }
 
-private:
-    Log log_;
-    bool flag;
-};
+// private:
+//     Log log_{};
+//     bool flag;
+// };
 
 char buffer[100];
 LogStream stream(buffer);
-LogQueue queue;
-LogObserver observer(stream, queue, "[%s] [%l] %m\n");
+LogObserver observer(stream, "[%s] [%l] %m\n");
 
 TEST(TestHydrolibLogger, TranslatorTest)
 {
-    Logger<observer> logger("Logger", 0);
+    Logger logger("Logger", 0, observer);
     observer.SetLogFiltration(0, LogLevel::DEBUG);
 
-    logger.WriteLog(LogLevel::INFO, "First message");
-    observer.Process();
+    logger.WriteLog(LogLevel::INFO, "First message: {}", 1);
     int length = stream.GetLength();
     buffer[length] = '\0';
     std::cout << buffer;
-    EXPECT_EQ(0, strcmp(buffer, "[Logger] [INFO] First message\n"));
+    EXPECT_EQ(0, strcmp(buffer, "[Logger] [INFO] First message: 1\n"));
 
     stream.Reset();
-    logger.WriteLog(LogLevel::DEBUG, "Message two");
-    observer.Process();
+    logger.WriteLog(LogLevel::DEBUG, "Message two: {}", 2);
     length = stream.GetLength();
     buffer[length] = '\0';
     std::cout << buffer;
-    EXPECT_EQ(0, strcmp(buffer, "[Logger] [DEBUG] Message two\n"));
+    EXPECT_EQ(0, strcmp(buffer, "[Logger] [DEBUG] Message two: 2\n"));
 
     stream.Reset();
-    logger.WriteLog(LogLevel::CRITICAL, "Third");
-    observer.Process();
+    logger.WriteLog(LogLevel::CRITICAL, "Third: {}", 3);
     length = stream.GetLength();
     buffer[length] = '\0';
     std::cout << buffer;
-    EXPECT_EQ(0, strcmp(buffer, "[Logger] [CRITICAL] Third\n"));
+    EXPECT_EQ(0, strcmp(buffer, "[Logger] [CRITICAL] Third: 3\n"));
 }
 
 TEST(TestHydrolibLogger, FilterTest)
 {
-    Logger<observer> logger("Logger", 0);
+    Logger logger("Logger", 0, observer);
     observer.SetLogFiltration(0, LogLevel::INFO);
 
     stream.Reset();
     logger.WriteLog(LogLevel::INFO, "First message");
-    observer.Process();
     int length = stream.GetLength();
     buffer[length] = '\0';
     std::cout << buffer;
@@ -121,7 +116,6 @@ TEST(TestHydrolibLogger, FilterTest)
 
     stream.Reset();
     logger.WriteLog(LogLevel::DEBUG, "Message two");
-    observer.Process();
     length = stream.GetLength();
     buffer[length] = '\0';
     std::cout << buffer;

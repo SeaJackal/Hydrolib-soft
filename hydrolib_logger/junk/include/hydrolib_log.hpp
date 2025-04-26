@@ -43,12 +43,12 @@ namespace hydrolib::Logger
         };
 
     public:
-        template <strings::ByteStreamConcept DestType, typename... Ts>
-        hydrolib_ReturnCode ToBytes(const char *format_string, DestType &buffer, Ts... other) const;
+        template <strings::ByteStreamConcept DestType>
+        hydrolib_ReturnCode ToBytes(const char *format_string, DestType &buffer) const;
 
     private:
-        template <strings::ByteStreamConcept DestType, typename... Ts>
-        hydrolib_ReturnCode TranslateMessage_(DestType &buffer, Ts... other) const;
+        template <strings::ByteStreamConcept DestType>
+        hydrolib_ReturnCode TranslateMessage_(DestType &buffer) const;
 
         template <strings::ByteStreamConcept DestType>
         hydrolib_ReturnCode TranslateLevel_(DestType &buffer) const;
@@ -67,8 +67,8 @@ namespace hydrolib::Logger
         const strings::CString<MAX_NAME_LENGTH> *process_name;
     };
 
-    template <strings::ByteStreamConcept DestType, typename... Ts>
-    hydrolib_ReturnCode Log::ToBytes(const char *format_string, DestType &buffer, Ts... other) const
+    template <strings::ByteStreamConcept DestType>
+    hydrolib_ReturnCode Log::ToBytes(const char *format_string, DestType &buffer) const
     {
         unsigned format_index = 0;
 
@@ -91,7 +91,7 @@ namespace hydrolib::Logger
                 {
                 case SpecialSymbols::MESSAGE:
                 {
-                    hydrolib_ReturnCode message_res = TranslateMessage_(buffer, other...);
+                    hydrolib_ReturnCode message_res = TranslateMessage_(buffer);
                     if (message_res != HYDROLIB_RETURN_OK)
                     {
                         return message_res;
@@ -142,10 +142,12 @@ namespace hydrolib::Logger
         return HYDROLIB_RETURN_OK;
     }
 
-    template <strings::ByteStreamConcept DestType, typename... Ts>
-    hydrolib_ReturnCode Log::TranslateMessage_(DestType &buffer, Ts... other) const
+    template <strings::ByteStreamConcept DestType>
+    hydrolib_ReturnCode Log::TranslateMessage_(DestType &buffer) const
     {
-        return message.ToBytes(buffer, other...);
+        unsigned message_length = message.GetLength();
+
+        return buffer.Push(reinterpret_cast<const uint8_t *>(message.GetString()), message_length);
     }
 
     template <strings::ByteStreamConcept DestType>
