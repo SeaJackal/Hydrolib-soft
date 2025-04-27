@@ -13,6 +13,14 @@ namespace hydrolib::Logger
     //     { queue.Pull(buffer) } -> std::same_as<hydrolib_ReturnCode>;
     // };
 
+    template <typename T>
+    concept SynchronousByteStreamConcept =
+        strings::ByteStreamConcept<T> &&
+        requires(T stream) {
+            { stream.Open() } -> std::same_as<hydrolib_ReturnCode>;
+            { stream.Close() } -> std::same_as<hydrolib_ReturnCode>;
+        };
+
     class NoObserver
     {
     public:
@@ -25,14 +33,14 @@ namespace hydrolib::Logger
         }
     };
 
-    template <strings::ByteStreamConcept Stream, LogObserverConcept Observer = NoObserver>
+    template <SynchronousByteStreamConcept Stream, LogObserverConcept Observer = NoObserver>
     class LogObserver
     {
     public:
         static constexpr size_t MAX_LOGGERS_COUNT = 50; // TODO make template
 
     public:
-        LogObserver(Stream &stream, char *format_string, Observer *next_observer = nullptr);
+        LogObserver(Stream &stream, char *format_string, Observer *next_observer = nullptr); // TODO make constexpr
 
     public:
         template <typename... Ts>
@@ -41,7 +49,9 @@ namespace hydrolib::Logger
             if (level_filter_[source_id] != LogLevel::NO_LEVEL &&
                 log.level >= level_filter_[source_id])
             {
+                output_stream_.Open();
                 log.ToBytes(format_string_, output_stream_, params...);
+                output_stream_.Close();
             }
 
             if (next_observer_)
@@ -61,7 +71,7 @@ namespace hydrolib::Logger
         Observer *next_observer_;
     };
 
-    template <strings::ByteStreamConcept Stream, LogObserverConcept Observer>
+    template <SynchronousByteStreamConcept Stream, LogObserverConcept Observer>
     LogObserver<Stream, Observer>::LogObserver(Stream &stream,
                                                char *format_string,
                                                Observer *next_observer)
@@ -76,13 +86,13 @@ namespace hydrolib::Logger
         }
     }
 
-    template <strings::ByteStreamConcept Stream, LogObserverConcept Observer>
+    template <SynchronousByteStreamConcept Stream, LogObserverConcept Observer>
     void LogObserver<Stream, Observer>::SetFormatString(char *format_string)
     {
         format_string_ = format_string;
     }
 
-    template <strings::ByteStreamConcept Stream, LogObserverConcept Observer>
+    template <SynchronousByteStreamConcept Stream, LogObserverConcept Observer>
     void LogObserver<Stream, Observer>::SetLogFiltration(unsigned logger_id, LogLevel level)
     {
         level_filter_[logger_id] = level;

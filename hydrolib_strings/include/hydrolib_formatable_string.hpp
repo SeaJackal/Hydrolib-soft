@@ -179,6 +179,7 @@ namespace hydrolib::strings
         unsigned next_param_index,
         unsigned translated_length) const
     {
+        (void)next_param_index;
         buffer.Push(reinterpret_cast<const uint8_t *>(string_ + translated_length),
                     length_ - translated_length);
         return HYDROLIB_RETURN_OK;

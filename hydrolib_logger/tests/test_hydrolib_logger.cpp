@@ -26,6 +26,16 @@ public:
         return HYDROLIB_RETURN_OK;
     }
 
+    hydrolib_ReturnCode Open()
+    {
+        return HYDROLIB_RETURN_OK;
+    }
+
+    hydrolib_ReturnCode Close()
+    {
+        return HYDROLIB_RETURN_OK;
+    }
+
     int GetLength()
     {
         return length_;
