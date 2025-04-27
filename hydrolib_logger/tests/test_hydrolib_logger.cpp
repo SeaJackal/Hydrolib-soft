@@ -1,5 +1,6 @@
 #include "hydrolib_logger.hpp"
 #include "hydrolib_log_observer.hpp"
+#include "hydrolib_log_manager.hpp"
 
 #include <gtest/gtest.h>
 #include <iostream>
@@ -83,8 +84,12 @@ private:
 // };
 
 char buffer[100];
+char buffer2[100];
 LogStream stream(buffer);
+LogStream stream2(buffer2);
 LogObserver observer(stream, "[%s] [%l] %m\n");
+
+LogManager manager(stream, stream2);
 
 TEST(TestHydrolibLogger, TranslatorTest)
 {
@@ -130,6 +135,10 @@ TEST(TestHydrolibLogger, FilterTest)
     buffer[length] = '\0';
     std::cout << buffer;
     EXPECT_EQ(length, 0);
+}
+
+TEST(TestHydrolibLogger, ManagerTest)
+{
 }
 
 // TEST(TestHydrolibLogger, DistributorTest)
