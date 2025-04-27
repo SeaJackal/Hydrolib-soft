@@ -2,9 +2,9 @@
 #define HYDROLIB_LOGGER_H_
 
 #include <cstdint>
+#include <concepts>
 
 #include "hydrolib_common.h"
-#include "hydrolib_observer.hpp"
 #include "hydrolib_formatable_string.hpp"
 #include "hydrolib_cstring.hpp"
 #include "hydrolib_log.hpp"
@@ -12,18 +12,18 @@
 namespace hydrolib::Logger
 {
     template <typename T, typename... Ts>
-    concept LogObserverConcept = requires(T observer, unsigned source_id, Log &log, Ts... params) {
-        observer.Notify(source_id, log, params...);
+    concept LogDistributorConcept = requires(T distributor, unsigned source_id, Log &log, Ts... params) {
+        distributor.Notify(source_id, log, params...);
     };
 
-    template <LogObserverConcept Observer>
+    template <LogDistributorConcept Distributor>
     class Logger
     {
     public:
-        constexpr Logger(const char *name, unsigned id, Observer &observer)
+        consteval Logger(const char *name, unsigned id, const Distributor &distributor)
             : name_(name),
               id_(id),
-              observer_(observer)
+              distributor_(distributor)
         {
         }
 
@@ -36,14 +36,14 @@ namespace hydrolib::Logger
                 .level = level,
                 .process_name = &name_};
 
-            observer_.Notify(id_, log, params...);
+            distributor_.Notify(id_, log, params...);
         }
 
     private:
         const strings::CString<Log::MAX_NAME_LENGTH> name_;
         const unsigned id_;
 
-        Observer &observer_;
+        const Distributor &distributor_;
     };
 }
 

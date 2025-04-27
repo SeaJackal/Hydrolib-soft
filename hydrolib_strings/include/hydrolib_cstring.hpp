@@ -18,6 +18,10 @@ namespace hydrolib::strings
                 string_[length_] = str[length_];
                 length_++;
             }
+            for (unsigned i = length_; i < CAPACITY; i++)
+            {
+                string_[i] = 0;
+            }
         }
 
     public:

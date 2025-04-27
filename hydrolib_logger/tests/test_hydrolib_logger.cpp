@@ -1,6 +1,6 @@
 #include "hydrolib_logger.hpp"
 #include "hydrolib_log_observer.hpp"
-#include "hydrolib_log_manager.hpp"
+#include "hydrolib_log_distributor.hpp"
 
 #include <gtest/gtest.h>
 #include <iostream>
@@ -83,62 +83,78 @@ private:
 //     bool flag;
 // };
 
-char buffer[100];
+char buffer1[100];
 char buffer2[100];
-LogStream stream(buffer);
+LogStream stream1(buffer1);
 LogStream stream2(buffer2);
-LogObserver observer(stream, "[%s] [%l] %m\n");
 
-LogManager manager(stream, stream2);
+LogDistributor manager("[%s] [%l] %m\n", stream1, stream2);
+Logger logger1("Logger1", 0, manager);
+Logger logger2("Logger2", 1, manager);
 
 TEST(TestHydrolibLogger, TranslatorTest)
 {
-    Logger logger("Logger", 0, observer);
-    observer.SetLogFiltration(0, LogLevel::DEBUG);
+    manager.SetAllFilters(0, LogLevel::DEBUG);
+    manager.SetAllFilters(1, LogLevel::DEBUG);
+    logger1.WriteLog(LogLevel::INFO, "First message: {}", 1);
+    int length = stream1.GetLength();
+    buffer1[length] = '\0';
+    buffer2[length] = '\0';
+    std::cout << buffer1;
+    EXPECT_EQ(0, strcmp(buffer1, "[Logger1] [INFO] First message: 1\n"));
+    EXPECT_EQ(0, strcmp(buffer2, "[Logger1] [INFO] First message: 1\n"));
 
-    logger.WriteLog(LogLevel::INFO, "First message: {}", 1);
-    int length = stream.GetLength();
-    buffer[length] = '\0';
-    std::cout << buffer;
-    EXPECT_EQ(0, strcmp(buffer, "[Logger] [INFO] First message: 1\n"));
+    stream1.Reset();
+    stream2.Reset();
+    logger2.WriteLog(LogLevel::DEBUG, "Message two: {}", 2);
+    length = stream1.GetLength();
+    buffer1[length] = '\0';
+    buffer2[length] = '\0';
+    std::cout << buffer1;
+    EXPECT_EQ(0, strcmp(buffer1, "[Logger2] [DEBUG] Message two: 2\n"));
+    EXPECT_EQ(0, strcmp(buffer2, "[Logger2] [DEBUG] Message two: 2\n"));
 
-    stream.Reset();
-    logger.WriteLog(LogLevel::DEBUG, "Message two: {}", 2);
-    length = stream.GetLength();
-    buffer[length] = '\0';
-    std::cout << buffer;
-    EXPECT_EQ(0, strcmp(buffer, "[Logger] [DEBUG] Message two: 2\n"));
-
-    stream.Reset();
-    logger.WriteLog(LogLevel::CRITICAL, "Third: {}", 3);
-    length = stream.GetLength();
-    buffer[length] = '\0';
-    std::cout << buffer;
-    EXPECT_EQ(0, strcmp(buffer, "[Logger] [CRITICAL] Third: 3\n"));
+    stream1.Reset();
+    stream2.Reset();
+    logger1.WriteLog(LogLevel::CRITICAL, "Third: {}", 3);
+    length = stream1.GetLength();
+    buffer1[length] = '\0';
+    buffer2[length] = '\0';
+    std::cout << buffer1;
+    EXPECT_EQ(0, strcmp(buffer1, "[Logger1] [CRITICAL] Third: 3\n"));
+    EXPECT_EQ(0, strcmp(buffer2, "[Logger1] [CRITICAL] Third: 3\n"));
 }
 
 TEST(TestHydrolibLogger, FilterTest)
 {
-    Logger logger("Logger", 0, observer);
-    observer.SetLogFiltration(0, LogLevel::INFO);
+    manager.SetAllFilters(0, LogLevel::DEBUG);
+    manager.SetAllFilters(1, LogLevel::DEBUG);
+    manager.SetFilter(0, 0, LogLevel::INFO);
+    manager.SetFilter(1, 1, LogLevel::INFO);
 
-    stream.Reset();
-    logger.WriteLog(LogLevel::INFO, "First message");
-    int length = stream.GetLength();
-    buffer[length] = '\0';
-    std::cout << buffer;
-    EXPECT_EQ(length, sizeof("[Logger] [INFO] First message\n") - 1);
+    stream1.Reset();
+    stream2.Reset();
+    logger1.WriteLog(LogLevel::INFO, "First message: {}", 1);
+    int length1 = stream1.GetLength();
+    int length2 = stream2.GetLength();
+    EXPECT_EQ(length1, sizeof("[Logger1] [INFO] First message: 1\n") - 1);
+    EXPECT_EQ(length2, sizeof("[Logger1] [INFO] First message: 1\n") - 1);
 
-    stream.Reset();
-    logger.WriteLog(LogLevel::DEBUG, "Message two");
-    length = stream.GetLength();
-    buffer[length] = '\0';
-    std::cout << buffer;
-    EXPECT_EQ(length, 0);
-}
+    stream1.Reset();
+    stream2.Reset();
+    logger1.WriteLog(LogLevel::DEBUG, "Message two: {}", 2);
+    length1 = stream1.GetLength();
+    length2 = stream2.GetLength();
+    EXPECT_EQ(length1, 0);
+    EXPECT_EQ(length2, sizeof("[Logger2] [DEBUG] Message two: 2\n") - 1);
 
-TEST(TestHydrolibLogger, ManagerTest)
-{
+    stream1.Reset();
+    stream2.Reset();
+    logger2.WriteLog(LogLevel::DEBUG, "Message two: {}", 2);
+    length1 = stream1.GetLength();
+    length2 = stream2.GetLength();
+    EXPECT_EQ(length2, 0);
+    EXPECT_EQ(length1, sizeof("[Logger2] [DEBUG] Message two: 2\n") - 1);
 }
 
 // TEST(TestHydrolibLogger, DistributorTest)
