@@ -7,12 +7,34 @@
 
 namespace hydrolib::Logger
 {
+    template <typename T>
+    concept SynchronousByteStreamConcept =
+        strings::ByteStreamConcept<T> &&
+        requires(T stream) {
+            { stream.Open() } -> std::same_as<hydrolib_ReturnCode>;
+            { stream.Close() } -> std::same_as<hydrolib_ReturnCode>;
+        };
 
     template <SynchronousByteStreamConcept... Streams>
     class LogDistributor
     {
     public:
         static constexpr size_t MAX_LOGGERS_COUNT = 50; // TODO make template
+
+    public:
+        consteval LogDistributor(char *format_string, Streams &...streams);
+
+    public:
+        template <typename... Ts>
+        void Notify(unsigned source_id, Log &log, Ts... params) const
+        {
+            distributing_list_.head_node->Notify(source_id, log, params...);
+        }
+
+        hydrolib_ReturnCode SetFilter(unsigned stream_number, unsigned logger_id,
+                                      LogLevel level);
+        hydrolib_ReturnCode SetAllFilters(unsigned logger_id, LogLevel level);
+
     private:
         template <typename Observer,
                   SynchronousByteStreamConcept... Streams_>
