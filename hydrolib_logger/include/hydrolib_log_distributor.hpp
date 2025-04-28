@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#include "hydrolib_log_observer.hpp"
+#include "hydrolib_log.hpp"
 
 namespace hydrolib::Logger
 {
@@ -35,8 +35,8 @@ namespace hydrolib::Logger
                                                     this, streams...),
                   output_stream_(stream),
                   format_string_(format_string),
-                  next_node_(next_node)
-
+                  next_node_(next_node),
+                  stream_enable_(false)
             {
                 for (size_t i = 0; i < MAX_LOGGERS_COUNT; i++)
                 {
@@ -46,19 +46,33 @@ namespace hydrolib::Logger
 
         public:
             template <typename... Ts>
-            void Notify(unsigned source_id, Log &log, Ts... params) const
+            bool Notify(unsigned source_id, LogLevel level)
             {
-                if (level_filter_[source_id] != LogLevel::NO_LEVEL &&
-                    log.level >= level_filter_[source_id])
+                bool res = level_filter_[source_id] != LogLevel::NO_LEVEL &&
+                           level >= level_filter_[source_id];
+                stream_enable_ = res;
+                if (res)
                 {
-                    output_stream_.Open();
-                    log.ToBytes(format_string_, output_stream_, params...);
-                    output_stream_.Close();
+                    next_node_->Notify(source_id, level);
+                    return true;
                 }
-                if (next_node_) // TODO search for if constexpr
+                if (next_node_)
                 {
-                    next_node_->Notify(source_id, log, params...);
+                    return res || next_node_->Notify(source_id, level);
                 }
+                else
+                {
+                    return res;
+                }
+            }
+
+            void Push(const uint8_t *source, std::size_t length) const
+            {
+                if (stream_enable_)
+                {
+                    output_stream_.Push(source, length);
+                }
+                next_node_->Push(source, length);
             }
 
             hydrolib_ReturnCode SetFormatString(unsigned depth, char *format_string)
@@ -109,6 +123,8 @@ namespace hydrolib::Logger
             Stream &output_stream_;
             char *format_string_; // TODO Make CString (and add coping)
 
+            bool stream_enable_;
+
             NextNode *next_node_;
         };
 
@@ -126,8 +142,12 @@ namespace hydrolib::Logger
         public:
             template <typename... Ts>
             void Notify([[maybe_unused]] unsigned source_id,
-                        [[maybe_unused]] Log &log,
-                        [[maybe_unused]] Ts...) const // TODO workaround, need fix
+                        [[maybe_unused]] LogLevel level) const // TODO workaround, need fix
+            {
+            }
+
+            void Push([[maybe_unused]] const uint8_t *source,
+                      [[maybe_unused]] std::size_t length) const
             {
             }
 
@@ -155,7 +175,12 @@ namespace hydrolib::Logger
         template <typename... Ts>
         void Notify(unsigned source_id, Log &log, Ts... params) const
         {
-            distributing_list_.head_node->Notify(source_id, log, params...);
+            if (distributing_list_.head_node->Notify(source_id, log.level))
+            {
+                output_stream_.Open();
+                log.ToBytes(format_string_, *distributing_list_.head_node, params...);
+                output_stream_.Close();
+            }
         }
 
         hydrolib_ReturnCode SetFilter(unsigned stream_number, unsigned logger_id,

@@ -1,5 +1,4 @@
 #include "hydrolib_logger.hpp"
-#include "hydrolib_log_observer.hpp"
 #include "hydrolib_log_distributor.hpp"
 
 #include <gtest/gtest.h>
