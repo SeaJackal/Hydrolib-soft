@@ -120,27 +120,34 @@ namespace hydrolib::strings
         translated_length += param_pos_diffs_[next_param_index] + 2;
         next_param_index++;
 
-        if (param < 0)
+        if (param == 0)
         {
-            buffer.Push(reinterpret_cast<const uint8_t *>("-"), 1);
-            param = -param;
+            buffer.Push(reinterpret_cast<const uint8_t *>("0"), 1);
         }
-
-        unsigned digit = 1;
-        while (digit <= static_cast<unsigned>(param))
+        else
         {
-            digit *= 10;
-        }
-        digit /= 10;
+            if (param < 0)
+            {
+                buffer.Push(reinterpret_cast<const uint8_t *>("-"), 1);
+                param = -param;
+            }
 
-        char symbol;
-
-        while (digit != 0)
-        {
-            symbol = param / digit + '0';
-            param %= digit;
-            buffer.Push(reinterpret_cast<const uint8_t *>(&symbol), 1);
+            unsigned digit = 1;
+            while (digit <= static_cast<unsigned>(param))
+            {
+                digit *= 10;
+            }
             digit /= 10;
+
+            char symbol;
+
+            while (digit != 0)
+            {
+                symbol = param / digit + '0';
+                param %= digit;
+                buffer.Push(reinterpret_cast<const uint8_t *>(&symbol), 1);
+                digit /= 10;
+            }
         }
 
         return ToBytes_(buffer, next_param_index, translated_length, others...);

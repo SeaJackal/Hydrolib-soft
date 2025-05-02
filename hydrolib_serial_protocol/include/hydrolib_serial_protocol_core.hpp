@@ -1,6 +1,6 @@
 /**
  @defgroup hydrolib_serial_protocol Hydrolib serial protocol
-\brief Protocol for communication throw duplex serial port
+@brief Protocol for communication through duplex serial port
 
 Protocol uses algorithm for header finding to implement non-constant message length communication.
 It supports device public memory abstraction. It allows devices to interact with each other by
