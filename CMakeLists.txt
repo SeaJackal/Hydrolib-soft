@@ -11,5 +11,6 @@ add_subdirectory(hydrolib_serial_protocol)
 add_subdirectory(hydrolib_strings)
 add_subdirectory(hydrolib_logger)
 add_subdirectory(hydrolib_pid)
+add_subdirectory(hydrolib_vectornav)
 
 enable_testing()
