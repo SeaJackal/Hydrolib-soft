@@ -224,6 +224,17 @@ hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::ProcessMessage_()
     switch (current_header_->common.command)
     {
     case Command::READ:
+        header_read_res =
+            rx_queue_.Read(&current_rx_message_[sizeof(MessageHeader::Common)],
+                           current_header_->common.message_length -
+                               sizeof(MessageHeader::Common),
+                           sizeof(MessageHeader::Common));
+        if (header_read_res != HYDROLIB_RETURN_OK)
+        {
+            return header_read_res;
+        }
+        current_processed_length_ = 0;
+        return HYDROLIB_RETURN_OK;
     case Command::WRITE:
         header_read_res =
             rx_queue_.Read(&current_rx_message_[sizeof(MessageHeader::Common)],

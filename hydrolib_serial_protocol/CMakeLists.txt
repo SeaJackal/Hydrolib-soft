@@ -25,17 +25,19 @@ if(BUILD_TESTING)
     # add_executable(TestSerialProtocol ${TESTS})
     add_executable(TestSerialProtocol
         tests/test_hydrolib_sp_serialize_env.cpp
-        tests/test_hydrolib_sp_serialize_write.cpp)
+        tests/test_hydrolib_sp_serialize_write.cpp
+        tests/test_hydrolib_sp_serialize_read.cpp
+        tests/test_hydrolib_sp_serialize_responce.cpp)
     set_target_properties(TestSerialProtocol
         PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Testing"
     )
     target_compile_features(TestSerialProtocol PUBLIC cxx_std_20)
-    # target_compile_options(TestSerialProtocol PRIVATE -Wall -Wextra -Wpedantic -Wc++20-compat -Wno-format-security
-    #     -Woverloaded-virtual -Wsuggest-override)
 
+    # target_compile_options(TestSerialProtocol PRIVATE -Wall -Wextra -Wpedantic -Wc++20-compat -Wno-format-security
+    # -Woverloaded-virtual -Wsuggest-override)
     target_compile_options(TestSerialProtocol PRIVATE -Wall -Wextra -Wpedantic -Wc++20-compat -Wno-format-security
-    -Woverloaded-virtual -Wsuggest-override -fsanitize=address -fsanitize=undefined)
+        -Woverloaded-virtual -Wsuggest-override -fsanitize=address -fsanitize=undefined)
     target_link_options(TestSerialProtocol PRIVATE -fsanitize=address -fsanitize=undefined)
     target_link_libraries(TestSerialProtocol HydrolibSerialProtocol GTest::gtest GTest::gtest_main -pthread)
     gtest_discover_tests(TestSerialProtocol)
