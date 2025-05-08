@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace hydrolib::serialProtocol;
+using namespace hydrolib::serial_protocol;
 
 namespace test_core
 {
@@ -14,32 +14,31 @@ namespace test_core
 #define DEVICE_ADDRESS_RECEIVER 3
 #define DEVICE_ADDRESS_TRANSMITTER 4
 
-    class TestRxQueue : public MessageProcessor::RxQueueInterface,
-                        public MessageProcessor::TxQueueInterface
+    class TestRxQueue
     {
     private:
         std::deque<uint8_t> queue;
 
     public:
-        hydrolib_ReturnCode Read(void *buffer, uint32_t length, uint32_t shift) const override;
+        hydrolib_ReturnCode Read(void *buffer, uint32_t length, uint32_t shift) const;
 
-        void Drop(uint32_t number) override;
+        void Drop(uint32_t number);
 
-        void Clear() override;
+        void Clear();
 
-        hydrolib_ReturnCode Push(void *data, uint32_t length) override;
+        hydrolib_ReturnCode Push(const void *data, uint32_t length);
 
         void WriteByte(uint8_t data);
     };
 
-    class TestPublicMemory : public MessageProcessor::PublicMemoryInterface
+    class TestPublicMemory
     {
     public:
         hydrolib_ReturnCode Read(void *buffer, uint32_t address,
-                                 uint32_t length) override;
+                                 uint32_t length);
         hydrolib_ReturnCode Write(const void *buffer, uint32_t address,
-                                  uint32_t length) override;
-        uint32_t Size() override;
+                                  uint32_t length);
+        uint32_t Size();
 
     public:
         uint8_t buffer[PUBLIC_MEMORY_LENGTH];
@@ -52,8 +51,8 @@ namespace test_core
         TestRxQueue txrx_queue;
         TestRxQueue rxtx_queue;
 
-        MessageProcessor transmitter;
-        MessageProcessor receiver;
+        MessageProcessor<TestRxQueue, TestRxQueue, TestPublicMemory> transmitter;
+        MessageProcessor<TestRxQueue, TestRxQueue, TestPublicMemory> receiver;
 
         TestPublicMemory public_memory;
 

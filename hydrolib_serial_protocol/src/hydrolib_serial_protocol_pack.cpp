@@ -1,6 +1,6 @@
 #include "hydrolib_serial_protocol_pack.hpp"
 
-namespace hydrolib::serialProtocol
+namespace hydrolib::serial_protocol
 {
     SerialProtocolHandler::RxQueue_::RxQueue_()
     {

@@ -11,7 +11,7 @@
 #define HYDROLIB_SP_RX_BUFFER_CAPACITY HYDROLIB_SP_MAX_MESSAGE_LENGTH + \
                                            HYDROLIB_SP_RX_BUFFER_RESERVE
 
-namespace hydrolib::serialProtocol
+namespace hydrolib::serial_protocol
 {
     class SerialProtocolHandler : public MessageProcessor
     {

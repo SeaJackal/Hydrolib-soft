@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-using namespace hydrolib::serialProtocol;
+using namespace hydrolib::serial_protocol;
 
 #define MIN_MESSAGE_LENGTH 4
 

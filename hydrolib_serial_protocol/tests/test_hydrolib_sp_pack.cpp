@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace hydrolib::serialProtocol;
+using namespace hydrolib::serial_protocol;
 
 namespace test_pack
 {

@@ -1,6 +1,6 @@
 #include "test_hydrolib_sp_core_env.hpp"
 
-using namespace hydrolib::serialProtocol;
+using namespace hydrolib::serial_protocol;
 
 namespace test_core
 {
@@ -56,11 +56,11 @@ namespace test_core
         return PUBLIC_MEMORY_LENGTH;
     }
 
-    hydrolib_ReturnCode TestRxQueue::Push(void *data, uint32_t length)
+    hydrolib_ReturnCode TestRxQueue::Push(const void *data, uint32_t length)
     {
         for (uint32_t i = 0; i < length; i++)
         {
-            queue.push_back(reinterpret_cast<uint8_t *>(data)[i]);
+            queue.push_back(reinterpret_cast<const uint8_t *>(data)[i]);
         }
         return HYDROLIB_RETURN_OK;
     }

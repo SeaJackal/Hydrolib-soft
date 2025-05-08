@@ -6,18 +6,11 @@
 
 #include "hydrolib_common.h"
 #include "hydrolib_logger.hpp"
+#include "hydrolib_queue_concepts.hpp"
 
 namespace hydrolib
 {
-    template <typename T>
-    concept ReadableByteQueue = requires(T queue, void *data, unsigned data_length,
-                                         unsigned shift) {
-        { queue.Read(data, data_length, shift) } -> std::same_as<hydrolib_ReturnCode>;
-        queue.Drop(data_length);
-        queue.Clear();
-    };
-
-    template <ReadableByteQueue InputQueue, typename Logger>
+    template <concepts::queue::ReadableByteQueue InputQueue, typename Logger>
     class VectorNAVParser
     {
     private:
@@ -64,14 +57,14 @@ namespace hydrolib
         Logger &logger_;
     };
 
-    template <ReadableByteQueue InputQueue, typename Logger>
+    template <concepts::queue::ReadableByteQueue InputQueue, typename Logger>
     constexpr VectorNAVParser<InputQueue, Logger>::VectorNAVParser(InputQueue &queue, Logger &logger)
         : queue_(queue),
           logger_(logger)
     {
     }
 
-    template <ReadableByteQueue InputQueue, typename Logger>
+    template <concepts::queue::ReadableByteQueue InputQueue, typename Logger>
     hydrolib_ReturnCode VectorNAVParser<InputQueue, Logger>::Process()
     {
         uint32_t header_buffer;
@@ -87,16 +80,16 @@ namespace hydrolib
                 {
                     return HYDROLIB_RETURN_NO_DATA;
                 }
-                logger_.WriteLog(hydrolib::Logger::LogLevel::DEBUG, "Received message");
-                logger_.WriteLog(hydrolib::Logger::LogLevel::DEBUG, "yaw: {}", static_cast<int>(current_data_.yaw_ * 100));
-                logger_.WriteLog(hydrolib::Logger::LogLevel::DEBUG, "pitch: {}", static_cast<int>(current_data_.pitch_ * 100));
-                logger_.WriteLog(hydrolib::Logger::LogLevel::DEBUG, "roll: {}", static_cast<int>(current_data_.roll_ * 100));
-                logger_.WriteLog(hydrolib::Logger::LogLevel::DEBUG, "x rate: {}", static_cast<int>(current_data_.x_rate_ * 100));
-                logger_.WriteLog(hydrolib::Logger::LogLevel::DEBUG, "y rate: {}", static_cast<int>(current_data_.y_rate_ * 100));
-                logger_.WriteLog(hydrolib::Logger::LogLevel::DEBUG, "z rate: {}", static_cast<int>(current_data_.z_rate_ * 100));
+                logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "Received message");
+                logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "yaw: {}", static_cast<int>(current_data_.yaw_ * 100));
+                logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "pitch: {}", static_cast<int>(current_data_.pitch_ * 100));
+                logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "roll: {}", static_cast<int>(current_data_.roll_ * 100));
+                logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "x rate: {}", static_cast<int>(current_data_.x_rate_ * 100));
+                logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "y rate: {}", static_cast<int>(current_data_.y_rate_ * 100));
+                logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "z rate: {}", static_cast<int>(current_data_.z_rate_ * 100));
                 if (shift != 0)
                 {
-                    logger_.WriteLog(hydrolib::Logger::LogLevel::WARNING, "Rubbish bytes: {}", shift);
+                    logger_.WriteLog(hydrolib::logger::LogLevel::WARNING, "Rubbish bytes: {}", shift);
                 }
                 queue_.Drop(sizeof(Message_) + sizeof(uint32_t) + shift);
                 return HYDROLIB_RETURN_OK;
@@ -106,25 +99,25 @@ namespace hydrolib
         }
         if (shift != 0)
         {
-            logger_.WriteLog(hydrolib::Logger::LogLevel::WARNING, "Rubbish bytes: {}", shift);
+            logger_.WriteLog(hydrolib::logger::LogLevel::WARNING, "Rubbish bytes: {}", shift);
             queue_.Drop(shift);
         }
         return HYDROLIB_RETURN_NO_DATA;
     }
 
-    template <ReadableByteQueue InputQueue, typename Logger>
+    template <concepts::queue::ReadableByteQueue InputQueue, typename Logger>
     float VectorNAVParser<InputQueue, Logger>::GetYaw() const
     {
         return current_data_.yaw_;
     }
 
-    template <ReadableByteQueue InputQueue, typename Logger>
+    template <concepts::queue::ReadableByteQueue InputQueue, typename Logger>
     float VectorNAVParser<InputQueue, Logger>::GetPitch() const
     {
         return current_data_.pitch_;
     }
 
-    template <ReadableByteQueue InputQueue, typename Logger>
+    template <concepts::queue::ReadableByteQueue InputQueue, typename Logger>
     float VectorNAVParser<InputQueue, Logger>::GetRoll() const
     {
         return current_data_.roll_;

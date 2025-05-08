@@ -8,7 +8,7 @@
 #include "hydrolib_formatable_string.hpp"
 #include "hydrolib_cstring.hpp"
 
-namespace hydrolib::Logger
+namespace hydrolib::logger
 {
 
     enum class LogLevel
@@ -43,20 +43,20 @@ namespace hydrolib::Logger
         };
 
     public:
-        template <strings::ByteStreamConcept DestType, typename... Ts>
+        template <concepts::stream::ByteStreamConcept DestType, typename... Ts>
         hydrolib_ReturnCode ToBytes(const char *format_string, DestType &buffer, Ts... other) const;
 
     private:
-        template <strings::ByteStreamConcept DestType, typename... Ts>
+        template <concepts::stream::ByteStreamConcept DestType, typename... Ts>
         hydrolib_ReturnCode TranslateMessage_(DestType &buffer, Ts... other) const;
 
-        template <strings::ByteStreamConcept DestType>
+        template <concepts::stream::ByteStreamConcept DestType>
         hydrolib_ReturnCode TranslateLevel_(DestType &buffer) const;
 
-        template <strings::ByteStreamConcept DestType>
+        template <concepts::stream::ByteStreamConcept DestType>
         hydrolib_ReturnCode TranslateSource_(DestType &buffer) const;
 
-        template <strings::ByteStreamConcept DestType>
+        template <concepts::stream::ByteStreamConcept DestType>
         hydrolib_ReturnCode BurstPush_(
             DestType &buffer,
             const char *burst_start, unsigned &burst_length) const;
@@ -67,7 +67,7 @@ namespace hydrolib::Logger
         const strings::CString<MAX_NAME_LENGTH> *process_name;
     };
 
-    template <strings::ByteStreamConcept DestType, typename... Ts>
+    template <concepts::stream::ByteStreamConcept DestType, typename... Ts>
     hydrolib_ReturnCode Log::ToBytes(const char *format_string, DestType &buffer, Ts... other) const
     {
         unsigned format_index = 0;
@@ -142,13 +142,13 @@ namespace hydrolib::Logger
         return HYDROLIB_RETURN_OK;
     }
 
-    template <strings::ByteStreamConcept DestType, typename... Ts>
+    template <concepts::stream::ByteStreamConcept DestType, typename... Ts>
     hydrolib_ReturnCode Log::TranslateMessage_(DestType &buffer, Ts... other) const
     {
         return message.ToBytes(buffer, other...);
     }
 
-    template <strings::ByteStreamConcept DestType>
+    template <concepts::stream::ByteStreamConcept DestType>
     hydrolib_ReturnCode Log::TranslateLevel_(DestType &buffer) const
     {
         const char *level_str;
@@ -182,7 +182,7 @@ namespace hydrolib::Logger
         return buffer.Push(reinterpret_cast<const uint8_t *>(level_str), str_length);
     }
 
-    template <strings::ByteStreamConcept DestType>
+    template <concepts::stream::ByteStreamConcept DestType>
     hydrolib_ReturnCode Log::TranslateSource_(DestType &buffer) const
     {
         unsigned source_length = process_name->GetLength();
@@ -192,7 +192,7 @@ namespace hydrolib::Logger
             source_length);
     }
 
-    template <strings::ByteStreamConcept DestType>
+    template <concepts::stream::ByteStreamConcept DestType>
     hydrolib_ReturnCode Log::BurstPush_(
         DestType &buffer,
         const char *burst_start, unsigned &burst_length) const

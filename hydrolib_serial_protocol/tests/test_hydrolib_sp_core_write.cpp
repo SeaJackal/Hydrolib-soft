@@ -1,6 +1,6 @@
 #include "test_hydrolib_sp_core_env.hpp"
 
-using namespace hydrolib::serialProtocol;
+using namespace hydrolib::serial_protocol;
 
 namespace test_core
 {
@@ -45,7 +45,8 @@ namespace test_core
 
             EXPECT_EQ(HYDROLIB_RETURN_OK, transmit_status);
 
-            for (uint8_t i = 0; i < HYDROLIB_SP_MAX_MESSAGE_LENGTH; i++)
+            for (uint8_t i = 0; i < MessageProcessor<TestRxQueue, TestRxQueue,
+                TestPublicMemory>::MAX_MESSAGE_LENGTH; i++)
             {
                 if (receiver.ProcessRx())
                 {

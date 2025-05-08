@@ -5,7 +5,7 @@
 #include <iostream>
 #include <cstring>
 
-using namespace hydrolib::Logger;
+using namespace hydrolib::logger;
 using namespace std;
 
 class LogStream
