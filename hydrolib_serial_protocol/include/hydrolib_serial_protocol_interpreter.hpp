@@ -60,7 +60,6 @@ public:
 private:
     hydrolib_ReturnCode ProcessRequest_(Command command,
                                         CommandInfo command_info);
-    hydrolib_ReturnCode ProcessFSM_(FSMInput_ input);
     hydrolib_ReturnCode ProcessWrite_(CommandInfo info);
     hydrolib_ReturnCode ProcessRead_(CommandInfo info);
     hydrolib_ReturnCode ProcessResponce_(Command command, CommandInfo info);
@@ -179,17 +178,6 @@ hydrolib_ReturnCode Interpreter<Memory, Distributor, Callback>::ProcessRequest_(
     case ERROR:
         logger_.WriteLog(logger::LogLevel::WARNING, "Got unsupposed responce");
         return HYDROLIB_RETURN_FAIL;
-    }
-}
-
-template <PublicMemoryConcept Memory, logger::LogDistributorConcept Distributor,
-          TransmitCallbackConcept Callback>
-hydrolib_ReturnCode
-Interpreter<Memory, Distributor, Callback>::ProcessFSM_(FSMInput_ input)
-{
-    if (input == FSMInput_::PROCESS_RESEIVE)
-    {
-        if (state_ == FSMState_::)
     }
 }
 
