@@ -21,13 +21,14 @@ public:
                          logger::Logger<Distributor> &logger,
                          uint8_t network = 0xA0);
 
-    public:
-        hydrolib_ReturnCode Process(Command command, CommandInfo info);
+public:
+    hydrolib_ReturnCode Process(Command command, CommandInfo info);
 
-    private:
-        void SerializeRead_(CommandInfo info);
-        void SerializeWrite_(CommandInfo info);
-        void SerializeResponce_(CommandInfo info);
+private:
+    void SerializeRead_(CommandInfo info);
+    void SerializeWrite_(CommandInfo info);
+    void SerializeResponce_(CommandInfo info);
+    void SerializeError_(CommandInfo info);
 
 private:
     logger::Logger<Distributor> &logger_;
@@ -79,6 +80,9 @@ hydrolib_ReturnCode Serializer<TxStream, Distributor>::Process(Command command,
     case RESPONCE:
         SerializeResponce_(info);
         break;
+    case ERROR:
+        SerializeError_(info);
+        break;
     }
     current_message_[current_message_length_ - MessageHeader::CRC_LENGTH] =
         MessageHeader::CountCRC(current_message_,
@@ -124,12 +128,24 @@ void Serializer<TxStream, Distributor>::SerializeResponce_(CommandInfo info)
 {
     current_header_->responce.device_address =
         MessageHeader::GetTrueAddress(info.responce.dest_address, network_);
-    current_message_length_ = sizeof(MessageHeader::Responce) +
+    current_message_length_ = sizeof(MessageHeader::Common) +
                               info.responce.data_length +
                               MessageHeader::CRC_LENGTH;
     current_header_->responce.message_length = current_message_length_;
-    memcpy(current_message_ + sizeof(MessageHeader::Responce),
-           info.responce.data, info.responce.data_length);
+    memcpy(current_message_ + sizeof(MessageHeader::Common), info.responce.data,
+           info.responce.data_length);
+}
+
+template <concepts::stream::ByteStreamConcept TxStream,
+          logger::LogDistributorConcept Distributor>
+void Serializer<TxStream, Distributor>::SerializeError_(CommandInfo info)
+{
+    current_header_->error.device_address =
+        MessageHeader::GetTrueAddress(info.responce.dest_address, network_);
+    current_message_length_ =
+        sizeof(MessageHeader::Error) + MessageHeader::CRC_LENGTH;
+    current_header_->error.message_length = current_message_length_;
+    current_header_->error.error_code = info.error.error_code;
 }
 
 } // namespace hydrolib::serial_protocol

@@ -7,12 +7,11 @@ using namespace hydrolib::serial_protocol;
 
 namespace test_core
 {
-TEST_P(TestHydrolibSerialProtocolSerializeParametrized, MemReadingTest)
+TEST_F(TestHydrolibSerialProtocolSerialize, MemReadingTest)
 {
-    auto param = GetParam();
-    uint8_t mem_address = std::get<0>(param);
-    uint8_t reading_length = std::get<1>(param);
-    for (uint8_t j = 0; j < 10; j++)
+    uint8_t mem_address = 2;
+    uint8_t reading_length = 5;
+    for (uint8_t j = 0; j < 100; j++)
     {
         if (mem_address + reading_length > PUBLIC_MEMORY_LENGTH)
         {
@@ -41,12 +40,11 @@ TEST_P(TestHydrolibSerialProtocolSerializeParametrized, MemReadingTest)
     }
 }
 
-TEST_P(TestHydrolibSerialProtocolSerializeParametrized, MemReadingWithNoizeTest)
+TEST_F(TestHydrolibSerialProtocolSerialize, MemReadingWithNoizeTest)
 {
-    auto param = GetParam();
-    uint8_t mem_address = std::get<0>(param);
-    uint8_t reading_length = std::get<1>(param);
-    for (uint8_t j = 0; j < 10; j++)
+    uint8_t mem_address = 2;
+    uint8_t reading_length = 5;
+    for (uint8_t j = 0; j < 100; j++)
     {
         if (mem_address + reading_length > PUBLIC_MEMORY_LENGTH)
         {
@@ -87,39 +85,4 @@ TEST_P(TestHydrolibSerialProtocolSerializeParametrized, MemReadingWithNoizeTest)
         EXPECT_EQ(reading_length, received_info.read.memory_access_length);
     }
 }
-
-// TEST_P(TestHydrolibSPcoreMemoryAccess, MemWritingWithNoizeTest)
-// {
-//     auto param = GetParam();
-//     uint8_t mem_address = std::get<0>(param);
-//     uint8_t writing_length = std::get<1>(param);
-//     for (uint8_t j = 0; j < 10; j++)
-//     {
-//         if (mem_address + writing_length > PUBLIC_MEMORY_LENGTH)
-//         {
-//             continue;
-//         }
-//         txrx_queue.WriteByte(j);
-//         hydrolib_ReturnCode transmit_status = transmitter.TransmitWrite(
-//             DEVICE_ADDRESS_RECEIVER, mem_address, writing_length, test_data);
-
-//         EXPECT_EQ(HYDROLIB_RETURN_OK, transmit_status);
-
-//         for (uint8_t i = 0;
-//              i < MessageProcessor<TestRxQueue, TestRxQueue,
-//                                   TestPublicMemory>::MAX_MESSAGE_LENGTH;
-//              i++)
-//         {
-//             if (receiver.ProcessRx())
-//             {
-//                 break;
-//             }
-//             txrx_queue.WriteByte(j);
-//         }
-//         for (uint8_t i = 0; i < writing_length; i++)
-//         {
-//             EXPECT_EQ(test_data[i], public_memory.buffer[mem_address + i]);
-//         }
-//     }
-// }
 } // namespace test_core

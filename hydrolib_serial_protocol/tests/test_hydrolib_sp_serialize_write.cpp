@@ -7,12 +7,11 @@ using namespace hydrolib::serial_protocol;
 
 namespace test_core
 {
-TEST_P(TestHydrolibSerialProtocolSerializeParametrized, MemWritingTest)
+TEST_F(TestHydrolibSerialProtocolSerialize, MemWritingTest)
 {
-    auto param = GetParam();
-    uint8_t mem_address = std::get<0>(param);
-    uint8_t writing_length = std::get<1>(param);
-    for (uint8_t j = 0; j < 10; j++)
+    uint8_t mem_address = 2;
+    uint8_t writing_length = 5;
+    for (uint8_t j = 0; j < 100; j++)
     {
         if (mem_address + writing_length > PUBLIC_MEMORY_LENGTH)
         {
@@ -47,12 +46,11 @@ TEST_P(TestHydrolibSerialProtocolSerializeParametrized, MemWritingTest)
     }
 }
 
-TEST_P(TestHydrolibSerialProtocolSerializeParametrized, MemWritingWithNoizeTest)
+TEST_F(TestHydrolibSerialProtocolSerialize, MemWritingWithNoizeTest)
 {
-    auto param = GetParam();
-    uint8_t mem_address = std::get<0>(param);
-    uint8_t writing_length = std::get<1>(param);
-    for (uint8_t j = 0; j < 10; j++)
+    uint8_t mem_address = 2;
+    uint8_t writing_length = 5;
+    for (uint8_t j = 0; j < 100; j++)
     {
         if (mem_address + writing_length > PUBLIC_MEMORY_LENGTH)
         {

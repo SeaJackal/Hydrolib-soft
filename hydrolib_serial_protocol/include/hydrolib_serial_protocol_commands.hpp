@@ -1,5 +1,5 @@
-#ifndef HYDROLIB_SERIAL_PROTOCOL_INTERPRETER_H_
-#define HYDROLIB_SERIAL_PROTOCOL_INTERPRETER_H_
+#ifndef HYDROLIB_SERIAL_PROTOCOL_COMMANDS_H_
+#define HYDROLIB_SERIAL_PROTOCOL_COMMANDS_H_
 
 #include <cstdint>
 
@@ -10,7 +10,16 @@ enum Command : uint8_t
 {
     WRITE = 1,
     READ,
-    RESPONCE
+    RESPONCE,
+    ERROR
+};
+
+enum ErrorCode : uint8_t
+{
+    NO_ERROR = 1,
+    BAD_ADDRESS,
+    NO_ACCESS,
+    INTERNAL_ERROR
 };
 
 union CommandInfo
@@ -43,10 +52,18 @@ public:
         const uint8_t *data;
     };
 
+    struct Error
+    {
+        unsigned source_address;
+        unsigned dest_address;
+        ErrorCode error_code;
+    };
+
 public:
     Read read;
     Write write;
     Responce responce;
+    Error error;
 };
 
 } // namespace hydrolib::serial_protocol

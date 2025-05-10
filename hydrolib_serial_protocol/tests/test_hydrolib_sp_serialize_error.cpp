@@ -8,7 +8,7 @@ using namespace hydrolib::serial_protocol;
 
 namespace test_core
 {
-TEST_F(TestHydrolibSerialProtocolSerialize, ResponceTest)
+TEST_F(TestHydrolibSerialProtocolSerialize, ErrorTest)
 {
     uint8_t mem_address = 2;
     uint8_t data_length = 6;
@@ -19,34 +19,27 @@ TEST_F(TestHydrolibSerialProtocolSerialize, ResponceTest)
             continue;
         }
         CommandInfo transmitted_info;
-        transmitted_info.responce = {.source_address = SERIALIZER_ADDRESS,
-                                     .dest_address = DESERIALIZER_ADDRESS,
-                                     .data_length = data_length,
-                                     .data = test_data + mem_address};
+        transmitted_info.error = {.source_address = SERIALIZER_ADDRESS,
+                                  .dest_address = DESERIALIZER_ADDRESS,
+                                  .error_code = ErrorCode::NO_ERROR};
         hydrolib_ReturnCode transmit_status =
-            serializer.Process(Command::RESPONCE, transmitted_info);
+            serializer.Process(Command::ERROR, transmitted_info);
         EXPECT_EQ(HYDROLIB_RETURN_OK, transmit_status);
 
         hydrolib_ReturnCode receive_status = deserializer.Process();
         EXPECT_EQ(HYDROLIB_RETURN_OK, receive_status);
 
         Command command = deserializer.GetCommand();
-        EXPECT_EQ(Command::RESPONCE, command);
+        EXPECT_EQ(Command::ERROR, command);
 
         CommandInfo received_info = deserializer.GetInfo();
-        EXPECT_EQ(SERIALIZER_ADDRESS, received_info.responce.source_address);
-        EXPECT_EQ(DESERIALIZER_ADDRESS, received_info.responce.dest_address);
-        EXPECT_EQ(data_length, received_info.responce.data_length);
-
-        for (uint8_t i = 0; i < data_length; i++)
-        {
-            EXPECT_EQ(test_data[mem_address + i],
-                      received_info.responce.data[i]);
-        }
+        EXPECT_EQ(SERIALIZER_ADDRESS, received_info.error.source_address);
+        EXPECT_EQ(DESERIALIZER_ADDRESS, received_info.error.dest_address);
+        EXPECT_EQ(ErrorCode::NO_ERROR, received_info.error.error_code);
     }
 }
 
-TEST_F(TestHydrolibSerialProtocolSerialize, ResponceWithNoizeTest)
+TEST_F(TestHydrolibSerialProtocolSerialize, ErrorWithNoizeTest)
 {
     uint8_t mem_address = 2;
     uint8_t data_length = 6;
@@ -60,12 +53,11 @@ TEST_F(TestHydrolibSerialProtocolSerialize, ResponceWithNoizeTest)
         stream.WriteByte(j);
 
         CommandInfo transmitted_info;
-        transmitted_info.responce = {.source_address = SERIALIZER_ADDRESS,
-                                     .dest_address = DESERIALIZER_ADDRESS,
-                                     .data_length = data_length,
-                                     .data = test_data + mem_address};
+        transmitted_info.error = {.source_address = SERIALIZER_ADDRESS,
+                                  .dest_address = DESERIALIZER_ADDRESS,
+                                  .error_code = ErrorCode::NO_ERROR};
         hydrolib_ReturnCode transmit_status =
-            serializer.Process(Command::RESPONCE, transmitted_info);
+            serializer.Process(Command::ERROR, transmitted_info);
         EXPECT_EQ(HYDROLIB_RETURN_OK, transmit_status);
 
         hydrolib_ReturnCode receive_status;
@@ -82,17 +74,12 @@ TEST_F(TestHydrolibSerialProtocolSerialize, ResponceWithNoizeTest)
         EXPECT_EQ(HYDROLIB_RETURN_OK, receive_status);
 
         Command command = deserializer.GetCommand();
-        EXPECT_EQ(Command::RESPONCE, command);
+        EXPECT_EQ(Command::ERROR, command);
 
         CommandInfo received_info = deserializer.GetInfo();
-        EXPECT_EQ(SERIALIZER_ADDRESS, received_info.responce.source_address);
-        EXPECT_EQ(DESERIALIZER_ADDRESS, received_info.responce.dest_address);
-        EXPECT_EQ(data_length, received_info.responce.data_length);
-
-        for (uint8_t i = 0; i < data_length; i++)
-        {
-            EXPECT_EQ(test_data[mem_address + i], received_info.write.data[i]);
-        }
+        EXPECT_EQ(SERIALIZER_ADDRESS, received_info.error.source_address);
+        EXPECT_EQ(DESERIALIZER_ADDRESS, received_info.error.dest_address);
+        EXPECT_EQ(ErrorCode::NO_ERROR, received_info.error.error_code);
     }
 }
 } // namespace test_core

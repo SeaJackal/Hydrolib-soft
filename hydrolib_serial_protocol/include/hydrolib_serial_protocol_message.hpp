@@ -42,12 +42,13 @@ public:
         uint8_t memory_access_length;
     };
 
-    struct Responce
+    struct Error
     {
         uint8_t device_address;
         uint8_t command;
         uint8_t self_address;
         uint8_t message_length;
+        uint8_t error_code;
     };
 
 #pragma pack(pop)
@@ -55,7 +56,8 @@ public:
 public:
     Common common;
     MemoryAccess memory_access;
-    Responce responce;
+    Common responce;
+    Error error;
 };
 
 inline uint8_t MessageHeader::CountCRC(const uint8_t *buffer, unsigned length)

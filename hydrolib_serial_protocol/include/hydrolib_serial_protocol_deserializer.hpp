@@ -111,11 +111,17 @@ CommandInfo Deserializer<RxQueue, Distributor>::GetInfo()
             .source_address = MessageHeader::GetReadableAddress(
                 current_header_->responce.self_address),
             .dest_address = self_readable_address_,
-            .data_length =
-                current_header_->responce.message_length -
-                static_cast<uint8_t>(sizeof(MessageHeader::Responce)) -
-                MessageHeader::CRC_LENGTH,
-            .data = current_rx_message_ + sizeof(MessageHeader::Responce)};
+            .data_length = current_header_->responce.message_length -
+                           static_cast<uint8_t>(sizeof(MessageHeader::Common)) -
+                           MessageHeader::CRC_LENGTH,
+            .data = current_rx_message_ + sizeof(MessageHeader::Common)};
+        break;
+    case Command::ERROR:
+        info.error = {.source_address = MessageHeader::GetReadableAddress(
+                          current_header_->error.self_address),
+                      .dest_address = self_readable_address_,
+                      .error_code = static_cast<ErrorCode>(
+                          current_header_->error.error_code)};
         break;
     }
     return info;
@@ -219,35 +225,19 @@ template <concepts::queue::ReadableByteQueue RxQueue,
           logger::LogDistributorConcept Distributor>
 hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::ProcessMessage_()
 {
-    hydrolib_ReturnCode header_read_res;
-    unsigned target_length;
-    switch (current_header_->common.command)
+    hydrolib_ReturnCode header_read_res = rx_queue_.Read(
+        &current_rx_message_[sizeof(MessageHeader::Common)],
+        current_header_->common.message_length - sizeof(MessageHeader::Common),
+        sizeof(MessageHeader::Common));
+    if (header_read_res != HYDROLIB_RETURN_OK)
     {
-    case Command::READ:
-        header_read_res =
-            rx_queue_.Read(&current_rx_message_[sizeof(MessageHeader::Common)],
-                           current_header_->common.message_length -
-                               sizeof(MessageHeader::Common),
-                           sizeof(MessageHeader::Common));
-        if (header_read_res != HYDROLIB_RETURN_OK)
-        {
-            return header_read_res;
-        }
-        current_processed_length_ = 0;
-        return HYDROLIB_RETURN_OK;
-    case Command::WRITE:
-        header_read_res =
-            rx_queue_.Read(&current_rx_message_[sizeof(MessageHeader::Common)],
-                           current_header_->common.message_length -
-                               sizeof(MessageHeader::Common),
-                           sizeof(MessageHeader::Common));
-        if (header_read_res != HYDROLIB_RETURN_OK)
-        {
-            return header_read_res;
-        }
-        target_length = current_header_->common.message_length -
-                        sizeof(MessageHeader::MemoryAccess) -
-                        MessageHeader::CRC_LENGTH;
+        return header_read_res;
+    }
+    if (current_header_->common.command == Command::WRITE)
+    {
+        unsigned target_length = current_header_->common.message_length -
+                                 sizeof(MessageHeader::MemoryAccess) -
+                                 MessageHeader::CRC_LENGTH;
         if (current_header_->memory_access.memory_access_length !=
             target_length)
         {
@@ -259,21 +249,11 @@ hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::ProcessMessage_()
             current_processed_length_ = 0;
             return HYDROLIB_RETURN_FAIL;
         }
-        current_processed_length_ = 0;
-        return HYDROLIB_RETURN_OK;
-    case Command::RESPONCE:
-        header_read_res =
-            rx_queue_.Read(&current_rx_message_[sizeof(MessageHeader::Common)],
-                           current_header_->common.message_length -
-                               sizeof(MessageHeader::Common),
-                           sizeof(MessageHeader::Common));
-        if (header_read_res != HYDROLIB_RETURN_OK)
-        {
-            return header_read_res;
-        }
-        current_processed_length_ = 0;
-        return HYDROLIB_RETURN_OK;
-    default:
+    }
+    else if (current_header_->common.command != Command::READ &&
+             current_header_->common.command != Command::RESPONCE &&
+             current_header_->common.command != Command::ERROR)
+    {
         logger_.WriteLog(
             logger::LogLevel::WARNING, "Wrong command: {}",
             static_cast<unsigned>(current_header_->common.command));
@@ -281,6 +261,8 @@ hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::ProcessMessage_()
         current_processed_length_ = 0;
         return HYDROLIB_RETURN_FAIL;
     }
+    current_processed_length_ = 0;
+    return HYDROLIB_RETURN_OK;
 }
 
 template <concepts::queue::ReadableByteQueue RxQueue,

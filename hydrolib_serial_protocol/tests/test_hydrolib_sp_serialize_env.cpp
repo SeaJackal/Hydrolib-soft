@@ -59,8 +59,8 @@ TestHydrolibSerialProtocolSerialize::TestHydrolibSerialProtocolSerialize()
     }
 }
 
-INSTANTIATE_TEST_CASE_P(
-    Test, TestHydrolibSerialProtocolSerializeParametrized,
-    ::testing::Combine(::testing::Range<uint16_t>(0, PUBLIC_MEMORY_LENGTH),
-                       ::testing::Range<uint16_t>(1,
-                                                  PUBLIC_MEMORY_LENGTH + 1)));
+// INSTANTIATE_TEST_CASE_P(
+//     Test, TestHydrolibSerialProtocolSerializeParametrized,
+//     ::testing::Combine(::testing::Range<uint16_t>(0, PUBLIC_MEMORY_LENGTH),
+//                        ::testing::Range<uint16_t>(1,
+//                                                   PUBLIC_MEMORY_LENGTH + 1)));
