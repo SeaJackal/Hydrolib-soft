@@ -12,24 +12,30 @@ namespace hydrolib::serial_protocol
 {
 
 template <typename T>
-concept PublicMemoryConcept =
-    requires(T mem, void *read_buffer, const void *write_buffer,
-             unsigned address, unsigned length) {
-        { mem.Read(address, length) } -> std::same_as<const uint8_t *>;
+concept PublicMemoryConcept = requires(T mem, void *read_buffer,
+                                       const void *write_buffer,
+                                       unsigned address, unsigned length)
+{
+    {
+        mem.Read(address, length)
+        } -> std::same_as<const uint8_t *>;
 
-        {
-            mem.Write(write_buffer, address, length)
+    {
+        mem.Write(write_buffer, address, length)
         } -> std::same_as<hydrolib_ReturnCode>;
-    };
+};
 
 template <typename T>
-concept TransmitCallbackConcept =
-    requires(T callback, Command command, CommandInfo info) {
-        { callback(command, info) } -> std::same_as<hydrolib_ReturnCode>;
-    };
+concept TransmitterConcept = requires(T transmitter, Command command,
+                                      CommandInfo info)
+{
+    {
+        transmitter.Process(command, info)
+        } -> std::same_as<hydrolib_ReturnCode>;
+};
 
 template <PublicMemoryConcept Memory, logger::LogDistributorConcept Distributor,
-          TransmitCallbackConcept Callback>
+          TransmitterConcept Transmitter>
 class Interpreter
 {
 private:
@@ -45,7 +51,7 @@ private:
     };
 
 public:
-    constexpr Interpreter(Memory &memory, Callback transmit_callback,
+    constexpr Interpreter(Memory &memory, Transmitter &transmitter,
                           logger::Logger<Distributor> &logger);
 
     hydrolib_ReturnCode ProcessRx(Command command, CommandInfo command_info);
@@ -74,7 +80,7 @@ private:
 
     Memory &memory_;
 
-    Callback transmit_callback_;
+    Transmitter &transmitter_;
 
     FSMState_ state_;
 
@@ -84,13 +90,13 @@ private:
 };
 
 template <PublicMemoryConcept Memory, logger::LogDistributorConcept Distributor,
-          TransmitCallbackConcept Callback>
-constexpr Interpreter<Memory, Distributor, Callback>::Interpreter(
-    Memory &memory, Callback transmit_callback,
+          TransmitterConcept Transmitter>
+constexpr Interpreter<Memory, Distributor, Transmitter>::Interpreter(
+    Memory &memory, Transmitter &transmitter,
     logger::Logger<Distributor> &logger)
     : logger_(logger),
       memory_(memory),
-      transmit_callback_(transmit_callback),
+      transmitter_(transmitter),
       state_(FSMState_::IDLE),
       responding_device_(0),
       responce_buffer_(nullptr),
@@ -99,10 +105,9 @@ constexpr Interpreter<Memory, Distributor, Callback>::Interpreter(
 }
 
 template <PublicMemoryConcept Memory, logger::LogDistributorConcept Distributor,
-          TransmitCallbackConcept Callback>
-hydrolib_ReturnCode
-Interpreter<Memory, Distributor, Callback>::ProcessRx(Command command,
-                                                      CommandInfo command_info)
+          TransmitterConcept Transmitter>
+hydrolib_ReturnCode Interpreter<Memory, Distributor, Transmitter>::ProcessRx(
+    Command command, CommandInfo command_info)
 {
     hydrolib_ReturnCode res;
     switch (state_)
@@ -113,15 +118,18 @@ Interpreter<Memory, Distributor, Callback>::ProcessRx(Command command,
         res = ProcessResponce_(command, command_info);
         if (res == HYDROLIB_RETURN_OK)
         {
-            state_ == FSMState_::IDLE;
+            state_ = FSMState_::IDLE;
         }
         return res;
+    default:
+        return HYDROLIB_RETURN_ERROR;
     }
 }
 
 template <PublicMemoryConcept Memory, logger::LogDistributorConcept Distributor,
-          TransmitCallbackConcept Callback>
-hydrolib_ReturnCode Interpreter<Memory, Distributor, Callback>::TransmitWrite(
+          TransmitterConcept Transmitter>
+hydrolib_ReturnCode
+Interpreter<Memory, Distributor, Transmitter>::TransmitWrite(
     unsigned device_address, unsigned memory_address, unsigned memory_length,
     const uint8_t *data)
 {
@@ -132,7 +140,7 @@ hydrolib_ReturnCode Interpreter<Memory, Distributor, Callback>::TransmitWrite(
                   .memory_address = memory_address,
                   .memory_access_length = memory_length,
                   .data = data};
-    hydrolib_ReturnCode res = transmit_callback_(Command::WRITE, info);
+    hydrolib_ReturnCode res = transmitter_.Process(Command::WRITE, info);
     if (res == HYDROLIB_RETURN_OK)
     {
         state_ = FSMState_::WAITING_TO_RESPONCE;
@@ -141,8 +149,8 @@ hydrolib_ReturnCode Interpreter<Memory, Distributor, Callback>::TransmitWrite(
 }
 
 template <PublicMemoryConcept Memory, logger::LogDistributorConcept Distributor,
-          TransmitCallbackConcept Callback>
-hydrolib_ReturnCode Interpreter<Memory, Distributor, Callback>::TransmitRead(
+          TransmitterConcept Transmitter>
+hydrolib_ReturnCode Interpreter<Memory, Distributor, Transmitter>::TransmitRead(
     unsigned device_address, unsigned memory_address, unsigned memory_length,
     uint8_t *data)
 {
@@ -152,7 +160,7 @@ hydrolib_ReturnCode Interpreter<Memory, Distributor, Callback>::TransmitRead(
                  .dest_address = device_address,
                  .memory_address = memory_address,
                  .memory_access_length = memory_length};
-    hydrolib_ReturnCode res = transmit_callback_(Command::READ, info);
+    hydrolib_ReturnCode res = transmitter_.Process(Command::READ, info);
     if (res == HYDROLIB_RETURN_OK)
     {
         state_ = FSMState_::WAITING_TO_RESPONCE;
@@ -164,8 +172,9 @@ hydrolib_ReturnCode Interpreter<Memory, Distributor, Callback>::TransmitRead(
 }
 
 template <PublicMemoryConcept Memory, logger::LogDistributorConcept Distributor,
-          TransmitCallbackConcept Callback>
-hydrolib_ReturnCode Interpreter<Memory, Distributor, Callback>::ProcessRequest_(
+          TransmitterConcept Transmitter>
+hydrolib_ReturnCode
+Interpreter<Memory, Distributor, Transmitter>::ProcessRequest_(
     Command command, CommandInfo command_info)
 {
     switch (command)
@@ -178,13 +187,15 @@ hydrolib_ReturnCode Interpreter<Memory, Distributor, Callback>::ProcessRequest_(
     case ERROR:
         logger_.WriteLog(logger::LogLevel::WARNING, "Got unsupposed responce");
         return HYDROLIB_RETURN_FAIL;
+    default:
+        return HYDROLIB_RETURN_ERROR;
     }
 }
 
 template <PublicMemoryConcept Memory, logger::LogDistributorConcept Distributor,
-          TransmitCallbackConcept Callback>
+          TransmitterConcept Transmitter>
 hydrolib_ReturnCode
-Interpreter<Memory, Distributor, Callback>::ProcessWrite_(CommandInfo info)
+Interpreter<Memory, Distributor, Transmitter>::ProcessWrite_(CommandInfo info)
 {
     hydrolib_ReturnCode res =
         memory_.Write(info.write.data, info.write.memory_address,
@@ -195,15 +206,15 @@ Interpreter<Memory, Distributor, Callback>::ProcessWrite_(CommandInfo info)
         responce_info.error = {.source_address = info.read.dest_address,
                                .dest_address = info.read.source_address,
                                .error_code = ErrorCode::BAD_ADDRESS};
-        return transmit_callback_(Command::ERROR, responce_info);
+        return transmitter_.Process(Command::ERROR, responce_info);
     }
     return HYDROLIB_RETURN_OK;
 }
 
 template <PublicMemoryConcept Memory, logger::LogDistributorConcept Distributor,
-          TransmitCallbackConcept Callback>
+          TransmitterConcept Transmitter>
 hydrolib_ReturnCode
-Interpreter<Memory, Distributor, Callback>::ProcessRead_(CommandInfo info)
+Interpreter<Memory, Distributor, Transmitter>::ProcessRead_(CommandInfo info)
 {
 
     const uint8_t *read_data =
@@ -214,7 +225,7 @@ Interpreter<Memory, Distributor, Callback>::ProcessRead_(CommandInfo info)
         responce_info.error = {.source_address = info.read.dest_address,
                                .dest_address = info.read.source_address,
                                .error_code = ErrorCode::BAD_ADDRESS};
-        return transmit_callback_(Command::ERROR, responce_info);
+        return transmitter_.Process(Command::ERROR, responce_info);
     }
     else
     {
@@ -223,25 +234,25 @@ Interpreter<Memory, Distributor, Callback>::ProcessRead_(CommandInfo info)
                                   .dest_address = info.read.source_address,
                                   .data_length = info.read.memory_access_length,
                                   .data = read_data};
-        return transmit_callback_(Command::RESPONCE, responce_info);
+        return transmitter_.Process(Command::RESPONCE, responce_info);
     }
 }
 
 template <PublicMemoryConcept Memory, logger::LogDistributorConcept Distributor,
-          TransmitCallbackConcept Callback>
+          TransmitterConcept Transmitter>
 hydrolib_ReturnCode
-Interpreter<Memory, Distributor, Callback>::ProcessResponce_(Command command,
-                                                             CommandInfo info)
+Interpreter<Memory, Distributor, Transmitter>::ProcessResponce_(
+    Command command, CommandInfo info)
 {
     switch (command)
     {
     case RESPONCE:
-        if (responding_device_ != info.responce.dest_address)
+        if (responding_device_ != info.responce.source_address)
         {
             logger_.WriteLog(
                 logger::LogLevel::WARNING,
                 "Got responce from wrong address: supposed {}, got {}",
-                responding_device_, info.responce.dest_address);
+                responding_device_, info.responce.source_address);
             return HYDROLIB_RETURN_FAIL;
         }
         if (responce_length_ != info.responce.data_length)

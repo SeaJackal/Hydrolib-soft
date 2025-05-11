@@ -1,9 +1,9 @@
 #include "test_hydrolib_sp_serialize_env.hpp"
 #include "hydrolib_logger.hpp"
 
-TestLogStream log_stream;
-LogDistributor distributor("[%s] [%l] %m\n", log_stream);
-Logger logger("Serializer", 0, distributor);
+inline TestLogStream log_stream;
+inline LogDistributor distributor("[%s] [%l] %m\n", log_stream);
+inline Logger logger("Serializer", 0, distributor);
 
 hydrolib_ReturnCode TestStream::Read(void *buffer, uint32_t length,
                                      uint32_t shift) const
@@ -63,4 +63,5 @@ TestHydrolibSerialProtocolSerialize::TestHydrolibSerialProtocolSerialize()
 //     Test, TestHydrolibSerialProtocolSerializeParametrized,
 //     ::testing::Combine(::testing::Range<uint16_t>(0, PUBLIC_MEMORY_LENGTH),
 //                        ::testing::Range<uint16_t>(1,
-//                                                   PUBLIC_MEMORY_LENGTH + 1)));
+//                                                   PUBLIC_MEMORY_LENGTH +
+//                                                   1)));
