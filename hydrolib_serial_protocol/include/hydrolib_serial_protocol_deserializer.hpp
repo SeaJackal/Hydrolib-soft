@@ -225,13 +225,21 @@ template <concepts::queue::ReadableByteQueue RxQueue,
           logger::LogDistributorConcept Distributor>
 hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::ProcessMessage_()
 {
+    if (current_header_->common.message_length < sizeof(MessageHeader::Common))
+    {
+        logger_.WriteLog(logger::LogLevel::WARNING, "Wrong message length: ",
+                         current_header_->common.message_length);
+        rx_queue_.Drop(1);
+        current_processed_length_ = 0;
+        return HYDROLIB_RETURN_FAIL;
+    }
     hydrolib_ReturnCode header_read_res = rx_queue_.Read(
         &current_rx_message_[sizeof(MessageHeader::Common)],
         current_header_->common.message_length - sizeof(MessageHeader::Common),
         sizeof(MessageHeader::Common));
     if (header_read_res != HYDROLIB_RETURN_OK)
     {
-        return header_read_res;
+        return HYDROLIB_RETURN_NO_DATA;
     }
     if (current_header_->common.command == Command::WRITE)
     {

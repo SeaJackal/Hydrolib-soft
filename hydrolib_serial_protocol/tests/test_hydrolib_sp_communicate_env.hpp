@@ -1,14 +1,15 @@
-#ifndef TEST_HYDROLIB_SP_INTERPRETER_ENV_H_
-#define TEST_HYDROLIB_SP_INTERPRETER_ENV_H_
+#ifndef TEST_HYDROLIB_SP_COMMUNICATE_ENV_H_
+#define TEST_HYDROLIB_SP_COMMUNICATE_ENV_H_
 
 #include "hydrolib_common.h"
 #include "hydrolib_log_distributor.hpp"
-#include "hydrolib_serial_protocol_commands.hpp"
-#include "hydrolib_serial_protocol_interpreter.hpp"
+#include "hydrolib_serial_protocol_master.hpp"
+#include "hydrolib_serial_protocol_slave.hpp"
 
 #include <cstddef>
 #include <cstring>
 #include <deque>
+#include <functional>
 #include <iostream>
 #include <utility>
 
@@ -17,7 +18,10 @@
 using namespace hydrolib::serial_protocol;
 using namespace hydrolib::logger;
 
-#define PUBLIC_MEMORY_LENGTH 20
+#define PUBLIC_MEMORY_LENGTH 10
+
+#define MASTER_ADDRESS 3
+#define SLAVE_ADDRESS 4
 
 class TestLogStream
 {
@@ -71,37 +75,46 @@ public:
     uint8_t memory[PUBLIC_MEMORY_LENGTH];
 };
 
-class TestTransmitter
+class TestTranseiver
 {
-public:
-    hydrolib_ReturnCode Process(Command com, CommandInfo info)
-    {
-        command = com;
-        command_info = info;
-        return HYDROLIB_RETURN_OK;
-    }
+private:
+    std::deque<uint8_t> queue;
 
 public:
-    Command command;
-    CommandInfo command_info;
+    hydrolib_ReturnCode Read(void *buffer, uint32_t length,
+                             uint32_t shift) const;
+
+    void Drop(uint32_t number);
+
+    void Clear();
+
+    hydrolib_ReturnCode Push(const void *data, uint32_t length);
+
+    void WriteByte(uint8_t data);
 };
 
-class TestHydrolibSerialProtocolInterpreter : public ::testing::Test
+class TestHydrolibSerialProtocolCommunicate : public ::testing::Test
 {
 protected:
-    TestHydrolibSerialProtocolInterpreter();
+    TestHydrolibSerialProtocolCommunicate();
 
 protected:
     TestPublicMemory public_memory;
-    TestTransmitter transmitter;
+    TestTranseiver transeiver;
     uint8_t test_data[PUBLIC_MEMORY_LENGTH];
-    Interpreter<TestPublicMemory, LogDistributor<TestLogStream>,
-                TestTransmitter>
-        interpreter;
+
+    Master<TestTranseiver, TestPublicMemory, std::function<void()>,
+           LogDistributor<TestLogStream>>
+        master;
+
+    Slave<TestTranseiver, TestPublicMemory, LogDistributor<TestLogStream>>
+        slave;
+
+    bool responce_flag;
 };
 
-class TestHydrolibSerialProtocolInterpreterParametrized
-    : public TestHydrolibSerialProtocolInterpreter,
+class TestHydrolibSerialProtocolCommunicateParametrized
+    : public TestHydrolibSerialProtocolCommunicate,
       public ::testing::WithParamInterface<std::tuple<uint16_t, uint16_t>>
 {
 };

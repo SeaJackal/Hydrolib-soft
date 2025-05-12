@@ -30,7 +30,10 @@ if(BUILD_TESTING)
         tests/test_hydrolib_sp_serialize_responce.cpp
         tests/test_hydrolib_sp_serialize_error.cpp
         tests/test_hydrolib_sp_interpreter_env.cpp
-        tests/test_hydrolib_sp_interpreter.cpp)
+        tests/test_hydrolib_sp_interpreter.cpp
+        tests/test_hydrolib_sp_communicate_env.cpp
+        tests/test_hydrolib_sp_communicate_write.cpp
+        tests/test_hydrolib_sp_communicate_read.cpp)
     set_target_properties(TestSerialProtocol
         PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Testing"

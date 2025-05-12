@@ -1,3 +1,6 @@
+#ifndef TEST_HYDROLIB_SP_SERIALIZE_ENV_H_
+#define TEST_HYDROLIB_SP_SERIALIZE_ENV_H_
+
 #include "hydrolib_common.h"
 #include "hydrolib_log_distributor.hpp"
 #include "hydrolib_serial_protocol_commands.hpp"
@@ -67,3 +70,5 @@ class TestHydrolibSerialProtocolSerializeParametrized
       public ::testing::WithParamInterface<std::tuple<uint16_t, uint16_t>>
 {
 };
+
+#endif
