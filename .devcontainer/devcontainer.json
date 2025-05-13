@@ -28,7 +28,8 @@
             "settings": {
                 "clangd.arguments": [
                     "--compile-commands-dir=build"
-                ]
+                ],
+                "C_Cpp.intelliSenseEngine": "disabled"
             }
         }
     }
