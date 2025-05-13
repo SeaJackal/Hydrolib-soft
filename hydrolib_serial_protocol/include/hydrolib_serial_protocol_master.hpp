@@ -37,7 +37,7 @@ private:
     Interpreter<Memory, Distributor, Serializer<Transeiver, Distributor>>
         interpreter_;
 
-    Callback responce_callback_;
+    const Callback responce_callback_;
 };
 
 template <TransceiverConcept Transeiver, PublicMemoryConcept Memory,
