@@ -1,3 +1,4 @@
+#include "hydrolib_common.h"
 #include "hydrolib_serial_protocol_message.hpp"
 #include "test_hydrolib_sp_communicate_env.hpp"
 
@@ -60,7 +61,8 @@ TEST_P(TestHydrolibSerialProtocolCommunicateParametrized,
 
         for (uint8_t i = 0; i < MessageHeader::MAX_MESSAGE_LENGTH; i++)
         {
-            if (slave.ProcessRx())
+            hydrolib_ReturnCode result = slave.ProcessRx();
+            if (result == HYDROLIB_RETURN_OK)
             {
                 break;
             }

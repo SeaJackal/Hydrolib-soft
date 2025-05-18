@@ -163,6 +163,8 @@ hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::Process()
         message_found = CheckCRC_();
     }
 
+    rx_queue_.Drop(current_header_->common.message_length);
+
     return HYDROLIB_RETURN_OK;
 }
 
