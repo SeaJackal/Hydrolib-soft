@@ -13,6 +13,12 @@ concept ByteStreamConcept =
     requires(T stream, const uint8_t *source, std::size_t length) {
         { stream.Push(source, length) } -> std::same_as<hydrolib_ReturnCode>;
     };
+
+template <typename T>
+concept ByteReadableStreamConcept =
+    requires(T stream, void *source, unsigned length) {
+        { read(stream, source, length) } -> std::same_as<int>;
+    };
 } // namespace hydrolib::concepts::stream
 
 #endif

@@ -8,16 +8,17 @@
 #include "hydrolib_queue_concepts.hpp"
 #include "hydrolib_serial_protocol_commands.hpp"
 #include "hydrolib_serial_protocol_message.hpp"
+#include "hydrolib_stream_concepts.hpp"
 
 namespace hydrolib::serial_protocol
 {
 
-template <concepts::queue::ReadableByteQueue RxQueue,
+template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
 class Deserializer
 {
 public:
-    constexpr Deserializer(uint8_t address, RxQueue &rx_queue,
+    constexpr Deserializer(uint8_t address, RxStream &rx_stream,
                            logger::Logger<Distributor> &logger,
                            uint8_t network = 0xA0);
 
@@ -41,7 +42,7 @@ private:
 
     const uint8_t self_address_;
 
-    RxQueue &rx_queue_;
+    RxStream &rx_stream_;
 
     unsigned current_message_length_;
     unsigned current_processed_length_;
@@ -52,16 +53,16 @@ private:
     MessageHeader *current_header_;
 };
 
-template <concepts::queue::ReadableByteQueue RxQueue,
+template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
-constexpr Deserializer<RxQueue, Distributor>::Deserializer(
-    uint8_t address, RxQueue &rx_queue, logger::Logger<Distributor> &logger,
+constexpr Deserializer<RxStream, Distributor>::Deserializer(
+    uint8_t address, RxStream &rx_stream, logger::Logger<Distributor> &logger,
     uint8_t network)
     : logger_(logger),
       network_(network),
       self_readable_address_(address),
       self_address_(MessageHeader::GetTrueAddress(address, network)),
-      rx_queue_(rx_queue),
+      rx_stream_(rx_stream),
       current_message_length_(0),
       current_processed_length_(0),
       current_command_(Command::RESPONCE),
@@ -73,16 +74,16 @@ constexpr Deserializer<RxQueue, Distributor>::Deserializer(
     }
 }
 
-template <concepts::queue::ReadableByteQueue RxQueue,
+template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
-Command Deserializer<RxQueue, Distributor>::GetCommand()
+Command Deserializer<RxStream, Distributor>::GetCommand()
 {
     return static_cast<Command>(current_header_->common.command);
 }
 
-template <concepts::queue::ReadableByteQueue RxQueue,
+template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
-CommandInfo Deserializer<RxQueue, Distributor>::GetInfo()
+CommandInfo Deserializer<RxStream, Distributor>::GetInfo()
 {
     CommandInfo info;
     switch (current_header_->common.command)
@@ -127,9 +128,9 @@ CommandInfo Deserializer<RxQueue, Distributor>::GetInfo()
     return info;
 }
 
-template <concepts::queue::ReadableByteQueue RxQueue,
+template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
-hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::Process()
+hydrolib_ReturnCode Deserializer<RxStream, Distributor>::Process()
 {
     bool message_found = false;
     while (!message_found)
@@ -163,23 +164,23 @@ hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::Process()
         message_found = CheckCRC_();
     }
 
-    rx_queue_.Drop(current_header_->common.message_length);
+    rx_stream_.Drop(current_header_->common.message_length);
 
     return HYDROLIB_RETURN_OK;
 }
 
-template <concepts::queue::ReadableByteQueue RxQueue,
+template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
-hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::AimHeader_()
+hydrolib_ReturnCode Deserializer<RxStream, Distributor>::AimHeader_()
 {
     unsigned index = 0;
     hydrolib_ReturnCode finding_read_status =
-        rx_queue_.Read(&current_rx_message_[0], sizeof(self_address_), index);
+        rx_stream_.Read(&current_rx_message_[0], sizeof(self_address_), index);
     while (finding_read_status == HYDROLIB_RETURN_OK)
     {
         if (current_rx_message_[0] == self_address_)
         {
-            rx_queue_.Drop(index);
+            rx_stream_.Drop(index);
             if (index)
             {
                 logger_.WriteLog(logger::LogLevel::WARNING, "Rubbish bytes: {}",
@@ -192,8 +193,8 @@ hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::AimHeader_()
         {
             index++;
         }
-        finding_read_status = rx_queue_.Read(&current_rx_message_[0],
-                                             sizeof(self_address_), index);
+        finding_read_status = rx_stream_.Read(&current_rx_message_[0],
+                                              sizeof(self_address_), index);
     }
 
     if (finding_read_status != HYDROLIB_RETURN_NO_DATA)
@@ -201,19 +202,19 @@ hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::AimHeader_()
         return finding_read_status;
     }
 
-    rx_queue_.Drop(index);
+    rx_stream_.Drop(index);
     logger_.WriteLog(logger::LogLevel::WARNING, "Rubbish bytes: {}", index);
     return HYDROLIB_RETURN_NO_DATA;
 }
 
-template <concepts::queue::ReadableByteQueue RxQueue,
+template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
-hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::ProcessCommonHeader_()
+hydrolib_ReturnCode Deserializer<RxStream, Distributor>::ProcessCommonHeader_()
 {
     hydrolib_ReturnCode read_res =
-        rx_queue_.Read(&current_rx_message_[sizeof(self_address_)],
-                       sizeof(MessageHeader::Common) - sizeof(self_address_),
-                       sizeof(self_address_));
+        rx_stream_.Read(&current_rx_message_[sizeof(self_address_)],
+                        sizeof(MessageHeader::Common) - sizeof(self_address_),
+                        sizeof(self_address_));
 
     if (read_res != HYDROLIB_RETURN_OK)
     {
@@ -223,19 +224,19 @@ hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::ProcessCommonHeader_()
     return HYDROLIB_RETURN_OK;
 }
 
-template <concepts::queue::ReadableByteQueue RxQueue,
+template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
-hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::ProcessMessage_()
+hydrolib_ReturnCode Deserializer<RxStream, Distributor>::ProcessMessage_()
 {
     if (current_header_->common.message_length < sizeof(MessageHeader::Common))
     {
         logger_.WriteLog(logger::LogLevel::WARNING, "Wrong message length: ",
                          current_header_->common.message_length);
-        rx_queue_.Drop(1);
+        rx_stream_.Drop(1);
         current_processed_length_ = 0;
         return HYDROLIB_RETURN_FAIL;
     }
-    hydrolib_ReturnCode header_read_res = rx_queue_.Read(
+    hydrolib_ReturnCode header_read_res = rx_stream_.Read(
         &current_rx_message_[sizeof(MessageHeader::Common)],
         current_header_->common.message_length - sizeof(MessageHeader::Common),
         sizeof(MessageHeader::Common));
@@ -255,7 +256,7 @@ hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::ProcessMessage_()
                 logger::LogLevel::WARNING,
                 "Wrong data length: expected {}, in header {}", target_length,
                 current_header_->memory_access.memory_access_length);
-            rx_queue_.Drop(1);
+            rx_stream_.Drop(1);
             current_processed_length_ = 0;
             return HYDROLIB_RETURN_FAIL;
         }
@@ -267,7 +268,7 @@ hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::ProcessMessage_()
         logger_.WriteLog(
             logger::LogLevel::WARNING, "Wrong command: {}",
             static_cast<unsigned>(current_header_->common.command));
-        rx_queue_.Drop(1);
+        rx_stream_.Drop(1);
         current_processed_length_ = 0;
         return HYDROLIB_RETURN_FAIL;
     }
@@ -275,9 +276,9 @@ hydrolib_ReturnCode Deserializer<RxQueue, Distributor>::ProcessMessage_()
     return HYDROLIB_RETURN_OK;
 }
 
-template <concepts::queue::ReadableByteQueue RxQueue,
+template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
-bool Deserializer<RxQueue, Distributor>::CheckCRC_()
+bool Deserializer<RxStream, Distributor>::CheckCRC_()
 {
     uint8_t target_crc = MessageHeader::CountCRC(
         current_rx_message_,
@@ -292,7 +293,7 @@ bool Deserializer<RxQueue, Distributor>::CheckCRC_()
         logger_.WriteLog(logger::LogLevel::WARNING,
                          "Wrong CRC: expected {}, got {}", target_crc,
                          current_crc);
-        rx_queue_.Drop(1);
+        rx_stream_.Drop(1);
         return false;
     }
     return true;
