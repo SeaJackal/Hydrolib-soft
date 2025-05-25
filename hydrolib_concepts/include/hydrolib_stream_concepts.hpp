@@ -16,8 +16,8 @@ concept ByteStreamConcept =
 
 template <typename T>
 concept ByteReadableStreamConcept =
-    requires(T stream, void *source, unsigned length) {
-        { read(stream, source, length) } -> std::same_as<int>;
+    requires(T stream, void *dest, unsigned length) {
+        { read(stream, dest, length) } -> std::same_as<int>;
     };
 } // namespace hydrolib::concepts::stream
 

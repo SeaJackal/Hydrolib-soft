@@ -46,7 +46,9 @@ private:
 
     unsigned current_message_length_;
     unsigned current_processed_length_;
-    uint8_t current_rx_message_[MessageHeader::MAX_MESSAGE_LENGTH];
+    uint8_t rx_buffer_[2 * MessageHeader::MAX_MESSAGE_LENGTH];
+    int offset_;
+    int rx_buffer_length_;
 
     Command current_command_;
 
@@ -65,12 +67,14 @@ constexpr Deserializer<RxStream, Distributor>::Deserializer(
       rx_stream_(rx_stream),
       current_message_length_(0),
       current_processed_length_(0),
+      offset_(0),
+      rx_buffer_length_(0),
       current_command_(Command::RESPONCE),
-      current_header_(reinterpret_cast<MessageHeader *>(&current_rx_message_))
+      current_header_(reinterpret_cast<MessageHeader *>(&rx_buffer_))
 {
     for (unsigned i = 0; i < MessageHeader::MAX_MESSAGE_LENGTH; i++)
     {
-        current_rx_message_[i] = 0;
+        rx_buffer_[i] = 0;
     }
 }
 
@@ -173,37 +177,45 @@ template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
 hydrolib_ReturnCode Deserializer<RxStream, Distributor>::AimHeader_()
 {
-    unsigned index = 0;
-    hydrolib_ReturnCode finding_read_status =
-        rx_stream_.Read(&current_rx_message_[0], sizeof(self_address_), index);
-    while (finding_read_status == HYDROLIB_RETURN_OK)
+    int read_byte_count = sizeof(self_address_);
+
+    if (rx_buffer_length_ - offset_ < sizeof(self_address_))
     {
-        if (current_rx_message_[0] == self_address_)
+        if (rx_buffer_length_ <= offset_)
         {
-            rx_stream_.Drop(index);
-            if (index)
-            {
-                logger_.WriteLog(logger::LogLevel::WARNING, "Rubbish bytes: {}",
-                                 index);
-            }
+            offset_ = 0;
+            rx_buffer_length_ = 0;
+        }
+        read_byte_count =
+            read(rx_stream_, &rx_buffer_[offset_], sizeof(self_address_));
+        rx_buffer_length_ += read_byte_count;
+    }
+    while (read_byte_count == sizeof(self_address_))
+    {
+        if (rx_buffer_[offset_] == self_address_)
+        {
             current_processed_length_ = sizeof(self_address_);
             return HYDROLIB_RETURN_OK;
         }
         else
         {
-            index++;
+            offset_++;
+            logger_.WriteLog(logger::LogLevel::WARNING, "Rubbish bytes");
         }
-        finding_read_status = rx_stream_.Read(&current_rx_message_[0],
-                                              sizeof(self_address_), index);
-    }
 
-    if (finding_read_status != HYDROLIB_RETURN_NO_DATA)
-    {
-        return finding_read_status;
+        if (rx_buffer_length_ - offset_ < sizeof(self_address_))
+        {
+            if (rx_buffer_length_ <= offset_)
+            {
+                offset_ = 0;
+                rx_buffer_length_ = 0;
+            }
+            read_byte_count =
+                read(rx_stream_, &rx_buffer_[offset_], sizeof(self_address_));
+            rx_buffer_length_ += read_byte_count;
+        }
     }
-
-    rx_stream_.Drop(index);
-    logger_.WriteLog(logger::LogLevel::WARNING, "Rubbish bytes: {}", index);
+    // TODO обработать случай когда sizeof(self_address_)>1,
     return HYDROLIB_RETURN_NO_DATA;
 }
 
@@ -211,16 +223,22 @@ template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
 hydrolib_ReturnCode Deserializer<RxStream, Distributor>::ProcessCommonHeader_()
 {
-    hydrolib_ReturnCode read_res =
-        rx_stream_.Read(&current_rx_message_[sizeof(self_address_)],
-                        sizeof(MessageHeader::Common) - sizeof(self_address_),
-                        sizeof(self_address_));
-
-    if (read_res != HYDROLIB_RETURN_OK)
+    if (rx_buffer_length_ - offset_ < sizeof(MessageHeader::Common))
     {
-        return read_res;
+        int read_byte_count =
+            read(rx_stream_, &rx_buffer_[offset_ + sizeof(self_address_)],
+                 sizeof(MessageHeader::Common) - sizeof(self_address_));
+        rx_buffer_length_ += read_byte_count;
+
+        if (read_byte_count !=
+            sizeof(MessageHeader::Common) - sizeof(self_address_))
+        {
+            return HYDROLIB_RETURN_NO_DATA;
+        }
     }
+
     current_processed_length_ = sizeof(MessageHeader::Common);
+    current_header_ = reinterpret_cast<MessageHeader *>(rx_buffer_ + offset_);
     return HYDROLIB_RETURN_OK;
 }
 
