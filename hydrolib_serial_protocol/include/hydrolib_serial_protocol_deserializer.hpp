@@ -273,7 +273,8 @@ template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
 hydrolib_ReturnCode Deserializer<RxStream, Distributor>::ProcessMessage_()
 {
-    if (rx_buffer_length_ - offset_ < sizeof(MessageHeader::Common))
+    if (rx_buffer_length_ - offset_ <
+        static_cast<int>(current_header_->common.message_length))
     {
         int read_byte_count = read(
             rx_stream_, &rx_buffer_[offset_ + sizeof(MessageHeader::Common)],
@@ -281,8 +282,8 @@ hydrolib_ReturnCode Deserializer<RxStream, Distributor>::ProcessMessage_()
                 sizeof(MessageHeader::Common));
         rx_buffer_length_ += read_byte_count;
 
-        if (read_byte_count !=
-            sizeof(MessageHeader::Common) - sizeof(self_address_))
+        if (read_byte_count != current_header_->common.message_length -
+                                   sizeof(MessageHeader::Common))
         {
             return HYDROLIB_RETURN_NO_DATA;
         }
