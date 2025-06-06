@@ -92,6 +92,16 @@ public:
 
     void WriteByte(uint8_t data);
 };
+inline int read(TestTranseiver &stream, void *dest, unsigned length)
+{
+    hydrolib_ReturnCode result = stream.Read(dest, length, 0);
+    if (result == HYDROLIB_RETURN_OK)
+    {
+        stream.Drop(length);
+        return length;
+    }
+    return 0;
+}
 
 class TestHydrolibSerialProtocolCommunicate : public ::testing::Test
 {
