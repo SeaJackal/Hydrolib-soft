@@ -51,6 +51,8 @@ private:
     int rx_buffer_length_;
     int last_message_offset_;
 
+    bool message_ready_;
+
     Command current_command_;
 
     MessageHeader *current_header_;
@@ -71,6 +73,7 @@ constexpr Deserializer<RxStream, Distributor>::Deserializer(
       offset_(0),
       rx_buffer_length_(0),
       last_message_offset_(0),
+      message_ready_(false),
       current_command_(Command::RESPONCE),
       current_header_(reinterpret_cast<MessageHeader *>(&rx_buffer_))
 {
@@ -110,14 +113,15 @@ CommandInfo Deserializer<RxStream, Distributor>::GetInfo()
                          message_header->memory_access.memory_access_length};
         break;
     case Command::WRITE:
-        info.write = {
-            .source_address = MessageHeader::GetReadableAddress(
-                message_header->memory_access.self_address),
-            .dest_address = self_readable_address_,
-            .memory_address = message_header->memory_access.memory_address,
-            .memory_access_length =
-                message_header->memory_access.memory_access_length,
-            .data = rx_buffer_ + offset_ + sizeof(MessageHeader::MemoryAccess)};
+        info.write = {.source_address = MessageHeader::GetReadableAddress(
+                          message_header->memory_access.self_address),
+                      .dest_address = self_readable_address_,
+                      .memory_address =
+                          message_header->memory_access.memory_address,
+                      .memory_access_length =
+                          message_header->memory_access.memory_access_length,
+                      .data = rx_buffer_ + last_message_offset_ +
+                              sizeof(MessageHeader::MemoryAccess)};
         break;
     case Command::RESPONCE:
         info.responce = {
@@ -127,7 +131,8 @@ CommandInfo Deserializer<RxStream, Distributor>::GetInfo()
             .data_length = message_header->responce.message_length -
                            static_cast<uint8_t>(sizeof(MessageHeader::Common)) -
                            MessageHeader::CRC_LENGTH,
-            .data = rx_buffer_ + offset_ + sizeof(MessageHeader::Common)};
+            .data = rx_buffer_ + last_message_offset_ +
+                    sizeof(MessageHeader::Common)};
         break;
     case Command::ERROR:
         info.error = {.source_address = MessageHeader::GetReadableAddress(
@@ -137,6 +142,9 @@ CommandInfo Deserializer<RxStream, Distributor>::GetInfo()
                           message_header->error.error_code)};
         break;
     }
+
+    message_ready_ = false;
+
     return info;
 }
 
@@ -144,6 +152,10 @@ template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
 hydrolib_ReturnCode Deserializer<RxStream, Distributor>::Process()
 {
+    if (message_ready_)
+    {
+        return HYDROLIB_RETURN_FAIL;
+    }
     bool message_found = false;
     while (!message_found)
     {
@@ -181,6 +193,7 @@ hydrolib_ReturnCode Deserializer<RxStream, Distributor>::Process()
     }
 
     last_message_offset_ = offset_;
+    message_ready_ = true;
     offset_ += current_header_->common.message_length;
 
     return HYDROLIB_RETURN_OK;
@@ -192,7 +205,7 @@ hydrolib_ReturnCode Deserializer<RxStream, Distributor>::AimHeader_()
 {
     int read_byte_count = sizeof(self_address_);
 
-    if (rx_buffer_length_ - offset_ < sizeof(self_address_))
+    if (rx_buffer_length_ - offset_ < static_cast<int>(sizeof(self_address_)))
     {
         if (rx_buffer_length_ <= offset_)
         {
@@ -216,7 +229,8 @@ hydrolib_ReturnCode Deserializer<RxStream, Distributor>::AimHeader_()
             logger_.WriteLog(logger::LogLevel::WARNING, "Rubbish bytes");
         }
 
-        if (rx_buffer_length_ - offset_ < sizeof(self_address_))
+        if (rx_buffer_length_ - offset_ <
+            static_cast<int>(sizeof(self_address_)))
         {
             if (rx_buffer_length_ <= offset_)
             {
@@ -236,7 +250,8 @@ template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
 hydrolib_ReturnCode Deserializer<RxStream, Distributor>::ProcessCommonHeader_()
 {
-    if (rx_buffer_length_ - offset_ < sizeof(MessageHeader::Common))
+    if (rx_buffer_length_ - offset_ <
+        static_cast<int>(sizeof(MessageHeader::Common)))
     {
         int read_byte_count =
             read(rx_stream_, &rx_buffer_[offset_ + sizeof(self_address_)],
@@ -282,8 +297,9 @@ hydrolib_ReturnCode Deserializer<RxStream, Distributor>::ProcessMessage_()
                 sizeof(MessageHeader::Common));
         rx_buffer_length_ += read_byte_count;
 
-        if (read_byte_count != current_header_->common.message_length -
-                                   sizeof(MessageHeader::Common))
+        if (read_byte_count !=
+            current_header_->common.message_length -
+                static_cast<int>(sizeof(MessageHeader::Common)))
         {
             return HYDROLIB_RETURN_NO_DATA;
         }

@@ -12,7 +12,7 @@ TEST_F(TestHydrolibSerialProtocolSerialize, ErrorTest)
 {
     uint8_t mem_address = 2;
     uint8_t data_length = 6;
-    for (uint8_t j = 0; j < 100; j++)
+    for (unsigned j = 0; j < 500; j++)
     {
         if (mem_address + data_length > PUBLIC_MEMORY_LENGTH)
         {
@@ -43,7 +43,7 @@ TEST_F(TestHydrolibSerialProtocolSerialize, ErrorWithNoizeTest)
 {
     uint8_t mem_address = 2;
     uint8_t data_length = 6;
-    for (uint8_t j = 0; j < 100; j++)
+    for (unsigned j = 0; j < 500; j++)
     {
         if (mem_address + data_length > PUBLIC_MEMORY_LENGTH)
         {
