@@ -22,7 +22,7 @@ using namespace hydrolib::logger;
 class TestLogStream
 {
 public:
-    hydrolib_ReturnCode Push(const uint8_t *data, unsigned length)
+    hydrolib_ReturnCode Push(const void *data, unsigned length)
     {
         for (unsigned i = 0; i < length; i++)
         {

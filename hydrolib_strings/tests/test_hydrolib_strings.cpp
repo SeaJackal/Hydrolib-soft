@@ -1,9 +1,9 @@
 #include "hydrolib_cstring.hpp"
 #include "hydrolib_formatable_string.hpp"
 
+#include <cstring>
 #include <gtest/gtest.h>
 #include <iostream>
-#include <cstring>
 
 using namespace hydrolib::strings;
 using namespace std;
@@ -14,7 +14,7 @@ public:
     BytesReceiver() : current_length(0) {}
 
 public:
-    hydrolib_ReturnCode Push(const uint8_t *source, std::size_t length)
+    hydrolib_ReturnCode Push(const void *source, std::size_t length)
     {
         memcpy(buffer + current_length, source, length);
         current_length += length;

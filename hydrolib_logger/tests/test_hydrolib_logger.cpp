@@ -1,9 +1,9 @@
-#include "hydrolib_logger.hpp"
 #include "hydrolib_log_distributor.hpp"
+#include "hydrolib_logger.hpp"
 
+#include <cstring>
 #include <gtest/gtest.h>
 #include <iostream>
-#include <cstring>
 
 using namespace hydrolib::logger;
 using namespace std;
@@ -11,45 +11,40 @@ using namespace std;
 class LogStream
 {
 public:
-    LogStream(char *buffer) : buffer_(buffer),
-                              length_(0)
-    {
-    }
+    LogStream(char *buffer) : buffer_(buffer), length_(0) {}
 
     LogStream(LogStream &) = delete;
 
 public:
-    hydrolib_ReturnCode Push(const uint8_t *source, size_t length)
+    hydrolib_ReturnCode Push(const void *source, size_t length)
     {
         memcpy(buffer_ + length_, source, length);
         length_ += length;
         return HYDROLIB_RETURN_OK;
     }
 
-    hydrolib_ReturnCode Open()
-    {
-        return HYDROLIB_RETURN_OK;
-    }
+    hydrolib_ReturnCode Open() { return HYDROLIB_RETURN_OK; }
 
-    hydrolib_ReturnCode Close()
-    {
-        return HYDROLIB_RETURN_OK;
-    }
+    hydrolib_ReturnCode Close() { return HYDROLIB_RETURN_OK; }
 
-    int GetLength()
-    {
-        return length_;
-    }
+    int GetLength() { return length_; }
 
-    void Reset()
-    {
-        length_ = 0;
-    }
+    void Reset() { length_ = 0; }
 
 private:
     char *buffer_;
     int length_;
 };
+
+inline int write(LogStream &stream, const void *dest, unsigned length)
+{
+    hydrolib_ReturnCode result = stream.Push(dest, length);
+    if (result == HYDROLIB_RETURN_OK)
+    {
+        return length;
+    }
+    return 0;
+}
 
 // class LogQueue
 // {

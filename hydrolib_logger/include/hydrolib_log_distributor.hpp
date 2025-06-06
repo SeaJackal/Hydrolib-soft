@@ -11,7 +11,7 @@ namespace hydrolib::logger
 {
 template <typename T>
 concept SynchronousByteStreamConcept =
-    concepts::stream::ByteStreamConcept<T> && requires(T stream) {
+    concepts::stream::ByteWritableStreamConcept<T> && requires(T stream) {
         { stream.Open() } -> std::same_as<hydrolib_ReturnCode>;
         { stream.Close() } -> std::same_as<hydrolib_ReturnCode>;
     };
@@ -91,7 +91,7 @@ private:
             }
         }
 
-        hydrolib_ReturnCode Push(const uint8_t *source,
+        hydrolib_ReturnCode Push(const void *source,
                                  std::size_t length) const
         {
             hydrolib_ReturnCode self_res = HYDROLIB_RETURN_OK;
@@ -170,7 +170,7 @@ private:
             return true;
         }
 
-        hydrolib_ReturnCode Push([[maybe_unused]] const uint8_t *source,
+        hydrolib_ReturnCode Push([[maybe_unused]] const void *source,
                                  [[maybe_unused]] std::size_t length) const
         {
             return HYDROLIB_RETURN_OK;

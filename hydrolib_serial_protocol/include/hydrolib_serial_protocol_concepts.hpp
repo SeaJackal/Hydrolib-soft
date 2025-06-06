@@ -10,8 +10,8 @@ template <typename T>
 concept CallbackConcept = requires(T callback) { callback(); };
 
 template <typename T>
-concept TransceiverConcept = concepts::stream::ByteStreamConcept<T> &&
-                             concepts::queue::ReadableByteQueue<T>;
+concept TransceiverConcept = concepts::stream::ByteWritableStreamConcept<T> &&
+                             concepts::stream::ByteReadableStreamConcept<T>;
 
 } // namespace hydrolib::serial_protocol
 

@@ -12,7 +12,7 @@
 
 namespace hydrolib::serial_protocol
 {
-template <concepts::stream::ByteStreamConcept TxStream,
+template <concepts::stream::ByteWritableStreamConcept TxStream,
           logger::LogDistributorConcept Distributor>
 class Serializer
 {
@@ -44,7 +44,7 @@ private:
     MessageHeader *current_header_;
 };
 
-template <concepts::stream::ByteStreamConcept TxStream,
+template <concepts::stream::ByteWritableStreamConcept TxStream,
           logger::LogDistributorConcept Distributor>
 constexpr Serializer<TxStream, Distributor>::Serializer(
     uint8_t address, TxStream &tx_stream, logger::Logger<Distributor> &logger,
@@ -62,7 +62,7 @@ constexpr Serializer<TxStream, Distributor>::Serializer(
     }
 }
 
-template <concepts::stream::ByteStreamConcept TxStream,
+template <concepts::stream::ByteWritableStreamConcept TxStream,
           logger::LogDistributorConcept Distributor>
 hydrolib_ReturnCode Serializer<TxStream, Distributor>::Process(Command command,
                                                                CommandInfo info)
@@ -88,10 +88,15 @@ hydrolib_ReturnCode Serializer<TxStream, Distributor>::Process(Command command,
         MessageHeader::CountCRC(current_message_,
                                 current_header_->common.message_length -
                                     MessageHeader::CRC_LENGTH);
-    return tx_stream_.Push(current_message_, current_message_length_);
+    int res = write(tx_stream_, current_message_, current_message_length_);
+    if (res != static_cast<int>(current_message_length_))
+    {
+        return HYDROLIB_RETURN_FAIL;
+    }
+    return HYDROLIB_RETURN_OK;
 }
 
-template <concepts::stream::ByteStreamConcept TxStream,
+template <concepts::stream::ByteWritableStreamConcept TxStream,
           logger::LogDistributorConcept Distributor>
 void Serializer<TxStream, Distributor>::SerializeRead_(CommandInfo info)
 {
@@ -105,7 +110,7 @@ void Serializer<TxStream, Distributor>::SerializeRead_(CommandInfo info)
     current_header_->memory_access.message_length = current_message_length_;
 }
 
-template <concepts::stream::ByteStreamConcept TxStream,
+template <concepts::stream::ByteWritableStreamConcept TxStream,
           logger::LogDistributorConcept Distributor>
 void Serializer<TxStream, Distributor>::SerializeWrite_(CommandInfo info)
 {
@@ -122,7 +127,7 @@ void Serializer<TxStream, Distributor>::SerializeWrite_(CommandInfo info)
            info.write.data, info.write.memory_access_length);
 }
 
-template <concepts::stream::ByteStreamConcept TxStream,
+template <concepts::stream::ByteWritableStreamConcept TxStream,
           logger::LogDistributorConcept Distributor>
 void Serializer<TxStream, Distributor>::SerializeResponce_(CommandInfo info)
 {
@@ -136,7 +141,7 @@ void Serializer<TxStream, Distributor>::SerializeResponce_(CommandInfo info)
            info.responce.data_length);
 }
 
-template <concepts::stream::ByteStreamConcept TxStream,
+template <concepts::stream::ByteWritableStreamConcept TxStream,
           logger::LogDistributorConcept Distributor>
 void Serializer<TxStream, Distributor>::SerializeError_(CommandInfo info)
 {

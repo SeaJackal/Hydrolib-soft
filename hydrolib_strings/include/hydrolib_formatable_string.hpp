@@ -29,22 +29,22 @@ public:
     const char *GetString() const;
     uint32_t GetLength() const;
 
-    template <concepts::stream::ByteStreamConcept DestType, typename... Ts>
+    template <concepts::stream::ByteWritableStreamConcept DestType, typename... Ts>
     hydrolib_ReturnCode ToBytes(DestType &buffer, Ts... params) const;
 
 private:
-    template <concepts::stream::ByteStreamConcept DestType, typename... Ts>
+    template <concepts::stream::ByteWritableStreamConcept DestType, typename... Ts>
     hydrolib_ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
                                  unsigned translated_length, int param,
                                  Ts... others) const;
 
-    template <concepts::stream::ByteStreamConcept DestType,
+    template <concepts::stream::ByteWritableStreamConcept DestType,
               StringConsept String, typename... Ts>
     hydrolib_ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
                                  unsigned translated_length, String param,
                                  Ts...) const;
 
-    template <concepts::stream::ByteStreamConcept DestType>
+    template <concepts::stream::ByteWritableStreamConcept DestType>
     hydrolib_ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
                                  unsigned translated_length) const;
 
@@ -84,7 +84,7 @@ consteval StaticFormatableString::StaticFormatableString(const char *string)
     }
 }
 
-template <concepts::stream::ByteStreamConcept DestType, typename... Ts>
+template <concepts::stream::ByteWritableStreamConcept DestType, typename... Ts>
 hydrolib_ReturnCode StaticFormatableString::ToBytes(DestType &buffer,
                                                     Ts... params) const
 {
@@ -97,7 +97,7 @@ hydrolib_ReturnCode StaticFormatableString::ToBytes(DestType &buffer,
     return ToBytes_(buffer, 0, 0, params...);
 }
 
-template <concepts::stream::ByteStreamConcept DestType, typename... Ts>
+template <concepts::stream::ByteWritableStreamConcept DestType, typename... Ts>
 hydrolib_ReturnCode
 StaticFormatableString::ToBytes_(DestType &buffer, unsigned next_param_index,
                                  unsigned translated_length, int param,
@@ -146,7 +146,7 @@ StaticFormatableString::ToBytes_(DestType &buffer, unsigned next_param_index,
     return ToBytes_(buffer, next_param_index, translated_length, others...);
 }
 
-template <concepts::stream::ByteStreamConcept DestType, StringConsept String,
+template <concepts::stream::ByteWritableStreamConcept DestType, StringConsept String,
           typename... Ts>
 hydrolib_ReturnCode
 StaticFormatableString::ToBytes_(DestType &buffer, unsigned next_param_index,
@@ -173,7 +173,7 @@ StaticFormatableString::ToBytes_(DestType &buffer, unsigned next_param_index,
     return ToBytes_(buffer, next_param_index, translated_length, others...);
 }
 
-template <concepts::stream::ByteStreamConcept DestType>
+template <concepts::stream::ByteWritableStreamConcept DestType>
 hydrolib_ReturnCode
 StaticFormatableString::ToBytes_(DestType &buffer, unsigned next_param_index,
                                  unsigned translated_length) const

@@ -26,7 +26,7 @@ using namespace hydrolib::logger;
 class TestLogStream
 {
 public:
-    hydrolib_ReturnCode Push(const uint8_t *data, unsigned length)
+    hydrolib_ReturnCode Push(const void *data, unsigned length)
     {
         for (unsigned i = 0; i < length; i++)
         {
@@ -37,6 +37,16 @@ public:
     hydrolib_ReturnCode Open() { return HYDROLIB_RETURN_OK; };
     hydrolib_ReturnCode Close() { return HYDROLIB_RETURN_OK; };
 };
+
+inline int write(TestLogStream &stream, const void *dest, unsigned length)
+{
+    hydrolib_ReturnCode result = stream.Push(dest, length);
+    if (result == HYDROLIB_RETURN_OK)
+    {
+        return length;
+    }
+    return 0;
+}
 
 class TestPublicMemory
 {
@@ -98,6 +108,16 @@ inline int read(TestTranseiver &stream, void *dest, unsigned length)
     if (result == HYDROLIB_RETURN_OK)
     {
         stream.Drop(length);
+        return length;
+    }
+    return 0;
+}
+
+inline int write(TestTranseiver &stream, const void *dest, unsigned length)
+{
+    hydrolib_ReturnCode result = stream.Push(dest, length);
+    if (result == HYDROLIB_RETURN_OK)
+    {
         return length;
     }
     return 0;
