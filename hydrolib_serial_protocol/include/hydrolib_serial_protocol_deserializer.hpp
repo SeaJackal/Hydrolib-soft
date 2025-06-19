@@ -205,7 +205,9 @@ hydrolib_ReturnCode Deserializer<RxStream, Distributor>::AimHeader_()
 {
     int read_byte_count = sizeof(self_address_);
 
-    if (rx_buffer_length_ - offset_ < static_cast<int>(sizeof(self_address_)))
+    if (rx_buffer_length_ - offset_ <
+        static_cast<int>(sizeof(
+            self_address_))) // TODO: >Rework for more then one byte of header
     {
         if (rx_buffer_length_ <= offset_)
         {
@@ -242,7 +244,6 @@ hydrolib_ReturnCode Deserializer<RxStream, Distributor>::AimHeader_()
             rx_buffer_length_ += read_byte_count;
         }
     }
-    // TODO обработать случай когда sizeof(self_address_)>1,
     return HYDROLIB_RETURN_NO_DATA;
 }
 
@@ -250,16 +251,15 @@ template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
 hydrolib_ReturnCode Deserializer<RxStream, Distributor>::ProcessCommonHeader_()
 {
-    if (rx_buffer_length_ - offset_ <
-        static_cast<int>(sizeof(MessageHeader::Common)))
+    int required_length = static_cast<int>(sizeof(MessageHeader::Common)) -
+                          (rx_buffer_length_ - offset_);
+    if (required_length > 0)
     {
         int read_byte_count =
-            read(rx_stream_, &rx_buffer_[offset_ + sizeof(self_address_)],
-                 sizeof(MessageHeader::Common) - sizeof(self_address_));
+            read(rx_stream_, &rx_buffer_[rx_buffer_length_], required_length);
         rx_buffer_length_ += read_byte_count;
 
-        if (read_byte_count !=
-            sizeof(MessageHeader::Common) - sizeof(self_address_))
+        if (read_byte_count != required_length)
         {
             return HYDROLIB_RETURN_NO_DATA;
         }
@@ -268,10 +268,11 @@ hydrolib_ReturnCode Deserializer<RxStream, Distributor>::ProcessCommonHeader_()
     current_processed_length_ = sizeof(MessageHeader::Common);
     current_header_ = reinterpret_cast<MessageHeader *>(rx_buffer_ + offset_);
 
-    if (current_header_->common.message_length <
-            sizeof(MessageHeader::Common) ||
-        (current_header_->common.message_length >
-         MessageHeader::MAX_MESSAGE_LENGTH))
+    // if (current_header_->common.message_length <
+    //         sizeof(MessageHeader::Common) ||
+    //     (current_header_->common.message_length >
+    //      MessageHeader::MAX_MESSAGE_LENGTH))
+    if (current_header_->common.message_length < sizeof(MessageHeader::Common))
     {
         logger_.WriteLog(logger::LogLevel::WARNING, "Wrong message length: ",
                          current_header_->common.message_length);
@@ -288,18 +289,16 @@ template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
 hydrolib_ReturnCode Deserializer<RxStream, Distributor>::ProcessMessage_()
 {
-    if (rx_buffer_length_ - offset_ <
-        static_cast<int>(current_header_->common.message_length))
+    int required_length =
+        static_cast<int>(current_header_->common.message_length) -
+        (rx_buffer_length_ - offset_);
+    if (required_length > 0)
     {
-        int read_byte_count = read(
-            rx_stream_, &rx_buffer_[offset_ + sizeof(MessageHeader::Common)],
-            current_header_->common.message_length -
-                sizeof(MessageHeader::Common));
+        int read_byte_count =
+            read(rx_stream_, &rx_buffer_[rx_buffer_length_], required_length);
         rx_buffer_length_ += read_byte_count;
 
-        if (read_byte_count !=
-            current_header_->common.message_length -
-                static_cast<int>(sizeof(MessageHeader::Common)))
+        if (read_byte_count != required_length)
         {
             return HYDROLIB_RETURN_NO_DATA;
         }
