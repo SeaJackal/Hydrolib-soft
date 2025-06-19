@@ -60,13 +60,15 @@ public:
     }
 
 public:
-    const uint8_t *Read(unsigned address, unsigned length)
+    hydrolib_ReturnCode Read(void *read_buffer, unsigned address,
+                             unsigned length)
     {
         if (address + length > PUBLIC_MEMORY_LENGTH)
         {
-            return nullptr;
+            return HYDROLIB_RETURN_FAIL;
         }
-        return memory + address;
+        memcpy(read_buffer, &memory[address], length);
+        return HYDROLIB_RETURN_OK;
     }
 
 public:

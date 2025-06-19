@@ -7,32 +7,31 @@
 #include "hydrolib_common.h"
 #include "hydrolib_logger.hpp"
 #include "hydrolib_serial_protocol_commands.hpp"
+#include "hydrolib_serial_protocol_message.hpp"
 
 namespace hydrolib::serial_protocol
 {
 
 template <typename T>
-concept PublicMemoryConcept = requires(T mem, void *read_buffer,
-                                       const void *write_buffer,
-                                       unsigned address, unsigned length)
-{
-    {
-        mem.Read(address, length)
-        } -> std::same_as<const uint8_t *>;
-
-    {
-        mem.Write(write_buffer, address, length)
+concept PublicMemoryConcept =
+    requires(T mem, void *read_buffer, const void *write_buffer,
+             unsigned address, unsigned length) {
+        {
+            mem.Read(read_buffer, address, length)
         } -> std::same_as<hydrolib_ReturnCode>;
-};
+
+        {
+            mem.Write(write_buffer, address, length)
+        } -> std::same_as<hydrolib_ReturnCode>;
+    };
 
 template <typename T>
-concept TransmitterConcept = requires(T transmitter, Command command,
-                                      CommandInfo info)
-{
-    {
-        transmitter.Process(command, info)
+concept TransmitterConcept =
+    requires(T transmitter, Command command, CommandInfo info) {
+        {
+            transmitter.Process(command, info)
         } -> std::same_as<hydrolib_ReturnCode>;
-};
+    };
 
 template <PublicMemoryConcept Memory, logger::LogDistributorConcept Distributor,
           TransmitterConcept Transmitter>
@@ -74,6 +73,7 @@ private:
     bool processing_master_;
     Command current_command_;
     CommandInfo current_command_info_;
+    uint8_t read_buffer_[MessageHeader::MAX_MESSAGE_LENGTH];
 
 private:
     logger::Logger<Distributor> &logger_;
@@ -217,9 +217,9 @@ hydrolib_ReturnCode
 Interpreter<Memory, Distributor, Transmitter>::ProcessRead_(CommandInfo info)
 {
 
-    const uint8_t *read_data =
-        memory_.Read(info.read.memory_address, info.read.memory_access_length);
-    if (!read_data)
+    hydrolib_ReturnCode read_res = memory_.Read(
+        read_buffer_, info.read.memory_address, info.read.memory_access_length);
+    if (read_res != HYDROLIB_RETURN_OK)
     {
         CommandInfo responce_info;
         responce_info.error = {.source_address = info.read.dest_address,
@@ -233,7 +233,7 @@ Interpreter<Memory, Distributor, Transmitter>::ProcessRead_(CommandInfo info)
         responce_info.responce = {.source_address = info.read.dest_address,
                                   .dest_address = info.read.source_address,
                                   .data_length = info.read.memory_access_length,
-                                  .data = read_data};
+                                  .data = read_buffer_};
         return transmitter_.Process(Command::RESPONCE, responce_info);
     }
 }

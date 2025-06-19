@@ -8,20 +8,6 @@ namespace hydrolib::serial_protocol
 union MessageHeader
 {
 public:
-    constexpr static unsigned MAX_MESSAGE_LENGTH = 255;
-    constexpr static unsigned ADDRESS_BITS_NUMBER = 4;
-    constexpr static unsigned NETWORK_BITS_NUMBER = 8 - ADDRESS_BITS_NUMBER;
-
-    constexpr static uint8_t ADDRESS_MASK = 0xFF >> (8 - ADDRESS_BITS_NUMBER);
-    constexpr static uint8_t NETWORK_MASK = ~ADDRESS_MASK;
-    constexpr static unsigned CRC_LENGTH = 1;
-
-public:
-    static uint8_t CountCRC(const uint8_t *buffer, unsigned length);
-    constexpr static uint8_t GetTrueAddress(uint8_t address, uint8_t network);
-    constexpr static uint8_t GetReadableAddress(uint8_t address);
-
-public:
 #pragma pack(push, 1)
 
     struct Common
@@ -52,6 +38,23 @@ public:
     };
 
 #pragma pack(pop)
+
+public:
+    constexpr static unsigned MAX_MESSAGE_LENGTH = 255;
+    constexpr static unsigned ADDRESS_BITS_NUMBER = 4;
+    constexpr static unsigned NETWORK_BITS_NUMBER = 8 - ADDRESS_BITS_NUMBER;
+
+    constexpr static uint8_t ADDRESS_MASK = 0xFF >> (8 - ADDRESS_BITS_NUMBER);
+    constexpr static uint8_t NETWORK_MASK = ~ADDRESS_MASK;
+    constexpr static unsigned CRC_LENGTH = 1;
+
+    constexpr static unsigned MAX_DATA_LENGTH =
+        MAX_MESSAGE_LENGTH - sizeof(MessageHeader::MemoryAccess);
+
+public:
+    static uint8_t CountCRC(const uint8_t *buffer, unsigned length);
+    constexpr static uint8_t GetTrueAddress(uint8_t address, uint8_t network);
+    constexpr static uint8_t GetReadableAddress(uint8_t address);
 
 public:
     Common common;
