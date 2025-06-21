@@ -30,6 +30,10 @@ concept ByteReadableStreamConcept =
     requires(T stream, void *dest, unsigned length) {
         { read(stream, dest, length) } -> std::convertible_to<int>;
     };
+
+template <typename T>
+concept ByteFullStreamConcept =
+    ByteWritableStreamConcept<T> && ByteReadableStreamConcept<T>;
 } // namespace hydrolib::concepts::stream
 
 #endif

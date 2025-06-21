@@ -2,126 +2,364 @@
 #define HYDROLIB_VECTORNAV_H_
 
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
+#include <cstring>
 
 #include "hydrolib_common.h"
 #include "hydrolib_logger.hpp"
-#include "hydrolib_queue_concepts.hpp"
+#include "hydrolib_stream_concepts.hpp"
 
 namespace hydrolib
 {
-    template <concepts::queue::ReadableByteQueue InputQueue, typename Logger>
-    class VectorNAVParser
-    {
-    private:
+template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
+class VectorNAVParser
+{
+private:
 #pragma pack(push, 1)
-        struct Message_
-        {
-            float yaw_;
-            float pitch_;
-            float roll_;
+    struct Message_
+    {
+        uint8_t groups;
 
-            float x_rate_;
-            float y_rate_;
-            float z_rate_;
+        uint16_t group_field;
 
-            uint16_t crc;
-        };
+        float yaw;
+        float pitch;
+        float roll;
+
+        float x_rate;
+        float y_rate;
+        float z_rate;
+
+        uint16_t crc;
+    };
 #pragma pack(pop)
 
-    private:
-        constexpr static uint32_t HEADER = (0xFA << 0) +
-                                           (0x01 << 8) +
-                                           (0x28 << (8 * 2));
-        constexpr static unsigned CRC_LENGTH = 2;
+public:
+    constexpr static unsigned YAW_ADDRESS = offsetof(Message_, yaw);
+    constexpr static unsigned PITCH_ADDRESS = offsetof(Message_, pitch);
+    constexpr static unsigned ROLL_ADDRESS = offsetof(Message_, roll);
+    constexpr static unsigned X_RATE_ADDRESS = offsetof(Message_, x_rate);
+    constexpr static unsigned Y_RATE_ADDRESS = offsetof(Message_, y_rate);
+    constexpr static unsigned Z_RATE_ADDRESS = offsetof(Message_, z_rate);
 
-    public:
-        constexpr VectorNAVParser(InputQueue &queue, Logger &logger);
+private:
+    // constexpr static uint32_t HEADER_ =
+    //     (0xFA << 0) + (0x01 << 8) + (0x28 << (8 * 2));
+    constexpr static uint8_t SYNC_ = 0xFA;
+    constexpr static unsigned CRC_LENGTH_ = 2;
 
-    public:
-        hydrolib_ReturnCode Process();
+    constexpr static char reset_message_[] = "$VNWRG,06,0*XX\r\n";
+    constexpr static char init_message_[] = "$VNWRG,75,2,8,01,0028*XX\r\n";
 
-        float GetYaw() const;
-        float GetPitch() const;
-        float GetRoll() const;
+public:
+    constexpr VectorNAVParser(InputStream &stream, Logger &logger);
 
-        float GetXRate() const;
-        float GetYRate() const;
-        float GetZRate() const;
+public:
+    hydrolib_ReturnCode Reset();
+    hydrolib_ReturnCode Init();
 
-    private:
-        InputQueue &queue_;
+    hydrolib_ReturnCode Process();
 
-        Message_ current_data_;
+    hydrolib_ReturnCode Read(void *buffer, uint32_t address,
+                             uint32_t length) const;
+    hydrolib_ReturnCode Write(const void *buffer, uint32_t address,
+                              uint32_t length);
 
-        Logger &logger_;
-    };
+    float GetYaw() const;
+    float GetPitch() const;
+    float GetRoll() const;
 
-    template <concepts::queue::ReadableByteQueue InputQueue, typename Logger>
-    constexpr VectorNAVParser<InputQueue, Logger>::VectorNAVParser(InputQueue &queue, Logger &logger)
-        : queue_(queue),
-          logger_(logger)
+    float GetXRate() const;
+    float GetYRate() const;
+    float GetZRate() const;
+
+    unsigned GetWrongCRCCount() const;
+    unsigned GetRubbishBytesCount() const;
+    unsigned GetPackagesCount() const;
+
+private:
+    uint16_t CalculateCRC_(uint8_t *data, unsigned length);
+
+private:
+    InputStream &stream_;
+
+    unsigned current_rx_length_;
+    unsigned rx_offset_;
+
+    bool header_found_;
+
+    Message_ current_data_;
+    Message_ rx_buffer_;
+
+    unsigned wrong_crc_counter_;
+    unsigned rubbish_bytes_counter_;
+    unsigned package_counter_;
+
+    Logger &logger_;
+};
+
+template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
+constexpr VectorNAVParser<InputStream, Logger>::VectorNAVParser(
+    InputStream &stream, Logger &logger)
+    : stream_(stream),
+      current_rx_length_(0),
+      rx_offset_(0),
+      header_found_(false),
+      wrong_crc_counter_(0),
+      rubbish_bytes_counter_(0),
+      package_counter_(0),
+      logger_(logger)
+{
+}
+
+template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
+hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
+{
+    // uint8_t header_buffer;
+    // if (read(stream_, &header_buffer, 1) == 1)
+    // {
+    //     logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "{} ",
+    //                      header_buffer);
+    //     current_rx_length_++;
+    //     if (current_rx_length_ == sizeof(SYNC_) + sizeof(Message_))
+    //     {
+    //         current_rx_length_ = 0;
+    //         logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "\n\r");
+    //     }
+    // }
+
+    // if (!header_found_)
+    // {
+    //     int required_length =
+    //         sizeof(uint32_t) - current_rx_length_ + rx_offset_;
+    //     int read_length =
+    //         read(stream_, &rx_buffer_[current_rx_length_],
+    //              required_length); // TODO: Process buffer overflow
+    //     current_rx_length_ += read_length;
+    //     while (required_length == read_length)
+    //     {
+    //         if (*reinterpret_cast<uint32_t *>(rx_buffer_ + rx_offset_) ==
+    //             HEADER_)
+    //         {
+    //             if (rx_offset_ != 0)
+    //             {
+    //                 logger_.WriteLog(hydrolib::logger::LogLevel::WARNING,
+    //                                  "Rubbish bytes: {}", rx_offset_);
+    //                 rx_offset_ = 0;
+    //             }
+    //             current_rx_length_ = 0;
+    //             header_found_ = true;
+    //             break;
+    //         }
+    //         rx_offset_++;
+    //         if (rx_offset_ == sizeof(Message_))
+    //         {
+    //             current_rx_length_ = sizeof(uint32_t) - 1;
+    //             memcpy(rx_buffer_,
+    //                    &rx_buffer_[sizeof(Message_) - current_rx_length_],
+    //                    current_rx_length_);
+    //             rx_offset_ = 0;
+    //             current_rx_length_ = 0;
+    //         }
+    //         required_length = 1;
+    //         read_length =
+    //             read(stream_, &rx_buffer_[current_rx_length_],
+    //             required_length);
+    //         current_rx_length_ += read_length;
+    //     }
+    //     if (required_length != read_length)
+    //     {
+    //         return HYDROLIB_RETURN_NO_DATA;
+    //     }
+    // }
+
+    unsigned rubbish_bytes = 0;
+    while (!header_found_)
     {
+        uint8_t header_buffer;
+        if (read(stream_, &header_buffer, 1) != 1)
+        {
+            if (rubbish_bytes != 0)
+            {
+                logger_.WriteLog(hydrolib::logger::LogLevel::WARNING,
+                                 "Rubbish bytes: {}", rubbish_bytes);
+            }
+            return HYDROLIB_RETURN_NO_DATA;
+        }
+        if (header_buffer == SYNC_)
+        {
+            header_found_ = true;
+            if (rubbish_bytes != 0)
+            {
+                logger_.WriteLog(hydrolib::logger::LogLevel::WARNING,
+                                 "Rubbish bytes: {}", rubbish_bytes);
+            }
+        }
+        else
+        {
+            rubbish_bytes++;
+            rubbish_bytes_counter_++;
+        }
     }
 
-    template <concepts::queue::ReadableByteQueue InputQueue, typename Logger>
-    hydrolib_ReturnCode VectorNAVParser<InputQueue, Logger>::Process()
+    int required_data_length = sizeof(Message_) - current_rx_length_;
+    int data_read_length = read(
+        stream_, reinterpret_cast<uint8_t *>(&rx_buffer_) + current_rx_length_,
+        required_data_length);
+    if (data_read_length != required_data_length)
     {
-        uint32_t header_buffer;
-        unsigned shift = 0;
-        hydrolib_ReturnCode read_res = queue_.Read(&header_buffer, sizeof(uint32_t), shift);
-        while (read_res == HYDROLIB_RETURN_OK)
-        {
-            if (header_buffer == HEADER)
-            {
-                hydrolib_ReturnCode data_read_res =
-                    queue_.Read(&current_data_, sizeof(Message_), sizeof(uint32_t) + shift);
-                if (data_read_res != HYDROLIB_RETURN_OK)
-                {
-                    return HYDROLIB_RETURN_NO_DATA;
-                }
-                logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "Received message");
-                logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "yaw: {}", static_cast<int>(current_data_.yaw_ * 100));
-                logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "pitch: {}", static_cast<int>(current_data_.pitch_ * 100));
-                logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "roll: {}", static_cast<int>(current_data_.roll_ * 100));
-                logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "x rate: {}", static_cast<int>(current_data_.x_rate_ * 100));
-                logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "y rate: {}", static_cast<int>(current_data_.y_rate_ * 100));
-                logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "z rate: {}", static_cast<int>(current_data_.z_rate_ * 100));
-                if (shift != 0)
-                {
-                    logger_.WriteLog(hydrolib::logger::LogLevel::WARNING, "Rubbish bytes: {}", shift);
-                }
-                queue_.Drop(sizeof(Message_) + sizeof(uint32_t) + shift);
-                return HYDROLIB_RETURN_OK;
-            }
-            shift++;
-            read_res = queue_.Read(&header_buffer, sizeof(uint32_t), shift);
-        }
-        if (shift != 0)
-        {
-            logger_.WriteLog(hydrolib::logger::LogLevel::WARNING, "Rubbish bytes: {}", shift);
-            queue_.Drop(shift);
-        }
+        current_rx_length_ += data_read_length;
         return HYDROLIB_RETURN_NO_DATA;
     }
 
-    template <concepts::queue::ReadableByteQueue InputQueue, typename Logger>
-    float VectorNAVParser<InputQueue, Logger>::GetYaw() const
+    header_found_ = false;
+    current_rx_length_ = 0;
+
+    package_counter_++;
+
+    // uint16_t supposed_crc =
+    //     CalculateCRC_(reinterpret_cast<uint8_t *>(&rx_buffer_),
+    //                   sizeof(Message_) - sizeof(rx_buffer_.crc));
+
+    // uint16_t big_endian_crc =
+    //     rx_buffer_.crc >> 8 | ((rx_buffer_.crc & 0xff) << 8);
+
+    // if (big_endian_crc != supposed_crc)
+    // {
+    //     logger_.WriteLog(hydrolib::logger::LogLevel::WARNING,
+    //                      "Wrong crc: supposed - {}, real - {}", supposed_crc,
+    //                      big_endian_crc);
+    //     wrong_crc_counter_++;
+    //     return HYDROLIB_RETURN_FAIL;
+    // }
+
+    uint16_t supposed_crc = CalculateCRC_(
+        reinterpret_cast<uint8_t *>(&rx_buffer_), sizeof(Message_));
+
+    if (supposed_crc)
     {
-        return current_data_.yaw_;
+        logger_.WriteLog(hydrolib::logger::LogLevel::WARNING, "Wrong crc");
+        wrong_crc_counter_++;
+        return HYDROLIB_RETURN_FAIL;
     }
 
-    template <concepts::queue::ReadableByteQueue InputQueue, typename Logger>
-    float VectorNAVParser<InputQueue, Logger>::GetPitch() const
-    {
-        return current_data_.pitch_;
-    }
+    memcpy(&current_data_, &rx_buffer_, sizeof(Message_));
 
-    template <concepts::queue::ReadableByteQueue InputQueue, typename Logger>
-    float VectorNAVParser<InputQueue, Logger>::GetRoll() const
-    {
-        return current_data_.roll_;
-    }
+    logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "Received message");
+    logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "yaw: {}",
+                     static_cast<int>(current_data_.yaw * 100));
+    logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "pitch: {}",
+                     static_cast<int>(current_data_.pitch * 100));
+    logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "roll: {}",
+                     static_cast<int>(current_data_.roll * 100));
+    logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "x rate: {}",
+                     static_cast<int>(current_data_.x_rate * 100));
+    logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "y rate: {}",
+                     static_cast<int>(current_data_.y_rate * 100));
+    logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "z rate: {}",
+                     static_cast<int>(current_data_.z_rate * 100));
+
+    return HYDROLIB_RETURN_OK;
 }
+
+template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
+hydrolib_ReturnCode
+VectorNAVParser<InputStream, Logger>::Read(void *buffer, uint32_t address,
+                                           uint32_t length) const
+{
+    if (address + length > sizeof(Message_))
+    {
+        return HYDROLIB_RETURN_FAIL;
+    }
+    memcpy(buffer, static_cast<uint8_t *>(&current_data_) + address, length);
+    return HYDROLIB_RETURN_OK;
+}
+
+template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
+hydrolib_ReturnCode
+VectorNAVParser<InputStream, Logger>::Write([[maybe_unused]] const void *buffer,
+                                            [[maybe_unused]] uint32_t address,
+                                            [[maybe_unused]] uint32_t length)
+{
+    return HYDROLIB_RETURN_FAIL;
+}
+
+template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
+hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Reset()
+{
+    if (write(stream_, reset_message_,
+              static_cast<unsigned>(sizeof(reset_message_)) - 1) !=
+        static_cast<unsigned>(sizeof(reset_message_)) - 1)
+    {
+        return HYDROLIB_RETURN_FAIL;
+    }
+    return HYDROLIB_RETURN_OK;
+}
+
+template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
+hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Init()
+{
+    if (write(stream_, init_message_,
+              static_cast<unsigned>(sizeof(init_message_)) - 1) !=
+        static_cast<unsigned>(sizeof(init_message_)) - 1)
+    {
+        return HYDROLIB_RETURN_FAIL;
+    }
+    return HYDROLIB_RETURN_OK;
+}
+
+template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
+float VectorNAVParser<InputStream, Logger>::GetYaw() const
+{
+    return current_data_.yaw;
+}
+
+template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
+float VectorNAVParser<InputStream, Logger>::GetPitch() const
+{
+    return current_data_.pitch;
+}
+
+template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
+float VectorNAVParser<InputStream, Logger>::GetRoll() const
+{
+    return current_data_.roll;
+}
+
+template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
+unsigned VectorNAVParser<InputStream, Logger>::GetWrongCRCCount() const
+{
+    return wrong_crc_counter_;
+}
+
+template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
+unsigned VectorNAVParser<InputStream, Logger>::GetRubbishBytesCount() const
+{
+    return rubbish_bytes_counter_;
+}
+
+template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
+unsigned VectorNAVParser<InputStream, Logger>::GetPackagesCount() const
+{
+    return package_counter_;
+}
+
+template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
+uint16_t VectorNAVParser<InputStream, Logger>::CalculateCRC_(uint8_t *data,
+                                                             unsigned length)
+{
+    uint16_t crc = 0;
+    for (unsigned i = 0; i < length; i++)
+    {
+        crc = static_cast<uint8_t>(crc >> 8) | (crc << 8);
+        crc ^= data[i];
+        crc ^= static_cast<uint8_t>(crc & 0xff) >> 4;
+        crc ^= crc << 12;
+        crc ^= (crc & 0x00ff) << 5;
+    }
+    return crc;
+}
+} // namespace hydrolib
 
 #endif
