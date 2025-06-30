@@ -62,17 +62,13 @@ public:
     hydrolib_ReturnCode Process();
 
     hydrolib_ReturnCode Read(void *buffer, uint32_t address,
-                             uint32_t length) const;
+                             uint32_t length);
     hydrolib_ReturnCode Write(const void *buffer, uint32_t address,
                               uint32_t length);
 
-    float GetYaw() const;
-    float GetPitch() const;
-    float GetRoll() const;
-
-    float GetXRate() const;
-    float GetYRate() const;
-    float GetZRate() const;
+    float GetYaw();
+    float GetPitch();
+    float GetRoll();
 
     unsigned GetWrongCRCCount() const;
     unsigned GetRubbishBytesCount() const;
@@ -129,51 +125,6 @@ hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
     //     }
     // }
 
-    // if (!header_found_)
-    // {
-    //     int required_length =
-    //         sizeof(uint32_t) - current_rx_length_ + rx_offset_;
-    //     int read_length =
-    //         read(stream_, &rx_buffer_[current_rx_length_],
-    //              required_length); // TODO: Process buffer overflow
-    //     current_rx_length_ += read_length;
-    //     while (required_length == read_length)
-    //     {
-    //         if (*reinterpret_cast<uint32_t *>(rx_buffer_ + rx_offset_) ==
-    //             HEADER_)
-    //         {
-    //             if (rx_offset_ != 0)
-    //             {
-    //                 logger_.WriteLog(hydrolib::logger::LogLevel::WARNING,
-    //                                  "Rubbish bytes: {}", rx_offset_);
-    //                 rx_offset_ = 0;
-    //             }
-    //             current_rx_length_ = 0;
-    //             header_found_ = true;
-    //             break;
-    //         }
-    //         rx_offset_++;
-    //         if (rx_offset_ == sizeof(Message_))
-    //         {
-    //             current_rx_length_ = sizeof(uint32_t) - 1;
-    //             memcpy(rx_buffer_,
-    //                    &rx_buffer_[sizeof(Message_) - current_rx_length_],
-    //                    current_rx_length_);
-    //             rx_offset_ = 0;
-    //             current_rx_length_ = 0;
-    //         }
-    //         required_length = 1;
-    //         read_length =
-    //             read(stream_, &rx_buffer_[current_rx_length_],
-    //             required_length);
-    //         current_rx_length_ += read_length;
-    //     }
-    //     if (required_length != read_length)
-    //     {
-    //         return HYDROLIB_RETURN_NO_DATA;
-    //     }
-    // }
-
     unsigned rubbish_bytes = 0;
     while (!header_found_)
     {
@@ -218,22 +169,6 @@ hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
 
     package_counter_++;
 
-    // uint16_t supposed_crc =
-    //     CalculateCRC_(reinterpret_cast<uint8_t *>(&rx_buffer_),
-    //                   sizeof(Message_) - sizeof(rx_buffer_.crc));
-
-    // uint16_t big_endian_crc =
-    //     rx_buffer_.crc >> 8 | ((rx_buffer_.crc & 0xff) << 8);
-
-    // if (big_endian_crc != supposed_crc)
-    // {
-    //     logger_.WriteLog(hydrolib::logger::LogLevel::WARNING,
-    //                      "Wrong crc: supposed - {}, real - {}", supposed_crc,
-    //                      big_endian_crc);
-    //     wrong_crc_counter_++;
-    //     return HYDROLIB_RETURN_FAIL;
-    // }
-
     uint16_t supposed_crc = CalculateCRC_(
         reinterpret_cast<uint8_t *>(&rx_buffer_), sizeof(Message_));
 
@@ -266,13 +201,13 @@ hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
 template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
 hydrolib_ReturnCode
 VectorNAVParser<InputStream, Logger>::Read(void *buffer, uint32_t address,
-                                           uint32_t length) const
+                                           uint32_t length)
 {
     if (address + length > sizeof(Message_))
     {
         return HYDROLIB_RETURN_FAIL;
     }
-    memcpy(buffer, static_cast<uint8_t *>(&current_data_) + address, length);
+    memcpy(buffer, reinterpret_cast<uint8_t *>(&current_data_) + address, length);
     return HYDROLIB_RETURN_OK;
 }
 
@@ -310,19 +245,19 @@ hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Init()
 }
 
 template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
-float VectorNAVParser<InputStream, Logger>::GetYaw() const
+float VectorNAVParser<InputStream, Logger>::GetYaw()
 {
     return current_data_.yaw;
 }
 
 template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
-float VectorNAVParser<InputStream, Logger>::GetPitch() const
+float VectorNAVParser<InputStream, Logger>::GetPitch()
 {
     return current_data_.pitch;
 }
 
 template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
-float VectorNAVParser<InputStream, Logger>::GetRoll() const
+float VectorNAVParser<InputStream, Logger>::GetRoll()
 {
     return current_data_.roll;
 }
