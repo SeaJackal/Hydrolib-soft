@@ -1,12 +1,3 @@
-cmake_minimum_required(VERSION 3.10)
-
-project(HydrolibSerialProtocol VERSION 1.0)
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-
-set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
-
 add_library(HydrolibSerialProtocol INTERFACE)
 
 target_include_directories(HydrolibSerialProtocol INTERFACE include)
@@ -16,7 +7,7 @@ target_link_libraries(HydrolibSerialProtocol INTERFACE HydrolibCommon INTERFACE 
 
 include(CTest)
 
-if(BUILD_TESTING)
+if(BUILD_TESTS)
     find_package(GTest REQUIRED)
     include(GoogleTest)
 
@@ -40,8 +31,6 @@ if(BUILD_TESTING)
     )
     target_compile_features(TestSerialProtocol PUBLIC cxx_std_20)
 
-    # target_compile_options(TestSerialProtocol PRIVATE -Wall -Wextra -Wpedantic -Wc++20-compat -Wno-format-security
-    # -Woverloaded-virtual -Wsuggest-override)
     target_compile_options(TestSerialProtocol PRIVATE -Wall -Wextra -Wpedantic -Wc++20-compat -Wno-format-security
         -Woverloaded-virtual -Wsuggest-override -fsanitize=address -fsanitize=undefined)
     target_link_options(TestSerialProtocol PRIVATE -fsanitize=address -fsanitize=undefined)
