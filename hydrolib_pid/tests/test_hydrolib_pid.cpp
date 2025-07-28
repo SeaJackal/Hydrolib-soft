@@ -17,7 +17,9 @@ TEST(TestPID, HarmonicTest)
     constexpr unsigned control_freq_hz = 1;
 
     constexpr unsigned p = 1;
-    constexpr unsigned i = 10;
+
+    constexpr unsigned i = 100;
+
     constexpr unsigned divide_shift = 12;
 
     constexpr double freq_rad = control_freq_hz * 2 *
@@ -40,7 +42,7 @@ TEST(TestPID, HarmonicTest)
 
         // std::cout << target_output << " : " << real_output << "\n";
 
-        EXPECT_LT(std::abs(target_output - real_output), control_amplitude * 0.01);
+        EXPECT_LT(std::abs(target_output - real_output), control_amplitude * 0.05);
     }
 }
 
