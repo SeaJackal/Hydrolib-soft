@@ -41,8 +41,12 @@ TEST(TestPID, HarmonicTest)
 
         // std::cout << target_output << " : " << real_output << "\n";
 
+<<<<<<< HEAD
         EXPECT_LT(std::abs(target_output - real_output),
                   control_amplitude * 0.05);
+=======
+        EXPECT_LT(std::abs(target_output - real_output), control_amplitude * 0.05);
+>>>>>>> 019fedc (PID fixes)
     }
 }
 
