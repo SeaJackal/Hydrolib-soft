@@ -17,7 +17,7 @@ TEST(TestPID, HarmonicTest)
     constexpr unsigned control_freq_hz = 1;
 
     constexpr unsigned p = 1;
-    constexpr unsigned i = 1;
+    constexpr unsigned i = 10;
     constexpr unsigned divide_shift = 12;
 
     constexpr double freq_rad = control_freq_hz * 2 *
