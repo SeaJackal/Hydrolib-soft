@@ -29,9 +29,8 @@ public:
         last_input_ = current_input_;
         current_input_ = input;
 
-        int delta = static_cast<int>(p_) * (current_input_ - last_input_) +
-                    static_cast<int>(i_) * (current_input_ + last_input_) /
-                        static_cast<int>(FREQ_HZ) / 2;
+        int delta = p_ * (current_input_ - last_input_) +
+                    i_ * (current_input_ + last_input_) / FREQ_HZ / 2;
 
         current_output_undivided_ += delta;
         return current_output_undivided_ >> divide_shift_;
