@@ -96,15 +96,17 @@ TEST(TestACS, ControlTest)
 
     control_system.SetControl(yaw, pitch, roll);
 
+    // control_system.OpenYawContour();
+
     for (int i = 0; i < 1000; i++)
     {
         control_system.Process();
         rov.Process();
         std::cout << rov.GetData().yaw_mdeg << std::endl;
-        //std::cout << rov.GetData().pitch_mdeg << std::endl;
-        //std::cout << rov.GetData().roll_mdeg << std::endl;
+        // std::cout << rov.GetData().pitch_mdeg << std::endl;
+        // std::cout << rov.GetData().roll_mdeg << std::endl;
     }
     EXPECT_NEAR(yaw, rov.GetData().yaw_mdeg, yaw * 0.1);
-    //EXPECT_NEAR(pitch, rov.GetData().pitch_mdeg, pitch * 0.1);
-    //EXPECT_NEAR(roll, rov.GetData().roll_mdeg, roll * 0.1);
+    // EXPECT_NEAR(pitch, rov.GetData().pitch_mdeg, pitch * 0.1);
+    // EXPECT_NEAR(roll, rov.GetData().roll_mdeg, roll * 0.1);
 }
