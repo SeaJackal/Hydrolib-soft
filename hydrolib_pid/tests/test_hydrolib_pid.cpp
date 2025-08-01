@@ -2,8 +2,8 @@
 
 #include <gtest/gtest.h>
 
-#include <iostream>
 #include <cmath>
+#include <iostream>
 #include <numbers>
 
 using namespace hydrolib;
@@ -17,13 +17,16 @@ TEST(TestPID, HarmonicTest)
     constexpr unsigned control_freq_hz = 1;
 
     constexpr unsigned p = 1;
+<<<<<<< HEAD
 
     constexpr unsigned i = 100;
 
+=======
+    constexpr unsigned i = 100;
+>>>>>>> 3584476 (Исправил регуляторы)
     constexpr unsigned divide_shift = 12;
 
-    constexpr double freq_rad = control_freq_hz * 2 *
-                                std::numbers::pi;
+    constexpr double freq_rad = control_freq_hz * 2 * std::numbers::pi;
 
     controlling::PID<freq_hz> pid;
     pid.SetP(p << divide_shift);
@@ -32,8 +35,10 @@ TEST(TestPID, HarmonicTest)
 
     for (unsigned t = 0; t < freq_hz * test_time_s; t++)
     {
-        double sin_value = std::sin(static_cast<double>(t) * freq_rad / freq_hz);
-        double cos_value = std::cos(static_cast<double>(t) * freq_rad / freq_hz);
+        double sin_value =
+            std::sin(static_cast<double>(t) * freq_rad / freq_hz);
+        double cos_value =
+            std::cos(static_cast<double>(t) * freq_rad / freq_hz);
         double control = control_amplitude * sin_value;
         double target_output = p * control_amplitude * sin_value -
                                i * control_amplitude * cos_value / freq_rad +
@@ -42,7 +47,8 @@ TEST(TestPID, HarmonicTest)
 
         // std::cout << target_output << " : " << real_output << "\n";
 
-        EXPECT_LT(std::abs(target_output - real_output), control_amplitude * 0.05);
+        EXPECT_LT(std::abs(target_output - real_output),
+                  control_amplitude * 0.05);
     }
 }
 
