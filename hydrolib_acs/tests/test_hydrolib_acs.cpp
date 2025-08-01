@@ -71,15 +71,15 @@ TEST(TestACS, ControlTest)
     int pitch = 90000;
     int roll = 180000;
     control_system.SetYawP(1);
-    control_system.SetYawI(0);
+    control_system.SetYawI(10);
     control_system.SetYawDivideShift(0);
 
     control_system.SetPitchP(1);
-    control_system.SetPitchI(0);
+    control_system.SetPitchI(10);
     control_system.SetPitchDivideShift(0);
 
     control_system.SetRollP(1);
-    control_system.SetRollI(0);
+    control_system.SetRollI(10);
     control_system.SetRollDivideShift(0);
 
     control_system.SetYawRateP(1);
