@@ -32,7 +32,7 @@ struct ThrusterControlData
     int roll_torque;
 };
 
-struct ClosingCircuits
+struct ClosingContours
 {
     int yaw_circuit;
     int pitch_circuit;
@@ -50,6 +50,7 @@ public:
         : imu_(imu_model),
           pressure_sensor_(pressure_model),
           thruster_(thruster),
+          closing_contours_(1, 1, 1, 1),
           yaw_control_mdeg_(0),
           pitch_control_mdeg_(0),
           roll_control_mdeg_(0)
@@ -87,12 +88,23 @@ public:
     void SetRollRateI(unsigned i);
     void SetRollRateDivideShift(unsigned divide_shift);
 
+    void CloseYawContour();
+    void ClosePitchContour();
+    void CloseRollContour();
+    void CloseDepthContour();
+
+    void OpenYawContour();
+    void OpenPitchContour();
+    void OpenRollContour();
+    void OpenDepthContour();
+
     void Process();
 
 private:
     IMUModel &imu_;
     PressureModel &pressure_sensor_;
     Thrusters &thruster_;
+    ClosingContours closing_contours_;
 
     PID<FREQ_HZ> yaw_pid_;
     PID<FREQ_HZ> pitch_pid_;
@@ -253,24 +265,89 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
+void ControlSystem<IMUModel, PressureModel, Thrusters,
+                   FREQ_HZ>::CloseYawContour()
+{
+    closing_contours_.yaw_circuit = 1;
+}
+
+template <typename IMUModel, typename PressureModel, typename Thrusters,
+          unsigned FREQ_HZ>
+void ControlSystem<IMUModel, PressureModel, Thrusters,
+                   FREQ_HZ>::ClosePitchContour()
+{
+    closing_contours_.pitch_circuit = 1;
+}
+
+template <typename IMUModel, typename PressureModel, typename Thrusters,
+          unsigned FREQ_HZ>
+void ControlSystem<IMUModel, PressureModel, Thrusters,
+                   FREQ_HZ>::CloseRollContour()
+{
+    closing_contours_.roll_circuit = 1;
+}
+
+template <typename IMUModel, typename PressureModel, typename Thrusters,
+          unsigned FREQ_HZ>
+void ControlSystem<IMUModel, PressureModel, Thrusters,
+                   FREQ_HZ>::CloseDepthContour()
+{
+    closing_contours_.depth_curcuit = 1;
+}
+
+template <typename IMUModel, typename PressureModel, typename Thrusters,
+          unsigned FREQ_HZ>
+void ControlSystem<IMUModel, PressureModel, Thrusters,
+                   FREQ_HZ>::OpenYawContour()
+{
+    closing_contours_.yaw_circuit = 0;
+}
+
+template <typename IMUModel, typename PressureModel, typename Thrusters,
+          unsigned FREQ_HZ>
+void ControlSystem<IMUModel, PressureModel, Thrusters,
+                   FREQ_HZ>::OpenPitchContour()
+{
+    closing_contours_.pitch_circuit = 0;
+}
+
+template <typename IMUModel, typename PressureModel, typename Thrusters,
+          unsigned FREQ_HZ>
+void ControlSystem<IMUModel, PressureModel, Thrusters,
+                   FREQ_HZ>::OpenRollContour()
+{
+    closing_contours_.roll_circuit = 0;
+}
+
+template <typename IMUModel, typename PressureModel, typename Thrusters,
+          unsigned FREQ_HZ>
+void ControlSystem<IMUModel, PressureModel, Thrusters,
+                   FREQ_HZ>::OpenDepthContour()
+{
+    closing_contours_.depth_curcuit = 0;
+}
+
+template <typename IMUModel, typename PressureModel, typename Thrusters,
+          unsigned FREQ_HZ>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::Process()
 {
     IMUData imu_data = imu_.GetData();
-    // ClosingCircuits closing_circuits = ;
-    int yaw_epsilon = yaw_control_mdeg_ -
-                      imu_data.yaw_mdeg; // * closing_circuits.yaw_circuit;
-    int pitch_epsilon =
-        pitch_control_mdeg_ -
-        imu_data.pitch_mdeg; // * closing_circuits.pitch_circuit;
+    int yaw_epsilon =
+        yaw_control_mdeg_ - imu_data.yaw_mdeg * closing_contours_.yaw_circuit;
+    int pitch_epsilon = pitch_control_mdeg_ -
+                        imu_data.pitch_mdeg * closing_contours_.pitch_circuit;
     int roll_epsilon = roll_control_mdeg_ -
-                       imu_data.roll_mdeg; // * closing_circuits.roll_circuit;
+                       imu_data.roll_mdeg * closing_contours_.roll_circuit;
 
     int yaw_rate_epsilon =
-        yaw_pid_.Process(yaw_epsilon) - imu_data.yaw_rate_mdeg_per_s;
+        yaw_pid_.Process(yaw_epsilon) -
+        imu_data.yaw_rate_mdeg_per_s * closing_contours_.yaw_circuit;
     int pitch_rate_epsilon =
-        pitch_pid_.Process(pitch_epsilon) - imu_data.pitch_rate_mdeg_per_s;
+        pitch_pid_.Process(pitch_epsilon) -
+        imu_data.pitch_rate_mdeg_per_s * closing_contours_.pitch_circuit;
     int roll_rate_epsilon =
-        roll_pid_.Process(roll_epsilon) - imu_data.roll_rate_mdeg_per_s;
+        roll_pid_.Process(roll_epsilon) -
+        imu_data.roll_rate_mdeg_per_s * closing_contours_.roll_circuit;
 
     ThrusterControlData thruster_control = {
         .yaw_torque = yaw_rate_pid_.Process(yaw_rate_epsilon),
