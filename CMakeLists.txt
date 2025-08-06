@@ -19,5 +19,6 @@ add_subdirectory(hydrolib_crc)
 add_subdirectory(hydrolib_return_codes)
 add_subdirectory(hydrolib_bus/hydrolib_bus_datalink)
 add_subdirectory(hydrolib_bus/hydrolib_bus_application)
+add_subdirectory(hydrolib_thrust_generator)
 
 enable_testing()
