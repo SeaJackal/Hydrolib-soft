@@ -185,7 +185,7 @@ Interpreter<Memory, Distributor, Transmitter>::ProcessRequest_(
         return ProcessWrite_(command_info);
     case RESPONCE:
     case ERROR:
-        logger_.WriteLog(logger::LogLevel::WARNING, "Got unsupposed responce");
+        LOG(logger_, logger::LogLevel::WARNING, "Got unsupposed responce");
         return HYDROLIB_RETURN_FAIL;
     default:
         return HYDROLIB_RETURN_ERROR;
@@ -249,29 +249,27 @@ Interpreter<Memory, Distributor, Transmitter>::ProcessResponce_(
     case RESPONCE:
         if (responding_device_ != info.responce.source_address)
         {
-            logger_.WriteLog(
-                logger::LogLevel::WARNING,
+            LOG(logger_, logger::LogLevel::WARNING,
                 "Got responce from wrong address: supposed {}, got {}",
                 responding_device_, info.responce.source_address);
             return HYDROLIB_RETURN_FAIL;
         }
         if (responce_length_ != info.responce.data_length)
         {
-            logger_.WriteLog(logger::LogLevel::WARNING,
-                             "Got wrong responce length: supposed {}, got {}",
-                             responce_length_, info.responce.data_length);
+            LOG(logger_, logger::LogLevel::WARNING,
+                "Got wrong responce length: supposed {}, got {}",
+                responce_length_, info.responce.data_length);
             return HYDROLIB_RETURN_FAIL;
         }
         memcpy(responce_buffer_, info.responce.data, info.responce.data_length);
         return HYDROLIB_RETURN_OK;
     case ERROR:
-        logger_.WriteLog(logger::LogLevel::WARNING, "Got error responce: {}",
-                         static_cast<unsigned>(info.error.error_code));
+        LOG(logger_, logger::LogLevel::WARNING, "Got error responce: {}",
+            static_cast<unsigned>(info.error.error_code));
         return HYDROLIB_RETURN_FAIL;
     default:
-        logger_.WriteLog(logger::LogLevel::WARNING,
-                         "Got request instead of responce",
-                         static_cast<unsigned>(info.error.error_code));
+        LOG(logger_, logger::LogLevel::WARNING,
+            "Got request instead of responce");
         return HYDROLIB_RETURN_FAIL;
     }
 }

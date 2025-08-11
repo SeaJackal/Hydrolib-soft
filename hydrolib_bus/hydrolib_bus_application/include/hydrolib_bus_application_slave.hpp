@@ -79,7 +79,7 @@ void Slave<Memory, Distributor, TxRxStream>::Process()
                                       info->address, info->length);
         if (res == ReturnCode::OK)
         {
-            logger_.WriteLog(logger::LogLevel::INFO,
+            LOG(logger_, logger::LogLevel::INFO,
                              "Transmitting {} bytes from {}", info->length,
                              info->address);
             *reinterpret_cast<Command *>(tx_buffer_) = Command::RESPONCE;
@@ -87,7 +87,7 @@ void Slave<Memory, Distributor, TxRxStream>::Process()
         }
         else
         {
-            logger_.WriteLog(logger::LogLevel::WARNING,
+            LOG(logger_, logger::LogLevel::WARNING,
                              "Can't read {} bytes from {}", info->length,
                              info->address);
             *reinterpret_cast<Command *>(tx_buffer_) = Command::ERROR;
@@ -104,7 +104,7 @@ void Slave<Memory, Distributor, TxRxStream>::Process()
                                        info->address, info->length);
         if (res != ReturnCode::OK)
         {
-            logger_.WriteLog(logger::LogLevel::WARNING,
+            LOG(logger_, logger::LogLevel::WARNING,
                              "Can't write {} bytes to {}", info->length,
                              info->address);
             *reinterpret_cast<Command *>(tx_buffer_) = Command::ERROR;
@@ -112,7 +112,7 @@ void Slave<Memory, Distributor, TxRxStream>::Process()
         }
         else
         {
-            logger_.WriteLog(logger::LogLevel::INFO, "Wrote {} bytes to {}",
+            LOG(logger_, logger::LogLevel::INFO, "Wrote {} bytes to {}",
                              info->length, info->address);
         }
     }
@@ -120,7 +120,7 @@ void Slave<Memory, Distributor, TxRxStream>::Process()
     case Command::ERROR:
     case Command::RESPONCE:
     default:
-        logger_.WriteLog(logger::LogLevel::WARNING, "Wrong command");
+        LOG(logger_, logger::LogLevel::WARNING, "Wrong command");
         *reinterpret_cast<Command *>(tx_buffer_) = Command::ERROR;
         write(stream_, tx_buffer_, sizeof(Command));
         break;

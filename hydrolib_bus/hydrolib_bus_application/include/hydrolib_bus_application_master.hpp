@@ -81,7 +81,7 @@ bool Master<TxRxStream, Distributor>::Process()
     case Command::READ:
     case Command::WRITE:
     default:
-        logger_.WriteLog(logger::LogLevel::WARNING, "Wrong command");
+        LOG(logger_, logger::LogLevel::WARNING, "Wrong command");
         return false;
     }
 }

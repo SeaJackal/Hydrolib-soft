@@ -34,6 +34,17 @@ public:
     hydrolib_ReturnCode Close() { return HYDROLIB_RETURN_OK; };
 };
 
+inline int write(TestLogStream &stream, const void *dest, unsigned length)
+{
+    hydrolib_ReturnCode result = stream.Push(dest, length);
+    if (result == HYDROLIB_RETURN_OK)
+    {
+        return length;
+    }
+    return 0;
+}
+
+
 class TestPublicMemory
 {
 public:

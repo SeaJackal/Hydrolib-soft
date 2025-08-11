@@ -115,13 +115,13 @@ hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
     // uint8_t header_buffer;
     // if (read(stream_, &header_buffer, 1) == 1)
     // {
-    //     logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "{} ",
+    //     LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "{} ",
     //                      header_buffer);
     //     current_rx_length_++;
     //     if (current_rx_length_ == sizeof(SYNC_) + sizeof(Message_))
     //     {
     //         current_rx_length_ = 0;
-    //         logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "\n\r");
+    //         LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "\n\r");
     //     }
     // }
 
@@ -133,7 +133,7 @@ hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
         {
             if (rubbish_bytes != 0)
             {
-                logger_.WriteLog(hydrolib::logger::LogLevel::WARNING,
+                LOG(logger_, hydrolib::logger::LogLevel::WARNING,
                                  "Rubbish bytes: {}", rubbish_bytes);
             }
             return HYDROLIB_RETURN_NO_DATA;
@@ -143,7 +143,7 @@ hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
             header_found_ = true;
             if (rubbish_bytes != 0)
             {
-                logger_.WriteLog(hydrolib::logger::LogLevel::WARNING,
+                LOG(logger_, hydrolib::logger::LogLevel::WARNING,
                                  "Rubbish bytes: {}", rubbish_bytes);
             }
         }
@@ -174,25 +174,25 @@ hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
 
     if (supposed_crc)
     {
-        logger_.WriteLog(hydrolib::logger::LogLevel::WARNING, "Wrong crc");
+        LOG(logger_, hydrolib::logger::LogLevel::WARNING, "Wrong crc");
         wrong_crc_counter_++;
         return HYDROLIB_RETURN_FAIL;
     }
 
     memcpy(&current_data_, &rx_buffer_, sizeof(Message_));
 
-    logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "Received message");
-    logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "yaw: {}",
+    LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "Received message");
+    LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "yaw: {}",
                      static_cast<int>(current_data_.yaw * 100));
-    logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "pitch: {}",
+    LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "pitch: {}",
                      static_cast<int>(current_data_.pitch * 100));
-    logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "roll: {}",
+    LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "roll: {}",
                      static_cast<int>(current_data_.roll * 100));
-    logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "x rate: {}",
+    LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "x rate: {}",
                      static_cast<int>(current_data_.x_rate * 100));
-    logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "y rate: {}",
+    LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "y rate: {}",
                      static_cast<int>(current_data_.y_rate * 100));
-    logger_.WriteLog(hydrolib::logger::LogLevel::DEBUG, "z rate: {}",
+    LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "z rate: {}",
                      static_cast<int>(current_data_.z_rate * 100));
 
     return HYDROLIB_RETURN_OK;

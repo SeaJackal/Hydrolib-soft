@@ -6,6 +6,8 @@ namespace hydrolib
     {
         OK = 0,
         FAIL,
-        NO_DATA
+        NO_DATA,
+        OVERFLOW,
+        ERROR
     };
 }

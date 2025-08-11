@@ -3,6 +3,7 @@
 #include "hydrolib_bus_datalink_message.hpp"
 #include "hydrolib_crc.hpp"
 #include "hydrolib_logger.hpp"
+#include "hydrolib_return_codes.hpp"
 #include "hydrolib_stream_concepts.hpp"
 #include <cstring>
 
@@ -17,8 +18,8 @@ public:
                          logger::Logger<Distributor> &logger);
 
 public:
-    void Process(AddressType dest_address, const void *data,
-                 unsigned data_length);
+    ReturnCode Process(AddressType dest_address, const void *data,
+                       unsigned data_length);
 
 public:
     static void COBSEncoding(uint8_t magic_byte, uint8_t *data,
@@ -53,9 +54,9 @@ constexpr Serializer<TxStream, Distributor>::Serializer(
 
 template <concepts::stream::ByteWritableStreamConcept TxStream,
           logger::LogDistributorConcept Distributor>
-void Serializer<TxStream, Distributor>::Process(AddressType dest_address,
-                                                const void *data,
-                                                unsigned data_length)
+ReturnCode Serializer<TxStream, Distributor>::Process(AddressType dest_address,
+                                                      const void *data,
+                                                      unsigned data_length)
 {
     current_header_->dest_address = dest_address;
     current_header_->src_address = address_;
@@ -71,7 +72,19 @@ void Serializer<TxStream, Distributor>::Process(AddressType dest_address,
                  current_header_->length - sizeof(MessageHeader) +
                      sizeof(MessageHeader::cobs_length));
 
-    write(tx_stream_, current_message_, current_header_->length);
+    int res = write(tx_stream_, current_message_, current_header_->length);
+    if (res < 0)
+    {
+        return ReturnCode::ERROR;
+    }
+    else if (res != current_header_->length)
+    {
+        return ReturnCode::OVERFLOW;
+    }
+    else
+    {
+        return ReturnCode::OK;
+    }
 }
 
 template <concepts::stream::ByteWritableStreamConcept TxStream,

@@ -1,21 +1,12 @@
-cmake_minimum_required(VERSION 3.10)
+add_library(HydrolibLogger INTERFACE)
 
-project(HydrolibLogger VERSION 1.0)
+target_include_directories(HydrolibLogger INTERFACE include)
 
-set(CMAKE_BUILD_TYPE Debug)
+target_link_libraries(HydrolibLogger INTERFACE HydrolibReturnCodes INTERFACE HydrolibStrings)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+if(BUILD_TESTS)
+    include(CTest)
 
-add_library(HydrolibLogger src/hydrolib_logger.cpp)
-
-target_include_directories(HydrolibLogger PUBLIC include)
-
-target_link_libraries(HydrolibLogger HydrolibCommon HydrolibStrings)
-
-include(CTest)
-
-if(BUILD_TESTING)
     find_package(GTest REQUIRED)
     include(GoogleTest)
 

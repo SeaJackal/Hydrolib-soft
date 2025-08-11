@@ -228,7 +228,7 @@ hydrolib_ReturnCode Deserializer<RxStream, Distributor>::AimHeader_()
         else
         {
             offset_++;
-            logger_.WriteLog(logger::LogLevel::WARNING, "Rubbish bytes");
+            LOG(logger_, logger::LogLevel::WARNING, "Rubbish bytes");
         }
 
         if (rx_buffer_length_ - offset_ <
@@ -274,8 +274,8 @@ hydrolib_ReturnCode Deserializer<RxStream, Distributor>::ProcessCommonHeader_()
     //      MessageHeader::MAX_MESSAGE_LENGTH))
     if (current_header_->common.message_length < sizeof(MessageHeader::Common))
     {
-        logger_.WriteLog(logger::LogLevel::WARNING, "Wrong message length: ",
-                         current_header_->common.message_length);
+        LOG(logger_, logger::LogLevel::WARNING,
+            "Wrong message length: {}", current_header_->common.message_length);
         offset_++;
         current_processed_length_ = 0;
 
@@ -312,8 +312,7 @@ hydrolib_ReturnCode Deserializer<RxStream, Distributor>::ProcessMessage_()
         if (current_header_->memory_access.memory_access_length !=
             target_length)
         {
-            logger_.WriteLog(
-                logger::LogLevel::WARNING,
+            LOG(logger_, logger::LogLevel::WARNING,
                 "Wrong data length: expected {}, in header {}", target_length,
                 current_header_->memory_access.memory_access_length);
             offset_++;
@@ -325,8 +324,7 @@ hydrolib_ReturnCode Deserializer<RxStream, Distributor>::ProcessMessage_()
              current_header_->common.command != Command::RESPONCE &&
              current_header_->common.command != Command::ERROR)
     {
-        logger_.WriteLog(
-            logger::LogLevel::WARNING, "Wrong command: {}",
+        LOG(logger_, logger::LogLevel::WARNING, "Wrong command: {}",
             static_cast<unsigned>(current_header_->common.command));
         offset_++;
         current_processed_length_ = 0;
@@ -349,7 +347,7 @@ bool Deserializer<RxStream, Distributor>::CheckCRC_()
 
     if (target_crc != current_crc)
     {
-        logger_.WriteLog(logger::LogLevel::WARNING,
+        LOG(logger_, logger::LogLevel::WARNING,
                          "Wrong CRC: expected {}, got {}", target_crc,
                          current_crc);
         offset_++;

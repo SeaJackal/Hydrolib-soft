@@ -3,67 +3,78 @@
 
 #include <cassert>
 #include <concepts>
-#include <cstdint>
+#include <cstring>
 
-#include "hydrolib_common.h"
+#include "hydrolib_return_codes.hpp"
 #include "hydrolib_stream_concepts.hpp"
 
 namespace hydrolib::strings
 {
 template <typename T>
 concept StringConsept = requires(T string) {
-    { string.GetConstString() } -> std::same_as<const char *>;
+    { static_cast<const char *>(string) };
     { string.GetLength() } -> std::convertible_to<std::size_t>;
 };
 
+template <typename... ArgTypes>
 class StaticFormatableString
 {
 public:
-    static constexpr unsigned MAX_PARAMETRES_COUNT = 10;
+    static constexpr unsigned MAX_PARAMETERS_COUNT = 10;
 
 public:
-    StaticFormatableString() : length_(0), param_count_(0) {};
+    constexpr StaticFormatableString()
+        : string_(nullptr), length_(0), param_count_(0) {};
     consteval StaticFormatableString(const char *string);
 
 public:
+    [[deprecated]]
     const char *GetString() const;
-    uint32_t GetLength() const;
+    unsigned GetLength() const;
 
-    template <concepts::stream::ByteWritableStreamConcept DestType, typename... Ts>
-    hydrolib_ReturnCode ToBytes(DestType &buffer, Ts... params) const;
+    template <concepts::stream::ByteWritableStreamConcept DestType>
+    ReturnCode ToBytes(DestType &buffer, ArgTypes... params) const;
+
+    constexpr operator const char *() const;
 
 private:
-    template <concepts::stream::ByteWritableStreamConcept DestType, typename... Ts>
-    hydrolib_ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
-                                 unsigned translated_length, int param,
-                                 Ts... others) const;
+    template <concepts::stream::ByteWritableStreamConcept DestType,
+              typename... Ts>
+    ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
+                        unsigned translated_length, int param,
+                        Ts... others) const;
 
     template <concepts::stream::ByteWritableStreamConcept DestType,
               StringConsept String, typename... Ts>
-    hydrolib_ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
-                                 unsigned translated_length, String param,
-                                 Ts...) const;
+    ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
+                        unsigned translated_length, String param, Ts...) const;
 
     template <concepts::stream::ByteWritableStreamConcept DestType>
-    hydrolib_ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
-                                 unsigned translated_length) const;
+    ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
+                        unsigned translated_length) const;
 
 private:
     static consteval unsigned CountLength_(const char *string);
     static consteval unsigned CountParametres_(const char *string);
 
 private:
-    const char *string_;
+    const char *const string_;
     const unsigned length_;
     const unsigned param_count_;
-    unsigned short param_pos_diffs_[MAX_PARAMETRES_COUNT];
+    unsigned short param_pos_diffs_[MAX_PARAMETERS_COUNT];
 };
 
-consteval StaticFormatableString::StaticFormatableString(const char *string)
+template <typename... ArgTypes>
+consteval StaticFormatableString<ArgTypes...>::StaticFormatableString(
+    const char *string)
     : string_(string),
       length_(CountLength_(string)),
       param_count_(CountParametres_(string))
 {
+    if (sizeof...(ArgTypes) != CountParametres_(string))
+    {
+        throw "Not enough arguments for inserting to formatable string";
+    }
     unsigned param_number = 0;
     unsigned last_param = 0;
     for (unsigned i = 0; i < length_; i++)
@@ -78,50 +89,76 @@ consteval StaticFormatableString::StaticFormatableString(const char *string)
             last_param = i + 1;
         }
     }
-    for (unsigned i = param_number; i < MAX_PARAMETRES_COUNT; i++)
+    for (unsigned i = param_number; i < MAX_PARAMETERS_COUNT; i++)
     {
         param_pos_diffs_[i] = 0;
     }
 }
 
-template <concepts::stream::ByteWritableStreamConcept DestType, typename... Ts>
-hydrolib_ReturnCode StaticFormatableString::ToBytes(DestType &buffer,
-                                                    Ts... params) const
+template <typename... ArgTypes>
+template <concepts::stream::ByteWritableStreamConcept DestType>
+ReturnCode
+StaticFormatableString<ArgTypes...>::ToBytes(DestType &buffer,
+                                             ArgTypes... params) const
 {
-    // static_assert(sizeof...(params) == param_count_,
-    //               "Not enough arguments for inserting to formatable string");
-    if (sizeof...(params) != param_count_)
-    {
-        return HYDROLIB_RETURN_FAIL;
-    }
     return ToBytes_(buffer, 0, 0, params...);
 }
 
+template <typename... ArgTypes>
+constexpr StaticFormatableString<ArgTypes...>::operator const char *() const
+{
+    return string_;
+}
+
+template <typename... ArgTypes>
 template <concepts::stream::ByteWritableStreamConcept DestType, typename... Ts>
-hydrolib_ReturnCode
-StaticFormatableString::ToBytes_(DestType &buffer, unsigned next_param_index,
-                                 unsigned translated_length, int param,
-                                 Ts... others) const
+ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
+    DestType &buffer, unsigned next_param_index, unsigned translated_length,
+    int param, Ts... others) const
 {
     if (translated_length >= length_)
     {
-        return HYDROLIB_RETURN_OK;
+        return ReturnCode::OK;
     }
 
-    buffer.Push(reinterpret_cast<const uint8_t *>(string_ + translated_length),
-                param_pos_diffs_[next_param_index]);
+    int write_res = write(buffer, string_ + translated_length,
+                          param_pos_diffs_[next_param_index]);
+    if (write_res == -1)
+    {
+        return ReturnCode::ERROR;
+    }
+    if (write_res != param_pos_diffs_[next_param_index])
+    {
+        return ReturnCode::OVERFLOW;
+    }
     translated_length += param_pos_diffs_[next_param_index] + 2;
     next_param_index++;
 
     if (param == 0)
     {
-        buffer.Push(reinterpret_cast<const uint8_t *>("0"), 1);
+        write_res = write(buffer, "0", 1);
+        if (write_res == -1)
+        {
+            return ReturnCode::ERROR;
+        }
+        if (write_res != param_pos_diffs_[next_param_index])
+        {
+            return ReturnCode::OVERFLOW;
+        }
     }
     else
     {
         if (param < 0)
         {
-            buffer.Push(reinterpret_cast<const uint8_t *>("-"), 1);
+            write_res = write(buffer, "-", 1);
+            if (write_res == -1)
+            {
+                return ReturnCode::ERROR;
+            }
+            if (write_res != param_pos_diffs_[next_param_index])
+            {
+                return ReturnCode::OVERFLOW;
+            }
             param = -param;
         }
 
@@ -138,7 +175,15 @@ StaticFormatableString::ToBytes_(DestType &buffer, unsigned next_param_index,
         {
             symbol = param / digit + '0';
             param %= digit;
-            buffer.Push(reinterpret_cast<const uint8_t *>(&symbol), 1);
+            write_res = write(buffer, &symbol, 1);
+            if (write_res == -1)
+            {
+                return ReturnCode::ERROR;
+            }
+            if (write_res != param_pos_diffs_[next_param_index])
+            {
+                return ReturnCode::OVERFLOW;
+            }
             digit /= 10;
         }
     }
@@ -146,49 +191,81 @@ StaticFormatableString::ToBytes_(DestType &buffer, unsigned next_param_index,
     return ToBytes_(buffer, next_param_index, translated_length, others...);
 }
 
-template <concepts::stream::ByteWritableStreamConcept DestType, StringConsept String,
-          typename... Ts>
-hydrolib_ReturnCode
-StaticFormatableString::ToBytes_(DestType &buffer, unsigned next_param_index,
-                                 unsigned translated_length, String param,
-                                 Ts... others) const
+template <typename... ArgTypes>
+template <concepts::stream::ByteWritableStreamConcept DestType,
+          StringConsept String, typename... Ts>
+ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
+    DestType &buffer, unsigned next_param_index, unsigned translated_length,
+    String param, Ts... others) const
 {
     if (translated_length >= length_)
     {
-        return HYDROLIB_RETURN_OK;
-    }
-    if (param_pos_diffs_[next_param_index] == 0)
-    {
-        return HYDROLIB_RETURN_FAIL;
+        return ReturnCode::OK;
     }
 
-    buffer.Push(reinterpret_cast<const uint8_t *>(string_ + translated_length),
-                param_pos_diffs_[next_param_index]);
+    int write_res = write(buffer, string_ + translated_length,
+                          param_pos_diffs_[next_param_index]);
+    if (write_res == -1)
+    {
+        return ReturnCode::ERROR;
+    }
+    if (write_res != param_pos_diffs_[next_param_index])
+    {
+        return ReturnCode::OVERFLOW;
+    }
     translated_length += param_pos_diffs_[next_param_index] + 2;
     next_param_index++;
 
-    buffer.Push(reinterpret_cast<const uint8_t *>(param.GetConstString()),
-                param.GetLength());
+    write_res =
+        write(buffer, static_cast<const char *>(param), param.GetLength());
+    if (write_res == -1)
+    {
+        return ReturnCode::ERROR;
+    }
+    if (write_res != param_pos_diffs_[next_param_index])
+    {
+        return ReturnCode::OVERFLOW;
+    }
 
     return ToBytes_(buffer, next_param_index, translated_length, others...);
 }
 
+template <typename... ArgTypes>
 template <concepts::stream::ByteWritableStreamConcept DestType>
-hydrolib_ReturnCode
-StaticFormatableString::ToBytes_(DestType &buffer, unsigned next_param_index,
-                                 unsigned translated_length) const
+ReturnCode
+StaticFormatableString<ArgTypes...>::ToBytes_(DestType &buffer,
+                                              unsigned next_param_index,
+                                              unsigned translated_length) const
 {
     (void)next_param_index;
-    buffer.Push(reinterpret_cast<const uint8_t *>(string_ + translated_length),
-                length_ - translated_length);
-    return HYDROLIB_RETURN_OK;
+    int write_res =
+        write(buffer, string_ + translated_length, length_ - translated_length);
+    if (write_res == -1)
+    {
+        return ReturnCode::ERROR;
+    }
+    if (write_res != param_pos_diffs_[next_param_index])
+    {
+        return ReturnCode::OVERFLOW;
+    }
+    return ReturnCode::OK;
 }
 
-inline const char *StaticFormatableString::GetString() const { return string_; }
+template <typename... ArgTypes>
+const char *StaticFormatableString<ArgTypes...>::GetString() const
+{
+    return string_;
+}
 
-inline uint32_t StaticFormatableString::GetLength() const { return length_; }
+template <typename... ArgTypes>
+unsigned StaticFormatableString<ArgTypes...>::GetLength() const
+{
+    return length_;
+}
 
-consteval unsigned StaticFormatableString::CountLength_(const char *string)
+template <typename... ArgTypes>
+consteval unsigned
+StaticFormatableString<ArgTypes...>::CountLength_(const char *string)
 {
     unsigned length = 0;
     while (string[length] != '\0')
@@ -198,7 +275,9 @@ consteval unsigned StaticFormatableString::CountLength_(const char *string)
     return length;
 }
 
-consteval unsigned StaticFormatableString::CountParametres_(const char *string)
+template <typename... ArgTypes>
+consteval unsigned
+StaticFormatableString<ArgTypes...>::CountParametres_(const char *string)
 {
     unsigned param_number = 0;
     bool open_flag = false;

@@ -26,9 +26,16 @@ public:
     unsigned current_length;
 };
 
+int write(BytesReceiver &stream, const void *source, unsigned length)
+{
+    stream.Push(source, length);
+    return length;
+}
+
 TEST(TestHydrolibStrings, TestFormatableString)
 {
-    constexpr StaticFormatableString s("Inserting values: {}, {}, {}, {} End");
+    constexpr StaticFormatableString<int, int, int, CString<4>> s(
+        "Inserting values: {}, {}, {}, {} End");
     BytesReceiver stream;
     s.ToBytes(stream, 1, 20, -33, CString<4>("haha"));
     stream.buffer[stream.current_length] = '\0';

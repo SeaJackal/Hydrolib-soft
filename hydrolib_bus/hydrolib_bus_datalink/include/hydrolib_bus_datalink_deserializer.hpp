@@ -4,8 +4,8 @@
 #include "hydrolib_common.h"
 #include "hydrolib_crc.hpp"
 #include "hydrolib_logger.hpp"
-#include "hydrolib_stream_concepts.hpp"
 #include "hydrolib_return_codes.hpp"
+#include "hydrolib_stream_concepts.hpp"
 
 namespace hydrolib::bus::datalink
 {
@@ -29,6 +29,10 @@ public:
                              unsigned data_length);
 
 private:
+    ReturnCode FindHeader_();
+    ReturnCode ParseHeader_();
+    ReturnCode ReadMessage_();
+
     bool CheckCRC_();
 
 private:
@@ -73,38 +77,27 @@ template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
 ReturnCode Deserializer<RxStream, Distributor>::Process()
 {
-    while (1) //TODO: bad practice 
+    while (1) // TODO: bad practice
     {
         if (current_processed_length_ == 0)
         {
-            while (read(rx_stream_, current_rx_buffer_, sizeof(kMagicByte)) !=
-                   0)
+            ReturnCode res = FindHeader_();
+            if (res != ReturnCode::OK)
             {
-                if (current_rx_buffer_[0] == kMagicByte)
-                {
-                    current_processed_length_ = sizeof(kMagicByte);
-                    break;
-                }
-            }
-            if (current_processed_length_ != sizeof(kMagicByte))
-            {
-                return ReturnCode::NO_DATA;
+                return res;
             }
         }
 
         if (current_processed_length_ < sizeof(MessageHeader))
         {
-            current_processed_length_ +=
-                read(rx_stream_, current_rx_buffer_ + sizeof(kMagicByte),
-                     sizeof(MessageHeader) - current_processed_length_);
-            if (current_processed_length_ != sizeof(MessageHeader))
+            ReturnCode res = ParseHeader_();
+            if (res == ReturnCode::FAIL)
             {
-                return ReturnCode::NO_DATA;
-            }
-            if (current_header_->dest_address != self_address_)
-            {
-                current_processed_length_ = 0;
                 continue;
+            }
+            if (res != ReturnCode::OK)
+            {
+                return res;
             }
         }
 
@@ -133,26 +126,6 @@ ReturnCode Deserializer<RxStream, Distributor>::Process()
             return ReturnCode::OK;
         }
     }
-}
-
-template <concepts::stream::ByteReadableStreamConcept RxStream,
-          logger::LogDistributorConcept Distributor>
-bool Deserializer<RxStream, Distributor>::CheckCRC_()
-{
-    uint8_t target_crc = crc::CountCRC8(current_rx_buffer_,
-                                        current_header_->length - kCRCLength);
-
-    uint8_t current_crc =
-        current_rx_buffer_[current_header_->length - kCRCLength];
-
-    if (target_crc != current_crc)
-    {
-        logger_.WriteLog(logger::LogLevel::WARNING,
-                         "Wrong CRC: expected {}, got {}", target_crc,
-                         current_crc);
-        return false;
-    }
-    return true;
 }
 
 template <concepts::stream::ByteReadableStreamConcept RxStream,
@@ -208,10 +181,80 @@ void Deserializer<RxStream, Distributor>::COBSDecoding(uint8_t magic_byte,
         current_appearance = next_appearance;
         if (current_appearance > data_length)
         {
-            return; //TODO: Make troubleshouting
+            return; // TODO: Make troubleshouting
         }
     }
     return;
+}
+
+template <concepts::stream::ByteReadableStreamConcept RxStream,
+          logger::LogDistributorConcept Distributor>
+ReturnCode Deserializer<RxStream, Distributor>::FindHeader_()
+{
+    int res = read(rx_stream_, current_rx_buffer_, sizeof(kMagicByte));
+    while (res != 0)
+    {
+        if (res < 0)
+        {
+            return ReturnCode::ERROR;
+        }
+        if (current_rx_buffer_[0] == kMagicByte)
+        {
+            current_processed_length_ = sizeof(kMagicByte);
+            return ReturnCode::OK;
+        }
+        res = read(rx_stream_, current_rx_buffer_, sizeof(kMagicByte));
+    }
+    return ReturnCode::NO_DATA;
+}
+
+template <concepts::stream::ByteReadableStreamConcept RxStream,
+          logger::LogDistributorConcept Distributor>
+ReturnCode Deserializer<RxStream, Distributor>::ParseHeader_()
+{
+    int res = read(rx_stream_, current_rx_buffer_ + sizeof(kMagicByte),
+                   sizeof(MessageHeader) - current_processed_length_);
+    if (res < 0)
+    {
+        return ReturnCode::ERROR;
+    }
+    current_processed_length_ += res;
+    if (current_processed_length_ != sizeof(MessageHeader))
+    {
+        return ReturnCode::NO_DATA;
+    }
+    if (current_header_->dest_address != self_address_)
+    {
+        current_processed_length_ = 0;
+        return ReturnCode::FAIL;
+    }
+    return ReturnCode::OK;
+}
+
+template <concepts::stream::ByteReadableStreamConcept RxStream,
+          logger::LogDistributorConcept Distributor>
+bool Deserializer<RxStream, Distributor>::CheckCRC_()
+{
+    uint8_t target_crc = crc::CountCRC8(current_rx_buffer_,
+                                        current_header_->length - kCRCLength);
+
+    uint8_t current_crc =
+        current_rx_buffer_[current_header_->length - kCRCLength];
+
+    if (target_crc != current_crc)
+    {
+        LOG(logger_, logger::LogLevel::WARNING,
+                         "Wrong CRC: expected {}, got {}", target_crc,
+                         current_crc);
+        return false;
+    }
+    return true;
+}
+
+template <concepts::stream::ByteReadableStreamConcept RxStream,
+          logger::LogDistributorConcept Distributor>
+ReturnCode Deserializer<RxStream, Distributor>::ReadMessage_()
+{
 }
 
 } // namespace hydrolib::bus::datalink
