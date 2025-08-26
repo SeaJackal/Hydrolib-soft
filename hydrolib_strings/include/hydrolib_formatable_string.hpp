@@ -141,7 +141,7 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
         {
             return ReturnCode::ERROR;
         }
-        if (write_res != param_pos_diffs_[next_param_index])
+        if (write_res != 1)
         {
             return ReturnCode::OVERFLOW;
         }
@@ -155,7 +155,7 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
             {
                 return ReturnCode::ERROR;
             }
-            if (write_res != param_pos_diffs_[next_param_index])
+            if (write_res != 1)
             {
                 return ReturnCode::OVERFLOW;
             }
@@ -180,7 +180,7 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
             {
                 return ReturnCode::ERROR;
             }
-            if (write_res != param_pos_diffs_[next_param_index])
+            if (write_res != 1)
             {
                 return ReturnCode::OVERFLOW;
             }
@@ -222,7 +222,7 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
     {
         return ReturnCode::ERROR;
     }
-    if (write_res != param_pos_diffs_[next_param_index])
+    if (write_res != param.GetLength())
     {
         return ReturnCode::OVERFLOW;
     }
