@@ -1,9 +1,13 @@
 #include "hydrolib_acs.hpp"
+#include "hydrolib_imu.hpp"
+#include "hydrolib_pressure_sensor.hpp"
 
 #include <gtest/gtest.h>
 #include <iostream>
 
 using namespace hydrolib::controlling;
+using namespace hydrolib::sensors;
+
 class TestROV
 {
 public:
@@ -12,16 +16,20 @@ public:
 
 public:
     IMUData GetData() { return imu_data_; }
+    PressureSensorData GetPressureData() { return pressure_data_; }
+
     void SetControl(ThrusterControlData thruster_control)
     {
         thruster_control_last_ = thruster_control_current_;
         thruster_control_current_ = thruster_control;
     }
+
     void Process()
     {
         int last_yaw = imu_data_.yaw_mdeg;
         int last_pitch = imu_data_.pitch_mdeg;
         int last_roll = imu_data_.roll_mdeg;
+        int last_depth = pressure_data_.depth_mm;
 
         imu_data_.yaw_mdeg =
             1 / (2 * kTau + kPeriod_s) *
@@ -41,6 +49,12 @@ public:
                           thruster_control_last_.roll_torque) -
              (kPeriod_s - 2 * kTau) * last_roll);
 
+        pressure_data_.depth_mm =
+            1 / (2 * kTau + kPeriod_s) *
+            (kPeriod_s * (thruster_control_current_.depth_torque +
+                          thruster_control_last_.depth_torque) -
+             (kPeriod_s - 2 * kTau) * last_depth);
+
         imu_data_.yaw_rate_mdeg_per_s =
             2 * (imu_data_.yaw_mdeg - last_yaw) / kPeriod_s -
             imu_data_.yaw_rate_mdeg_per_s;
@@ -52,24 +66,31 @@ public:
         imu_data_.roll_rate_mdeg_per_s =
             2 * (imu_data_.roll_mdeg - last_roll) / kPeriod_s -
             imu_data_.roll_rate_mdeg_per_s;
+
+        pressure_data_.depth_rate_mm_per_s =
+            2 * (pressure_data_.depth_mm - last_depth) / kPeriod_s -
+            pressure_data_.depth_rate_mm_per_s;
     }
 
 private:
     IMUData imu_data_ = {0, 0, 0, 0, 0, 0};
-    ThrusterControlData thruster_control_current_ = {0, 0, 0};
-    ThrusterControlData thruster_control_last_ = {0, 0, 0};
-    // ClosingCircuits closing_circuits = {1, 1, 1, 0};
+    PressureSensorData pressure_data_ = {0, 0};
+    ThrusterControlData thruster_control_current_ = {0, 0, 0, 0};
+    ThrusterControlData thruster_control_last_ = {0, 0, 0, 0};
 };
 
 TEST(TestACS, ControlTest)
 {
     TestROV rov;
     ControlSystem<TestROV, TestROV, TestROV,
-                  static_cast<int>(1 / TestROV::kPeriod_s)>
+                  static_cast<unsigned>(1 / TestROV::kPeriod_s)>
         control_system(rov, rov, rov);
+
     int yaw = 180000;
     int pitch = 90000;
     int roll = 180000;
+    int depth = 5000;
+
     control_system.SetYawP(1);
     control_system.SetYawI(10);
     control_system.SetYawDivideShift(0);
@@ -81,6 +102,10 @@ TEST(TestACS, ControlTest)
     control_system.SetRollP(1);
     control_system.SetRollI(10);
     control_system.SetRollDivideShift(0);
+
+    control_system.SetDepthP(1);
+    control_system.SetDepthI(10);
+    control_system.SetDepthDivideShift(0);
 
     control_system.SetYawRateP(1);
     control_system.SetYawRateI(0);
@@ -94,19 +119,30 @@ TEST(TestACS, ControlTest)
     control_system.SetRollRateI(0);
     control_system.SetRollRateDivideShift(0);
 
-    control_system.SetControl(yaw, pitch, roll);
+    control_system.SetDepthRateP(1);
+    control_system.SetDepthRateI(0);
+    control_system.SetDepthRateDivideShift(0);
 
-    // control_system.OpenYawContour();
+    control_system.SetControl(yaw, pitch, roll, depth);
+
+    control_system.CloseYawContour();
+    control_system.ClosePitchContour();
+    control_system.CloseRollContour();
+    control_system.CloseDepthContour();
 
     for (int i = 0; i < 1000; i++)
     {
         control_system.Process();
         rov.Process();
-        std::cout << rov.GetData().yaw_mdeg << std::endl;
-        // std::cout << rov.GetData().pitch_mdeg << std::endl;
-        // std::cout << rov.GetData().roll_mdeg << std::endl;
+        // std::cout << rov.GetData().yaw_mdeg << std::endl;
+        std::cout << "Step " << i << ": "
+                  << "Yaw=" << rov.GetData().yaw_mdeg
+                  << ", Pitch=" << rov.GetData().pitch_mdeg
+                  << ", Roll=" << rov.GetData().roll_mdeg
+                  << ", Depth=" << rov.GetPressureData().depth_mm << std::endl;
     }
     EXPECT_NEAR(yaw, rov.GetData().yaw_mdeg, yaw * 0.1);
-    // EXPECT_NEAR(pitch, rov.GetData().pitch_mdeg, pitch * 0.1);
-    // EXPECT_NEAR(roll, rov.GetData().roll_mdeg, roll * 0.1);
+    EXPECT_NEAR(pitch, rov.GetData().pitch_mdeg, pitch * 0.1);
+    EXPECT_NEAR(roll, rov.GetData().roll_mdeg, roll * 0.1);
+    EXPECT_NEAR(depth, rov.GetPressureData().depth_mm, depth * 0.1);
 }
