@@ -1,5 +1,4 @@
-#ifndef HYDROLIB_PRESSURE_H_
-#define HYDROLIB_PRESSURE_H_
+#pragma once
 
 #include <concepts>
 
@@ -9,7 +8,6 @@ namespace hydrolib::sensors
 struct PressureSensorData
 {
     int depth_mm;
-
     int depth_rate_mm_per_s;
 };
 
@@ -18,17 +16,10 @@ concept PressureSensorConcept = requires(T sensor) {
     { sensor.GetPressureData() } -> std::same_as<PressureSensorData>;
 };
 
-template <typename Model>
-class PressureSensor
+class MS5837
 {
 public:
-    auto GetPressureData() { return static_cast<Model *>(this)->ReadPressureData(); }
-};
-
-class MS5837 : public PressureSensor<MS5837>
-{
-public:
-    PressureSensorData ReadPressureData()
+    PressureSensorData GetPressureData()
     {
         PressureSensorData data{};
 
@@ -37,10 +28,10 @@ public:
     }
 };
 
-class WIKA : public PressureSensor<WIKA>
+class WIKA
 {
 public:
-    PressureSensorData ReadPressureData()
+    PressureSensorData GetPressureData()
     {
         PressureSensorData data{};
 
@@ -54,5 +45,3 @@ static_assert(PressureSensorConcept<MS5837>);
 static_assert(PressureSensorConcept<WIKA>);
 
 } // namespace hydrolib::sensors
-
-#endif

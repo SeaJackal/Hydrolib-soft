@@ -1,5 +1,4 @@
-#ifndef HYDROLIB_IMU_H_
-#define HYDROLIB_IMU_H_
+#pragma once
 
 #include <concepts>
 
@@ -17,31 +16,27 @@ struct IMUData
     int roll_rate_mdeg_per_s;
 };
 
-template<typename T>
+template <typename T>
 concept IMUConcept = requires(T imu) {
     { imu.GetData() } -> std::same_as<IMUData>;
 };
 
-template<typename Model>
-class IMUSensor {
+class IMU456
+{
 public:
-    auto GetData() {
-        return static_cast<Model*>(this)->ReadIMUData();
-    }
-};
-
-class IMU456 : public IMUSensor<IMU456> {
-public:
-    IMUData ReadIMUData() {
+    IMUData GetData()
+    {
         IMUData data{};
         // something
         return data;
     }
 };
 
-class IMU321 : public IMUSensor<IMU321> {
+class IMU321
+{
 public:
-    IMUData ReadIMUData() {
+    IMUData GetData()
+    {
         IMUData data{};
         // something
         return data;
@@ -52,5 +47,3 @@ static_assert(IMUConcept<IMU456>);
 static_assert(IMUConcept<IMU321>);
 
 } // namespace hydrolib::sensors
-
-#endif
