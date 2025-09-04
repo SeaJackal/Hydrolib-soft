@@ -18,32 +18,7 @@ struct IMUData
 
 template <typename T>
 concept IMUConcept = requires(T imu) {
-    { imu.GetData() } -> std::same_as<IMUData>;
+    { imu.GetIMUData() } -> std::same_as<IMUData>;
 };
-
-class IMU456
-{
-public:
-    IMUData GetData()
-    {
-        IMUData data{};
-        // something
-        return data;
-    }
-};
-
-class IMU321
-{
-public:
-    IMUData GetData()
-    {
-        IMUData data{};
-        // something
-        return data;
-    }
-};
-
-static_assert(IMUConcept<IMU456>);
-static_assert(IMUConcept<IMU321>);
 
 } // namespace hydrolib::sensors

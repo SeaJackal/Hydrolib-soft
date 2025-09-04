@@ -15,7 +15,7 @@ public:
     constexpr static double kPeriod_s = 0.01;
 
 public:
-    IMUData GetData() { return imu_data_; }
+    IMUData GetIMUData() { return imu_data_; }
     PressureSensorData GetPressureData() { return pressure_data_; }
 
     void SetControl(ThrusterControlData thruster_control)
@@ -136,13 +136,13 @@ TEST(TestACS, ControlTest)
         rov.Process();
         // std::cout << rov.GetData().yaw_mdeg << std::endl;
         std::cout << "Step " << i << ": "
-                  << "Yaw=" << rov.GetData().yaw_mdeg
-                  << ", Pitch=" << rov.GetData().pitch_mdeg
-                  << ", Roll=" << rov.GetData().roll_mdeg
+                  << "Yaw=" << rov.GetIMUData().yaw_mdeg
+                  << ", Pitch=" << rov.GetIMUData().pitch_mdeg
+                  << ", Roll=" << rov.GetIMUData().roll_mdeg
                   << ", Depth=" << rov.GetPressureData().depth_mm << std::endl;
     }
-    EXPECT_NEAR(yaw, rov.GetData().yaw_mdeg, yaw * 0.1);
-    EXPECT_NEAR(pitch, rov.GetData().pitch_mdeg, pitch * 0.1);
-    EXPECT_NEAR(roll, rov.GetData().roll_mdeg, roll * 0.1);
+    EXPECT_NEAR(yaw, rov.GetIMUData().yaw_mdeg, yaw * 0.1);
+    EXPECT_NEAR(pitch, rov.GetIMUData().pitch_mdeg, pitch * 0.1);
+    EXPECT_NEAR(roll, rov.GetIMUData().roll_mdeg, roll * 0.1);
     EXPECT_NEAR(depth, rov.GetPressureData().depth_mm, depth * 0.1);
 }

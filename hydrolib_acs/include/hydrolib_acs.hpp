@@ -461,7 +461,7 @@ requires hydrolib::sensors::IMUConcept<IMUModel> &&
          hydrolib::sensors::PressureSensorConcept<PressureModel>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::Process()
 {
-    hydrolib::sensors::IMUData imu_data = imu_.GetData();
+    hydrolib::sensors::IMUData imu_data = imu_.GetIMUData();
     hydrolib::sensors::PressureSensorData pressure_data =
         pressure_sensor_.GetPressureData();
     int yaw_epsilon =
