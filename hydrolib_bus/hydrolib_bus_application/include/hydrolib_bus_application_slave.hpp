@@ -82,7 +82,7 @@ void Slave<Memory, Distributor, TxRxStream>::Process()
             LOG(logger_, logger::LogLevel::INFO,
                              "Transmitting {} bytes from {}", info->length,
                              info->address);
-            *reinterpret_cast<Command *>(tx_buffer_) = Command::RESPONCE;
+            *reinterpret_cast<Command *>(tx_buffer_) = Command::RESPONSE;
             write(stream_, tx_buffer_, sizeof(Command) + info->length);
         }
         else
@@ -118,7 +118,7 @@ void Slave<Memory, Distributor, TxRxStream>::Process()
     }
     break;
     case Command::ERROR:
-    case Command::RESPONCE:
+    case Command::RESPONSE:
     default:
         LOG(logger_, logger::LogLevel::WARNING, "Wrong command");
         *reinterpret_cast<Command *>(tx_buffer_) = Command::ERROR;

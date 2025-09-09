@@ -68,8 +68,8 @@ bool Master<TxRxStream, Distributor>::Process()
     Command command = *reinterpret_cast<Command *>(rx_buffer_);
     switch (command)
     {
-    case Command::RESPONCE:
-        if (requested_length_ != read_length - sizeof(Command))
+    case Command::RESPONSE:
+        if (requested_length_ + sizeof(Command) != read_length)
         {
             return false;
         }

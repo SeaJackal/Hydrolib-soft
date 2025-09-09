@@ -8,7 +8,7 @@ enum class Command : uint8_t
 {
     WRITE,
     READ,
-    RESPONCE,
+    RESPONSE,
     ERROR
 };
 

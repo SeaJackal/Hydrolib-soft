@@ -1,8 +1,6 @@
 #ifndef TEST_HYDROLIB_SP_SERIALIZE_ENV_H_
 #define TEST_HYDROLIB_SP_SERIALIZE_ENV_H_
 
-#include "hydrolib_bus_datalink_deserializer.hpp"
-#include "hydrolib_bus_datalink_serializer.hpp"
 #include "hydrolib_bus_datalink_stream.hpp"
 #include "hydrolib_common.h"
 #include "hydrolib_log_distributor.hpp"
@@ -55,20 +53,13 @@ protected:
 protected:
     TestStream stream;
 
-    hydrolib::bus::datalink::Serializer<
+    hydrolib::bus::datalink::StreamManager<
         TestStream, hydrolib::logger::LogDistributor<TestLogStream>>
-        serializer;
-    hydrolib::bus::datalink::Deserializer<
-        TestStream, hydrolib::logger::LogDistributor<TestLogStream>>
-        deserializer;
+        sender_manager;
 
-    hydrolib::bus::datalink::Stream<
+    hydrolib::bus::datalink::StreamManager<
         TestStream, hydrolib::logger::LogDistributor<TestLogStream>>
-        tx_stream;
-
-    hydrolib::bus::datalink::Stream<
-        TestStream, hydrolib::logger::LogDistributor<TestLogStream>>
-        rx_stream;
+        receiver_manager;
 
     uint8_t test_data[PUBLIC_MEMORY_LENGTH];
 };
