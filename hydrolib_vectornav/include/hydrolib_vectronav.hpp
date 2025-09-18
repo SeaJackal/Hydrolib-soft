@@ -1,12 +1,13 @@
-#ifndef HYDROLIB_VECTORNAV_H_
-#define HYDROLIB_VECTORNAV_H_
+#pragma once
 
-#include <concepts>
+// #include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <concepts>
 
 #include "hydrolib_common.h"
+#include "hydrolib_imu.hpp"
 #include "hydrolib_logger.hpp"
 #include "hydrolib_stream_concepts.hpp"
 
@@ -61,8 +62,7 @@ public:
 
     hydrolib_ReturnCode Process();
 
-    hydrolib_ReturnCode Read(void *buffer, uint32_t address,
-                             uint32_t length);
+    hydrolib_ReturnCode Read(void *buffer, uint32_t address, uint32_t length);
     hydrolib_ReturnCode Write(const void *buffer, uint32_t address,
                               uint32_t length);
 
@@ -73,6 +73,8 @@ public:
     unsigned GetWrongCRCCount() const;
     unsigned GetRubbishBytesCount() const;
     unsigned GetPackagesCount() const;
+
+    sensors::IMUData GetIMUData();
 
 private:
     uint16_t CalculateCRC_(uint8_t *data, unsigned length);
@@ -134,7 +136,7 @@ hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
             if (rubbish_bytes != 0)
             {
                 LOG(logger_, hydrolib::logger::LogLevel::WARNING,
-                                 "Rubbish bytes: {}", rubbish_bytes);
+                    "Rubbish bytes: {}", rubbish_bytes);
             }
             return HYDROLIB_RETURN_NO_DATA;
         }
@@ -144,7 +146,7 @@ hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
             if (rubbish_bytes != 0)
             {
                 LOG(logger_, hydrolib::logger::LogLevel::WARNING,
-                                 "Rubbish bytes: {}", rubbish_bytes);
+                    "Rubbish bytes: {}", rubbish_bytes);
             }
         }
         else
@@ -183,31 +185,32 @@ hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
 
     LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "Received message");
     LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "yaw: {}",
-                     static_cast<int>(current_data_.yaw * 100));
+        static_cast<int>(current_data_.yaw * 100));
     LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "pitch: {}",
-                     static_cast<int>(current_data_.pitch * 100));
+        static_cast<int>(current_data_.pitch * 100));
     LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "roll: {}",
-                     static_cast<int>(current_data_.roll * 100));
+        static_cast<int>(current_data_.roll * 100));
     LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "x rate: {}",
-                     static_cast<int>(current_data_.x_rate * 100));
+        static_cast<int>(current_data_.x_rate * 100));
     LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "y rate: {}",
-                     static_cast<int>(current_data_.y_rate * 100));
+        static_cast<int>(current_data_.y_rate * 100));
     LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "z rate: {}",
-                     static_cast<int>(current_data_.z_rate * 100));
+        static_cast<int>(current_data_.z_rate * 100));
 
     return HYDROLIB_RETURN_OK;
 }
 
 template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
-hydrolib_ReturnCode
-VectorNAVParser<InputStream, Logger>::Read(void *buffer, uint32_t address,
-                                           uint32_t length)
+hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Read(void *buffer,
+                                                               uint32_t address,
+                                                               uint32_t length)
 {
     if (address + length > sizeof(Message_))
     {
         return HYDROLIB_RETURN_FAIL;
     }
-    memcpy(buffer, reinterpret_cast<uint8_t *>(&current_data_) + address, length);
+    memcpy(buffer, reinterpret_cast<uint8_t *>(&current_data_) + address,
+           length);
     return HYDROLIB_RETURN_OK;
 }
 
@@ -281,6 +284,22 @@ unsigned VectorNAVParser<InputStream, Logger>::GetPackagesCount() const
 }
 
 template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
+sensors::IMUData VectorNAVParser<InputStream, Logger>::GetIMUData()
+{
+    sensors::IMUData data;
+
+    data.yaw_mdeg = static_cast<int>(current_data_.yaw * 1000);
+    data.pitch_mdeg = static_cast<int>(current_data_.pitch * 1000);
+    data.roll_mdeg = static_cast<int>(current_data_.roll * 1000);
+
+    data.yaw_rate_mdeg_per_s = static_cast<int>(current_data_.z_rate * 1000);
+    data.pitch_rate_mdeg_per_s = static_cast<int>(current_data_.y_rate * 1000);
+    data.roll_rate_mdeg_per_s = static_cast<int>(current_data_.x_rate * 1000);
+
+    return data;
+}
+
+template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
 uint16_t VectorNAVParser<InputStream, Logger>::CalculateCRC_(uint8_t *data,
                                                              unsigned length)
 {
@@ -296,5 +315,3 @@ uint16_t VectorNAVParser<InputStream, Logger>::CalculateCRC_(uint8_t *data,
     return crc;
 }
 } // namespace hydrolib
-
-#endif

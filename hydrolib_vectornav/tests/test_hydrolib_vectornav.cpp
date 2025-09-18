@@ -2378,7 +2378,7 @@ inline Logger logger("vectorNAV", 0, distributor);
 
 constexpr unsigned packages_count = 1000;
 
-TEST(TestHydrolibVectorNAV, BasicTest)
+TEST(TestVectorNAV, BasicTest)
 {
     distributor.SetAllFilters(0, hydrolib::logger::LogLevel::DEBUG);
     TestStream stream;
