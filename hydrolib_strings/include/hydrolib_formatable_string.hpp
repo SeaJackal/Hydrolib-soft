@@ -64,6 +64,14 @@ private:
     unsigned short param_pos_diffs_[MAX_PARAMETERS_COUNT];
 };
 
+inline void Error(const char *);
+
+inline void Error(const char *)
+{
+    int a = 0;
+    [[maybe_unused]] int b = 1 / a;
+};
+
 template <typename... ArgTypes>
 consteval StaticFormatableString<ArgTypes...>::StaticFormatableString(
     const char *string)
@@ -73,7 +81,7 @@ consteval StaticFormatableString<ArgTypes...>::StaticFormatableString(
 {
     if (sizeof...(ArgTypes) != CountParametres_(string))
     {
-        throw "Not enough arguments for inserting to formatable string";
+        Error("Not enough arguments for inserting to formatable string");
     }
     unsigned param_number = 0;
     unsigned last_param = 0;
