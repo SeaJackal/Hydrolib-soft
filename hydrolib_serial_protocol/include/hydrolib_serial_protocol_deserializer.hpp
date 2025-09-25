@@ -46,7 +46,7 @@ private:
 
     unsigned current_message_length_;
     unsigned current_processed_length_;
-    uint8_t rx_buffer_[2 * MessageHeader::MAX_MESSAGE_LENGTH];
+    uint8_t rx_buffer_[2 * MessageHeader::MAX_MESSAGE_LENGTH]; // TODO: Remove second buffer
     int offset_;
     int rx_buffer_length_;
     int last_message_offset_;

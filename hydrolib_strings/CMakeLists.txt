@@ -22,7 +22,7 @@ if(BUILD_TESTS)
     target_compile_features(TestStrings PUBLIC cxx_std_20)
     target_compile_options(TestStrings PRIVATE -save-temps=obj)
     target_compile_options(TestStrings PRIVATE -Wall -Wextra -Wpedantic -Wc++20-compat -Wno-format-security
-        -Woverloaded-virtual -Wsuggest-override)
+        -Woverloaded-virtual -Wsuggest-override -fno-exceptions -fno-rtti)
     target_link_libraries(TestStrings HydrolibStrings GTest::gtest GTest::gtest_main -pthread)
     gtest_discover_tests(TestStrings)
 endif()

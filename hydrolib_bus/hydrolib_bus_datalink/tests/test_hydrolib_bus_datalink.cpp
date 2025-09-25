@@ -37,10 +37,8 @@ int write(TestStream &stream, const void *dest, unsigned length)
 }
 
 TestHydrolibBusDatalink::TestHydrolibBusDatalink()
-    : serializer(SERIALIZER_ADDRESS, stream, logger),
-      deserializer(DESERIALIZER_ADDRESS, stream, logger),
-      tx_stream(serializer, deserializer, DESERIALIZER_ADDRESS),
-      rx_stream(serializer, deserializer, SERIALIZER_ADDRESS)
+    : sender_manager(SERIALIZER_ADDRESS, stream, logger),
+      receiver_manager(DESERIALIZER_ADDRESS, stream, logger)
 {
     distributor.SetAllFilters(0, hydrolib::logger::LogLevel::DEBUG);
     for (int i = 0; i < PUBLIC_MEMORY_LENGTH; i++)
@@ -51,27 +49,23 @@ TestHydrolibBusDatalink::TestHydrolibBusDatalink()
 
 TEST_F(TestHydrolibBusDatalink, ExchangeTest)
 {
+    hydrolib::bus::datalink::StreamManager<TestStream, hydrolib::logger::LogDistributor<TestLogStream>>::Stream
+        tx_stream(sender_manager, DESERIALIZER_ADDRESS);
+    hydrolib::bus::datalink::StreamManager<TestStream, hydrolib::logger::LogDistributor<TestLogStream>>::Stream
+        rx_stream(receiver_manager, SERIALIZER_ADDRESS);
+
     for (unsigned j = 0; j < 500; j++)
     {
-        write(tx_stream, test_data, PUBLIC_MEMORY_LENGTH);
-        // serializer.Process(DESERIALIZER_ADDRESS, test_data,
-        //                    PUBLIC_MEMORY_LENGTH);
+        int written_bytes = tx_stream.Write(test_data, PUBLIC_MEMORY_LENGTH);
+        EXPECT_EQ(written_bytes, PUBLIC_MEMORY_LENGTH);
+
+        receiver_manager.Process();
 
         uint8_t buffer[PUBLIC_MEMORY_LENGTH];
+        unsigned length = rx_stream.Read(buffer, PUBLIC_MEMORY_LENGTH);
 
-        unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
-
-        // hydrolib::ReturnCode receive_status = deserializer.Process();
-        // EXPECT_EQ(hydrolib::ReturnCode::OK, receive_status);
-
-        // hydrolib::bus::datalink::AddressType address =
-        //     deserializer.GetSourceAddress();
-        // EXPECT_EQ(address, SERIALIZER_ADDRESS);
-
-        // unsigned length = deserializer.GetDataLength();
         EXPECT_EQ(length, PUBLIC_MEMORY_LENGTH);
 
-        // const uint8_t *data = deserializer.GetData();
         for (unsigned i = 0; i < length; i++)
         {
             EXPECT_EQ(buffer[i], test_data[i]);

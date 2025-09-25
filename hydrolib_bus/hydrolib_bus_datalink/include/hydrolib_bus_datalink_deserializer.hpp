@@ -31,7 +31,6 @@ public:
 private:
     ReturnCode FindHeader_();
     ReturnCode ParseHeader_();
-    ReturnCode ReadMessage_();
 
     bool CheckCRC_();
 
@@ -249,12 +248,6 @@ bool Deserializer<RxStream, Distributor>::CheckCRC_()
         return false;
     }
     return true;
-}
-
-template <concepts::stream::ByteReadableStreamConcept RxStream,
-          logger::LogDistributorConcept Distributor>
-ReturnCode Deserializer<RxStream, Distributor>::ReadMessage_()
-{
 }
 
 } // namespace hydrolib::bus::datalink
