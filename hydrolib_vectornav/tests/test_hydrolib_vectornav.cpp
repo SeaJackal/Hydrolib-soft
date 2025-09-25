@@ -2383,16 +2383,33 @@ TEST(TestVectorNAV, BasicTest)
     distributor.SetAllFilters(0, hydrolib::logger::LogLevel::DEBUG);
     TestStream stream;
     hydrolib::VectorNAVParser vector_nav(stream, logger);
+
     for (unsigned i = 0; i < packages_count; i++)
     {
         vector_nav.Process();
     }
+
+    unsigned wrong_crc_count = vector_nav.GetWrongCRCCount();
+    unsigned rubbish_bytes_count = vector_nav.GetRubbishBytesCount();
+
     std::cout << "Wrong crc: "
-              << static_cast<float>(vector_nav.GetWrongCRCCount()) /
-                     packages_count
+              << static_cast<float>(wrong_crc_count) / packages_count
               << std::endl;
     std::cout << "Rubbish bytes: "
-              << static_cast<float>(vector_nav.GetRubbishBytesCount()) /
-                     (packages_count * 30)
+              << static_cast<float>(rubbish_bytes_count) / (packages_count * 30)
               << std::endl;
+
+    float max_allowed_loss_percentage = 0.11f;
+    unsigned max_allowed_wrong_crc =
+        static_cast<unsigned>(packages_count * max_allowed_loss_percentage);
+
+    std::cout << "Wrong CRC count: " << wrong_crc_count
+              << ", Max allowed: " << max_allowed_wrong_crc << " ("
+              << (max_allowed_loss_percentage * 100) << "%)" << std::endl;
+
+    // Проверка ASSERT
+    EXPECT_LE(wrong_crc_count, max_allowed_wrong_crc)
+        << "Too many packets lost! " << wrong_crc_count
+        << " packets failed CRC check (max allowed: " << max_allowed_wrong_crc
+        << ")";
 }

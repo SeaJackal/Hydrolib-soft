@@ -1,10 +1,9 @@
 #pragma once
 
-// #include <concepts>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <concepts>
 
 #include "hydrolib_common.h"
 #include "hydrolib_imu.hpp"
@@ -16,6 +15,7 @@ namespace hydrolib
 template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
 class VectorNAVParser
 {
+
 private:
 #pragma pack(push, 1)
     struct Message_
@@ -95,6 +95,9 @@ private:
     unsigned package_counter_;
 
     Logger &logger_;
+
+    static_assert(sensors::IMUConcept<VectorNAVParser<InputStream, Logger>>,
+                  "VectorNAVParser must have GetIMUData() -> IMUData");
 };
 
 template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
