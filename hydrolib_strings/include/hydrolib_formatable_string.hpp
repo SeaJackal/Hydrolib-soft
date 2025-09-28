@@ -252,7 +252,7 @@ StaticFormatableString<ArgTypes...>::ToBytes_(DestType &buffer,
     {
         return ReturnCode::ERROR;
     }
-    if (write_res != param_pos_diffs_[next_param_index])
+    if (write_res != length_ - translated_length)
     {
         return ReturnCode::OVERFLOW;
     }
