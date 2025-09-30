@@ -6,6 +6,7 @@
 #include <iostream>
 
 using namespace hydrolib::strings;
+using namespace hydrolib::math;
 using namespace std;
 
 class BytesReceiver
@@ -34,12 +35,12 @@ int write(BytesReceiver &stream, const void *source, unsigned length)
 
 TEST(TestHydrolibStrings, TestFormatableString)
 {
-    constexpr StaticFormatableString<int, int, int, CString<4>> s(
-        "Inserting values: {}, {}, {}, {} End");
+    constexpr StaticFormatableString<int, int, int, CString<4>, FixedPoint10> s(
+        "Inserting values: {}, {}, {}, {}, {} End");
     BytesReceiver stream;
-    s.ToBytes(stream, 1, 20, -33, CString<4>("haha"));
+    s.ToBytes(stream, 1, 20, -33, CString<4>("haha"), 1.5_fp);
     stream.buffer[stream.current_length] = '\0';
 
     EXPECT_EQ(0, strcmp(reinterpret_cast<char *>(stream.buffer),
-                        "Inserting values: 1, 20, -33, haha End"));
+                        "Inserting values: 1, 20, -33, haha, 1.500 End"));
 }

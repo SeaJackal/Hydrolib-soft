@@ -5,6 +5,7 @@
 #include <concepts>
 #include <cstring>
 
+#include "hydrolib_fixed_point.hpp"
 #include "hydrolib_return_codes.hpp"
 #include "hydrolib_stream_concepts.hpp"
 
@@ -49,11 +50,20 @@ private:
     ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
                         unsigned translated_length, String param, Ts...) const;
 
+    template <concepts::stream::ByteWritableStreamConcept DestType,
+              typename... Ts>
+    ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
+                        unsigned translated_length, math::FixedPoint10 param,
+                        Ts...) const;
+
     template <concepts::stream::ByteWritableStreamConcept DestType>
     ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
                         unsigned translated_length) const;
 
 private:
+    template <concepts::stream::ByteWritableStreamConcept DestType>
+    static ReturnCode WriteIntegerToBuffer_(DestType &buffer, int param);
+
     static consteval unsigned CountLength_(const char *string);
     static consteval unsigned CountParametres_(const char *string);
 
@@ -142,58 +152,10 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
     translated_length += param_pos_diffs_[next_param_index] + 2;
     next_param_index++;
 
-    if (param == 0)
+    auto write_integer_result = WriteIntegerToBuffer_(buffer, param);
+    if (write_integer_result != ReturnCode::OK)
     {
-        write_res = write(buffer, "0", 1);
-        if (write_res == -1)
-        {
-            return ReturnCode::ERROR;
-        }
-        if (write_res != 1)
-        {
-            return ReturnCode::OVERFLOW;
-        }
-    }
-    else
-    {
-        if (param < 0)
-        {
-            write_res = write(buffer, "-", 1);
-            if (write_res == -1)
-            {
-                return ReturnCode::ERROR;
-            }
-            if (write_res != 1)
-            {
-                return ReturnCode::OVERFLOW;
-            }
-            param = -param;
-        }
-
-        unsigned digit = 1;
-        while (digit <= static_cast<unsigned>(param))
-        {
-            digit *= 10;
-        }
-        digit /= 10;
-
-        char symbol;
-
-        while (digit != 0)
-        {
-            symbol = param / digit + '0';
-            param %= digit;
-            write_res = write(buffer, &symbol, 1);
-            if (write_res == -1)
-            {
-                return ReturnCode::ERROR;
-            }
-            if (write_res != 1)
-            {
-                return ReturnCode::OVERFLOW;
-            }
-            digit /= 10;
-        }
+        return write_integer_result;
     }
 
     return ToBytes_(buffer, next_param_index, translated_length, others...);
@@ -235,6 +197,55 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
         return ReturnCode::OVERFLOW;
     }
 
+    return ToBytes_(buffer, next_param_index, translated_length, others...);
+}
+
+template <typename... ArgTypes>
+template <concepts::stream::ByteWritableStreamConcept DestType, typename... Ts>
+ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
+    DestType &buffer, unsigned next_param_index, unsigned translated_length,
+    math::FixedPoint10 param, Ts... others) const
+{
+    if (translated_length >= length_)
+    {
+        return ReturnCode::OK;
+    }
+
+    int write_res = write(buffer, string_ + translated_length,
+                          param_pos_diffs_[next_param_index]);
+    if (write_res == -1)
+    {
+        return ReturnCode::ERROR;
+    }
+    if (write_res != param_pos_diffs_[next_param_index])
+    {
+        return ReturnCode::OVERFLOW;
+    }
+    translated_length += param_pos_diffs_[next_param_index] + 2;
+    next_param_index++;
+
+    auto int_res = WriteIntegerToBuffer_(buffer, param.GetIntPart());
+    if (int_res != ReturnCode::OK)
+    {
+        return int_res;
+    }
+    constexpr char point = '.';
+    auto point_res = write(buffer, &point, 1);
+    if (point_res == -1)
+    {
+        return ReturnCode::ERROR;
+    }
+    if (point_res != 1)
+    {
+        return ReturnCode::OVERFLOW;
+    }
+    auto frac_res = WriteIntegerToBuffer_(
+        buffer, (param.GetFractionPart() * 1000) >>
+                    math::FixedPoint10::GetFractionBits());
+    if (frac_res != ReturnCode::OK)
+    {
+        return frac_res;
+    }
     return ToBytes_(buffer, next_param_index, translated_length, others...);
 }
 
@@ -281,6 +292,68 @@ StaticFormatableString<ArgTypes...>::CountLength_(const char *string)
         length++;
     }
     return length;
+}
+
+template <typename... ArgTypes>
+template <concepts::stream::ByteWritableStreamConcept DestType>
+ReturnCode
+StaticFormatableString<ArgTypes...>::WriteIntegerToBuffer_(DestType &buffer,
+                                                           int param)
+{
+    if (param == 0)
+    {
+        auto write_res = write(buffer, "0", 1);
+        if (write_res == -1)
+        {
+            return ReturnCode::ERROR;
+        }
+        if (write_res != 1)
+        {
+            return ReturnCode::OVERFLOW;
+        }
+    }
+    else
+    {
+        if (param < 0)
+        {
+            auto write_res = write(buffer, "-", 1);
+            if (write_res == -1)
+            {
+                return ReturnCode::ERROR;
+            }
+            if (write_res != 1)
+            {
+                return ReturnCode::OVERFLOW;
+            }
+            param = -param;
+        }
+
+        unsigned digit = 1;
+        while (digit <= static_cast<unsigned>(param))
+        {
+            digit *= 10;
+        }
+        digit /= 10;
+
+        char symbol;
+
+        while (digit != 0)
+        {
+            symbol = param / digit + '0';
+            param %= digit;
+            auto write_res = write(buffer, &symbol, 1);
+            if (write_res == -1)
+            {
+                return ReturnCode::ERROR;
+            }
+            if (write_res != 1)
+            {
+                return ReturnCode::OVERFLOW;
+            }
+            digit /= 10;
+        }
+    }
+    return ReturnCode::OK;
 }
 
 template <typename... ArgTypes>

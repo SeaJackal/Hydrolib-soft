@@ -34,6 +34,7 @@ class FixedPoint
 
 public:
     constexpr FixedPoint(int value);
+    constexpr FixedPoint(int value, int divider);
     consteval FixedPoint(float value);
     consteval FixedPoint(double value);
     consteval FixedPoint(long double value);
@@ -53,6 +54,10 @@ public:
 
     bool operator==(const FixedPoint &other) const;
 
+    static constexpr int GetFractionBits();
+    constexpr int GetIntPart() const;
+    constexpr int GetFractionPart() const;
+
 private:
     int value_;
 };
@@ -66,6 +71,12 @@ consteval FixedPoint10 operator""_fp(long double value);
 template <unsigned FRACTION_BITS>
 constexpr FixedPoint<FRACTION_BITS>::FixedPoint(int value)
     : value_(value << FRACTION_BITS)
+{
+}
+
+template <unsigned FRACTION_BITS>
+constexpr FixedPoint<FRACTION_BITS>::FixedPoint(int value, int divider)
+    : value_(value * (1 << FRACTION_BITS) / divider)
 {
 }
 
@@ -85,6 +96,31 @@ template <unsigned FRACTION_BITS>
 consteval FixedPoint<FRACTION_BITS>::FixedPoint(long double value)
     : value_(static_cast<int>(value * (1 << FRACTION_BITS)))
 {
+}
+
+template <unsigned FRACTION_BITS>
+constexpr int FixedPoint<FRACTION_BITS>::GetFractionBits()
+{
+    return FRACTION_BITS;
+}
+
+template <unsigned FRACTION_BITS>
+constexpr int FixedPoint<FRACTION_BITS>::GetIntPart() const
+{
+    return value_ >> FRACTION_BITS;
+}
+
+template <unsigned FRACTION_BITS>
+constexpr int FixedPoint<FRACTION_BITS>::GetFractionPart() const
+{
+    if (value_ < 0)
+    {
+        return (~(value_ - 1)) & ((1 << FRACTION_BITS) - 1);
+    }
+    else
+    {
+        return value_ & ((1 << FRACTION_BITS) - 1);
+    }
 }
 
 template <unsigned FRACTION_BITS>

@@ -11,6 +11,13 @@ TEST(TestHydrolibMath, FixedPoint10Constructor)
     EXPECT_DOUBLE_EQ(static_cast<double>(fp), 5.0);
 }
 
+TEST(TestHydrolibMath, FixedPoint10ConstructorWithDivider)
+{
+    FixedPoint10 fp(5, 2);
+
+    EXPECT_DOUBLE_EQ(static_cast<double>(fp), 2.5);
+}
+
 TEST(TestHydrolibMath, FixedPoint10ConstructorWithLiteral)
 {
     auto fp = 3.5_fp;
@@ -99,7 +106,6 @@ TEST(TestHydrolibMath, FixedPoint10Division)
     EXPECT_DOUBLE_EQ(static_cast<double>(result), 5.0);
 }
 
-
 TEST(TestHydrolibMath, FixedPoint10DivisionAssignment)
 {
     FixedPoint10 a(20);
@@ -146,22 +152,22 @@ TEST(TestHydrolibMath, FixedPoint10Sqrt)
 {
     FixedPoint10 a(16);
     FixedPoint10 result = sqrt(a);
-    
+
     EXPECT_DOUBLE_EQ(static_cast<double>(result), 4.0);
-    
+
     FixedPoint10 b(9);
     FixedPoint10 result2 = sqrt(b);
-    
+
     EXPECT_DOUBLE_EQ(static_cast<double>(result2), 3.0);
-    
+
     auto c = 6.25_fp;
     FixedPoint10 result3 = sqrt(c);
-    
+
     EXPECT_DOUBLE_EQ(static_cast<double>(result3), 2.5);
 
     auto d = 0.25_fp;
     FixedPoint10 result4 = sqrt(d);
-    
+
     EXPECT_DOUBLE_EQ(static_cast<double>(result4), 0.5);
 }
 
@@ -173,3 +179,71 @@ TEST(TestHydrolibMath, FixedPoint10EdgeCases)
     EXPECT_EQ(tiny + tiny, 0.002_fp);
     EXPECT_EQ(large / 2.0_fp, 511.5_fp);
 }
+
+TEST(TestHydrolibMath, FixedPoint10GetFractionBits)
+{
+    FixedPoint10 fp(5.5);
+    EXPECT_EQ(FixedPoint10::GetFractionBits(), 10);
+
+    FixedPoint10 fp2(0.0);
+    EXPECT_EQ(FixedPoint10::GetFractionBits(), 10);
+
+    FixedPoint10 fp3(-3.14);
+    EXPECT_EQ(FixedPoint10::GetFractionBits(), 10);
+}
+
+TEST(TestHydrolibMath, FixedPoint10GetIntPart)
+{
+    FixedPoint10 fp1(5.75);
+    EXPECT_EQ(fp1.GetIntPart(), 5);
+
+    FixedPoint10 fp2(10.25);
+    EXPECT_EQ(fp2.GetIntPart(), 10);
+
+    FixedPoint10 fp3(0.99);
+    EXPECT_EQ(fp3.GetIntPart(), 0);
+
+    FixedPoint10 fp4(-5.75);
+    EXPECT_EQ(fp4.GetIntPart(), -6);
+
+    FixedPoint10 fp5(-0.25);
+    EXPECT_EQ(fp5.GetIntPart(), -1);
+
+    FixedPoint10 fp6(42);
+    EXPECT_EQ(fp6.GetIntPart(), 42);
+
+    FixedPoint10 fp7(-15);
+    EXPECT_EQ(fp7.GetIntPart(), -15);
+
+    FixedPoint10 fp8(0);
+    EXPECT_EQ(fp8.GetIntPart(), 0);
+}
+
+TEST(TestHydrolibMath, FixedPoint10GetFractionPart)
+{
+    FixedPoint10 fp1(5.25);
+    EXPECT_EQ(fp1.GetFractionPart(),
+              0.25 * (1 << FixedPoint10::GetFractionBits()));
+
+    FixedPoint10 fp2(3.5);
+    EXPECT_EQ(fp2.GetFractionPart(),
+              0.5 * (1 << FixedPoint10::GetFractionBits()));
+
+    FixedPoint10 fp3(7.75);
+    EXPECT_EQ(fp3.GetFractionPart(),
+              0.75 * (1 << FixedPoint10::GetFractionBits()));
+
+    FixedPoint10 fp4(10);
+    EXPECT_EQ(fp4.GetFractionPart(), 0);
+
+    FixedPoint10 fp5(0);
+    EXPECT_EQ(fp5.GetFractionPart(), 0);
+}
+
+TEST(TestHydrolibMath, FixedPoint10GetFractionPartNegative)
+{
+    FixedPoint10 fp6(-2.25);
+    EXPECT_EQ(fp6.GetFractionPart(),
+              0.25 * (1 << FixedPoint10::GetFractionBits()));
+}
+
