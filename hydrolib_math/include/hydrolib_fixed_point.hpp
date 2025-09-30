@@ -33,13 +33,13 @@ class FixedPoint
     friend FixedPoint sqrt<FRACTION_BITS>(FixedPoint value);
 
 public:
-    explicit constexpr FixedPoint(int value);
+    constexpr FixedPoint(int value);
     consteval FixedPoint(float value);
     consteval FixedPoint(double value);
     consteval FixedPoint(long double value);
 
 public:
-    operator double() const;
+    explicit operator double() const;
 
     FixedPoint &operator+=(const FixedPoint &other);
     FixedPoint &operator-=(const FixedPoint &other);
@@ -50,6 +50,8 @@ public:
     FixedPoint operator/(const FixedPoint &other) const;
     FixedPoint &operator*=(const FixedPoint &other);
     FixedPoint &operator/=(const FixedPoint &other);
+
+    bool operator==(const FixedPoint &other) const;
 
 private:
     int value_;
@@ -165,6 +167,12 @@ FixedPoint<FRACTION_BITS>::operator/=(const FixedPoint<FRACTION_BITS> &other)
 {
     *this = *this / other;
     return *this;
+}
+
+template <unsigned FRACTION_BITS>
+bool FixedPoint<FRACTION_BITS>::operator==(const FixedPoint &other) const
+{
+    return value_ == other.value_;
 }
 
 template <unsigned FRACTION_BITS>

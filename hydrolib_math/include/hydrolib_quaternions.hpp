@@ -10,6 +10,7 @@ class Quaternion
 public:
     Quaternion(Number x, Number y, Number z, Number w);
     Quaternion(Vector3D<Number> &vector);
+    Quaternion(Vector3D<Number> &&vector, Number w);
 
 public:
     Quaternion &operator+=(const Quaternion &other);
@@ -41,6 +42,12 @@ inline Quaternion<Number>::Quaternion(Number x, Number y, Number z, Number w)
 template <ArithmeticConcept Number>
 inline Quaternion<Number>::Quaternion(Vector3D<Number> &vector)
     : x(vector.x), y(vector.y), z(vector.z), w(0)
+{
+}
+
+template <ArithmeticConcept Number>
+inline Quaternion<Number>::Quaternion(Vector3D<Number> &&vector, Number w)
+    : x(vector.x), y(vector.y), z(vector.z), w(w)
 {
 }
 
@@ -92,7 +99,7 @@ Quaternion<Number>::operator*(const Quaternion<Number> &other) const
 template <ArithmeticConcept Number>
 inline Quaternion<Number> Quaternion<Number>::operator!() const
 {
-    return Quaternion(x, -y, -z, -w);
+    return Quaternion(-x, -y, -z, w);
 }
 
 template <ArithmeticConcept Number>

@@ -117,10 +117,10 @@ TEST(TestHydrolibMath, QuaternionConjugate)
                                FixedPoint10(3), FixedPoint10(4));
     Quaternion<FixedPoint10> conjugate = !q;
 
-    EXPECT_EQ(conjugate.x, FixedPoint10(1));
+    EXPECT_EQ(conjugate.x, FixedPoint10(-1));
     EXPECT_EQ(conjugate.y, FixedPoint10(-2));
     EXPECT_EQ(conjugate.z, FixedPoint10(-3));
-    EXPECT_EQ(conjugate.w, FixedPoint10(-4));
+    EXPECT_EQ(conjugate.w, FixedPoint10(4));
 }
 
 TEST(TestHydrolibMath, QuaternionScalarMultiplication)
