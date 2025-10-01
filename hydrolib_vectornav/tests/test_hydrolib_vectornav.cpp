@@ -1,5 +1,5 @@
 #include "hydrolib_log_distributor.hpp"
-#include "hydrolib_vectronav.hpp"
+#include "hydrolib_vectornav.hpp"
 
 #include <cstdint>
 #include <gtest/gtest.h>
