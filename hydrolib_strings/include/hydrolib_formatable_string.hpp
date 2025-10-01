@@ -224,7 +224,21 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
     translated_length += param_pos_diffs_[next_param_index] + 2;
     next_param_index++;
 
-    auto int_res = WriteIntegerToBuffer_(buffer, param.GetIntPart());
+    if (param < 0)
+    {
+        constexpr char point = '-';
+        auto point_res = write(buffer, &point, 1);
+        if (point_res == -1)
+        {
+            return ReturnCode::ERROR;
+        }
+        if (point_res != 1)
+        {
+            return ReturnCode::OVERFLOW;
+        }
+    }
+
+    auto int_res = WriteIntegerToBuffer_(buffer, param.GetAbsIntPart());
     if (int_res != ReturnCode::OK)
     {
         return int_res;
@@ -240,7 +254,7 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
         return ReturnCode::OVERFLOW;
     }
     auto frac_res = WriteIntegerToBuffer_(
-        buffer, (param.GetFractionPart() * 1000) >>
+        buffer, (param.GetAbsFractionPart() * 1000) >>
                     math::FixedPoint10::GetFractionBits());
     if (frac_res != ReturnCode::OK)
     {

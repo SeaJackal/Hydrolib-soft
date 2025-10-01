@@ -53,10 +53,23 @@ public:
     FixedPoint &operator/=(const FixedPoint &other);
 
     bool operator==(const FixedPoint &other) const;
+    bool operator!=(const FixedPoint &other) const;
+    bool operator<(const FixedPoint &other) const;
+    bool operator<=(const FixedPoint &other) const;
+    bool operator>(const FixedPoint &other) const;
+    bool operator>=(const FixedPoint &other) const;
+
+    // Comparison with int
+    bool operator==(int other) const;
+    bool operator!=(int other) const;
+    bool operator<(int other) const;
+    bool operator<=(int other) const;
+    bool operator>(int other) const;
+    bool operator>=(int other) const;
 
     static constexpr int GetFractionBits();
-    constexpr int GetIntPart() const;
-    constexpr int GetFractionPart() const;
+    constexpr int GetAbsIntPart() const;
+    constexpr int GetAbsFractionPart() const;
 
 private:
     int value_;
@@ -105,13 +118,13 @@ constexpr int FixedPoint<FRACTION_BITS>::GetFractionBits()
 }
 
 template <unsigned FRACTION_BITS>
-constexpr int FixedPoint<FRACTION_BITS>::GetIntPart() const
+constexpr int FixedPoint<FRACTION_BITS>::GetAbsIntPart() const
 {
-    return value_ >> FRACTION_BITS;
+    return (value_ < 0 ? -value_ : value_) >> FRACTION_BITS;
 }
 
 template <unsigned FRACTION_BITS>
-constexpr int FixedPoint<FRACTION_BITS>::GetFractionPart() const
+constexpr int FixedPoint<FRACTION_BITS>::GetAbsFractionPart() const
 {
     if (value_ < 0)
     {
@@ -209,6 +222,72 @@ template <unsigned FRACTION_BITS>
 bool FixedPoint<FRACTION_BITS>::operator==(const FixedPoint &other) const
 {
     return value_ == other.value_;
+}
+
+template <unsigned FRACTION_BITS>
+bool FixedPoint<FRACTION_BITS>::operator!=(const FixedPoint &other) const
+{
+    return value_ != other.value_;
+}
+
+template <unsigned FRACTION_BITS>
+bool FixedPoint<FRACTION_BITS>::operator<(const FixedPoint &other) const
+{
+    return value_ < other.value_;
+}
+
+template <unsigned FRACTION_BITS>
+bool FixedPoint<FRACTION_BITS>::operator<=(const FixedPoint &other) const
+{
+    return value_ <= other.value_;
+}
+
+template <unsigned FRACTION_BITS>
+bool FixedPoint<FRACTION_BITS>::operator>(const FixedPoint &other) const
+{
+    return value_ > other.value_;
+}
+
+template <unsigned FRACTION_BITS>
+bool FixedPoint<FRACTION_BITS>::operator>=(const FixedPoint &other) const
+{
+    return value_ >= other.value_;
+}
+
+template <unsigned FRACTION_BITS>
+bool FixedPoint<FRACTION_BITS>::operator==(int other) const
+{
+    return value_ == (other << FRACTION_BITS);
+}
+
+template <unsigned FRACTION_BITS>
+bool FixedPoint<FRACTION_BITS>::operator!=(int other) const
+{
+    return value_ != (other << FRACTION_BITS);
+}
+
+template <unsigned FRACTION_BITS>
+bool FixedPoint<FRACTION_BITS>::operator<(int other) const
+{
+    return value_ < (other << FRACTION_BITS);
+}
+
+template <unsigned FRACTION_BITS>
+bool FixedPoint<FRACTION_BITS>::operator<=(int other) const
+{
+    return value_ <= (other << FRACTION_BITS);
+}
+
+template <unsigned FRACTION_BITS>
+bool FixedPoint<FRACTION_BITS>::operator>(int other) const
+{
+    return value_ > (other << FRACTION_BITS);
+}
+
+template <unsigned FRACTION_BITS>
+bool FixedPoint<FRACTION_BITS>::operator>=(int other) const
+{
+    return value_ >= (other << FRACTION_BITS);
 }
 
 template <unsigned FRACTION_BITS>

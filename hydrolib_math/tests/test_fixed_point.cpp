@@ -182,13 +182,6 @@ TEST(TestHydrolibMath, FixedPoint10EdgeCases)
 
 TEST(TestHydrolibMath, FixedPoint10GetFractionBits)
 {
-    FixedPoint10 fp(5.5);
-    EXPECT_EQ(FixedPoint10::GetFractionBits(), 10);
-
-    FixedPoint10 fp2(0.0);
-    EXPECT_EQ(FixedPoint10::GetFractionBits(), 10);
-
-    FixedPoint10 fp3(-3.14);
     EXPECT_EQ(FixedPoint10::GetFractionBits(), 10);
 }
 
@@ -204,16 +197,16 @@ TEST(TestHydrolibMath, FixedPoint10GetIntPart)
     EXPECT_EQ(fp3.GetIntPart(), 0);
 
     FixedPoint10 fp4(-5.75);
-    EXPECT_EQ(fp4.GetIntPart(), -6);
+    EXPECT_EQ(fp4.GetIntPart(), 5);
 
     FixedPoint10 fp5(-0.25);
-    EXPECT_EQ(fp5.GetIntPart(), -1);
+    EXPECT_EQ(fp5.GetIntPart(), 0);
 
     FixedPoint10 fp6(42);
     EXPECT_EQ(fp6.GetIntPart(), 42);
 
     FixedPoint10 fp7(-15);
-    EXPECT_EQ(fp7.GetIntPart(), -15);
+    EXPECT_EQ(fp7.GetIntPart(), 15);
 
     FixedPoint10 fp8(0);
     EXPECT_EQ(fp8.GetIntPart(), 0);
@@ -245,5 +238,52 @@ TEST(TestHydrolibMath, FixedPoint10GetFractionPartNegative)
     FixedPoint10 fp6(-2.25);
     EXPECT_EQ(fp6.GetFractionPart(),
               0.25 * (1 << FixedPoint10::GetFractionBits()));
+}
+
+TEST(TestHydrolibMath, FixedPoint10ComparisonOperators)
+{
+    FixedPoint10 a(5);
+    FixedPoint10 b(3);
+    FixedPoint10 c(5);
+
+    // FixedPoint to FixedPoint comparisons
+    EXPECT_TRUE(a > b);
+    EXPECT_TRUE(b < a);
+    EXPECT_TRUE(a >= c);
+    EXPECT_TRUE(c >= a);
+    EXPECT_TRUE(b <= a);
+    EXPECT_FALSE(a < b);
+    EXPECT_TRUE(a != b);
+    EXPECT_FALSE(a != c);
+
+    // FixedPoint to int comparisons
+    EXPECT_TRUE(a == 5);
+    EXPECT_TRUE(a != 3);
+    EXPECT_TRUE(a > 3);
+    EXPECT_TRUE(a >= 5);
+    EXPECT_TRUE(b < 5);
+    EXPECT_TRUE(b <= 3);
+    EXPECT_FALSE(a < 3);
+    EXPECT_FALSE(b > 5);
+}
+
+TEST(TestHydrolibMath, FixedPoint10DecimalComparisons)
+{
+    auto a = 5.5_fp;
+    auto b = 3.2_fp;
+    auto c = 5.5_fp;
+
+    EXPECT_TRUE(a > b);
+    EXPECT_TRUE(b < a);
+    EXPECT_TRUE(a >= c);
+    EXPECT_TRUE(a <= c);
+    EXPECT_TRUE(a == c);
+    EXPECT_TRUE(a != b);
+
+    EXPECT_TRUE(a > 5);
+    EXPECT_TRUE(a >= 5);
+    EXPECT_FALSE(a == 5);
+    EXPECT_TRUE(b < 4);
+    EXPECT_TRUE(b <= 4);
 }
 
