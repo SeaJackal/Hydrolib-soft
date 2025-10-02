@@ -171,6 +171,15 @@ TEST(TestHydrolibMath, FixedPoint10Sqrt)
     EXPECT_DOUBLE_EQ(static_cast<double>(result4), 0.5);
 }
 
+TEST(TestHydrolibMath, FixedPoint10Sin)
+{
+    constexpr double rads = 1.5708;
+    FixedPoint10 a(rads);
+    FixedPoint10 result = sin(a);
+
+    EXPECT_DOUBLE_EQ(static_cast<double>(result), sin(rads));
+}
+
 TEST(TestHydrolibMath, FixedPoint10EdgeCases)
 {
     auto tiny = 0.001_fp;
@@ -246,4 +255,3 @@ TEST(TestHydrolibMath, FixedPoint10GetFractionPartNegative)
     EXPECT_EQ(fp6.GetFractionPart(),
               0.25 * (1 << FixedPoint10::GetFractionBits()));
 }
-
