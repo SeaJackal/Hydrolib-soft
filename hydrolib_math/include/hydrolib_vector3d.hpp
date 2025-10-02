@@ -48,9 +48,18 @@ template <ArithmeticConcept Number>
 inline void Vector3D<Number>::Normalize()
 {
     Number len = Length();
-    x /= len;
-    y /= len;
-    z /= len;
+    if (len == 0)
+    {
+        x = 0;
+        y = 0;
+        z = 0;
+    }
+    else
+    {
+        x /= len;
+        y /= len;
+        z /= len;
+    }
 }
 
 template <ArithmeticConcept Number>

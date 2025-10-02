@@ -23,6 +23,8 @@ public:
     Quaternion operator*(Number k) const;
     Quaternion operator/(Number k) const;
 
+    Number Dot(const Quaternion &other) const;
+
     Number GetNorm() const;
     void Normalize();
 
@@ -118,6 +120,12 @@ template <ArithmeticConcept Number>
 inline Quaternion<Number> Quaternion<Number>::operator/(Number k) const
 {
     return Quaternion(x / k, y / k, z / k, w / k);
+}
+
+template <ArithmeticConcept Number>
+inline Number Quaternion<Number>::Dot(const Quaternion<Number> &other) const
+{
+    return x * other.x + y * other.y + z * other.z + w * other.w;
 }
 
 template <ArithmeticConcept Number>

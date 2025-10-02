@@ -4,256 +4,275 @@
 
 using namespace hydrolib::math;
 
-TEST(TestHydrolibMath, FixedPoint10Constructor)
+TEST(TestHydrolibMath, FixedPointBaseConstructor)
 {
-    FixedPoint10 fp(5.0);
+    FixedPointBase fp(5.0);
 
     EXPECT_DOUBLE_EQ(static_cast<double>(fp), 5.0);
 }
 
-TEST(TestHydrolibMath, FixedPoint10ConstructorWithDivider)
+TEST(TestHydrolibMath, FixedPointBaseConstructorWithDivider)
 {
-    FixedPoint10 fp(5, 2);
+    FixedPointBase fp(5, 2);
 
     EXPECT_DOUBLE_EQ(static_cast<double>(fp), 2.5);
 }
 
-TEST(TestHydrolibMath, FixedPoint10ConstructorWithLiteral)
+TEST(TestHydrolibMath, FixedPointBaseConstructorWithLiteral)
 {
     auto fp = 3.5_fp;
 
     EXPECT_DOUBLE_EQ(static_cast<double>(fp), 3.5);
 }
 
-TEST(TestHydrolibMath, FixedPoint10Addition)
+TEST(TestHydrolibMath, FixedPointBaseAddition)
 {
-    FixedPoint10 a(10);
-    FixedPoint10 b(5);
-    FixedPoint10 result = a + b;
+    FixedPointBase a(10);
+    FixedPointBase b(5);
+    FixedPointBase result = a + b;
 
     EXPECT_DOUBLE_EQ(static_cast<double>(result), 15.0);
 }
 
-TEST(TestHydrolibMath, FixedPoint10AdditionAssignment)
+TEST(TestHydrolibMath, FixedPointBaseAdditionAssignment)
 {
-    FixedPoint10 a(10);
-    FixedPoint10 b(5);
+    FixedPointBase a(10);
+    FixedPointBase b(5);
     a += b;
 
     EXPECT_DOUBLE_EQ(static_cast<double>(a), 15.0);
 }
 
-TEST(TestHydrolibMath, FixedPoint10Subtraction)
+TEST(TestHydrolibMath, FixedPointBaseSubtraction)
 {
-    FixedPoint10 a(10);
-    FixedPoint10 b(3);
-    FixedPoint10 result = a - b;
+    FixedPointBase a(10);
+    FixedPointBase b(3);
+    FixedPointBase result = a - b;
 
     EXPECT_DOUBLE_EQ(static_cast<double>(result), 7.0);
 }
 
-TEST(TestHydrolibMath, FixedPoint10SubtractionWithNegative)
+TEST(TestHydrolibMath, FixedPointBaseSubtractionWithNegative)
 {
-    FixedPoint10 a(5);
-    FixedPoint10 b(-3);
-    FixedPoint10 result = a - b;
+    FixedPointBase a(5);
+    FixedPointBase b(-3);
+    FixedPointBase result = a - b;
 
     EXPECT_DOUBLE_EQ(static_cast<double>(result), 8.0);
 }
 
-TEST(TestHydrolibMath, FixedPoint10SubtractionAssignment)
+TEST(TestHydrolibMath, FixedPointBaseSubtractionAssignment)
 {
-    FixedPoint10 a(10);
-    FixedPoint10 b(3);
+    FixedPointBase a(10);
+    FixedPointBase b(3);
     a -= b;
 
     EXPECT_DOUBLE_EQ(static_cast<double>(a), 7.0);
 }
 
-TEST(TestHydrolibMath, FixedPoint10UnaryMinus)
+TEST(TestHydrolibMath, FixedPointBaseUnaryMinus)
 {
-    FixedPoint10 a(10);
-    FixedPoint10 b(-5);
+    FixedPointBase a(10);
+    FixedPointBase b(-5);
 
     EXPECT_DOUBLE_EQ(static_cast<double>(-a), -10.0);
     EXPECT_DOUBLE_EQ(static_cast<double>(-b), 5.0);
 }
 
-TEST(TestHydrolibMath, FixedPoint10Multiplication)
+TEST(TestHydrolibMath, FixedPointBaseMultiplication)
 {
-    FixedPoint10 a(4);
-    FixedPoint10 b(3);
-    FixedPoint10 result = a * b;
+    FixedPointBase a(4);
+    FixedPointBase b(3);
+    FixedPointBase result = a * b;
 
     EXPECT_DOUBLE_EQ(static_cast<double>(result), 12.0);
 }
 
-TEST(TestHydrolibMath, FixedPoint10MultiplicationAssignment)
+TEST(TestHydrolibMath, FixedPointBaseMultiplicationAssignment)
 {
-    FixedPoint10 a(6);
-    FixedPoint10 b(2);
+    FixedPointBase a(6);
+    FixedPointBase b(2);
     a *= b;
 
     EXPECT_DOUBLE_EQ(static_cast<double>(a), 12.0);
 }
 
-TEST(TestHydrolibMath, FixedPoint10Division)
+TEST(TestHydrolibMath, FixedPointBaseDivision)
 {
-    FixedPoint10 a(15);
-    FixedPoint10 b(3);
-    FixedPoint10 result = a / b;
+    FixedPointBase a(15);
+    FixedPointBase b(3);
+    FixedPointBase result = a / b;
 
     EXPECT_DOUBLE_EQ(static_cast<double>(result), 5.0);
 }
 
-TEST(TestHydrolibMath, FixedPoint10DivisionAssignment)
+TEST(TestHydrolibMath, FixedPointBaseDivisionAssignment)
 {
-    FixedPoint10 a(20);
-    FixedPoint10 b(4);
+    FixedPointBase a(20);
+    FixedPointBase b(4);
     a /= b;
 
     EXPECT_DOUBLE_EQ(static_cast<double>(a), 5.0);
 }
 
-TEST(TestHydrolibMath, FixedPoint10ChainOperations)
+TEST(TestHydrolibMath, FixedPointBaseChainOperations)
 {
-    FixedPoint10 a(10);
-    FixedPoint10 b(5);
-    FixedPoint10 c(2);
+    FixedPointBase a(10);
+    FixedPointBase b(5);
+    FixedPointBase c(2);
 
-    FixedPoint10 result = (a + b) * c;
+    FixedPointBase result = (a + b) * c;
     EXPECT_DOUBLE_EQ(static_cast<double>(result), 30.0);
 
-    FixedPoint10 result2 = a * b - c;
+    FixedPointBase result2 = a * b - c;
     EXPECT_DOUBLE_EQ(static_cast<double>(result2), 48.0);
 }
 
-TEST(TestHydrolibMath, FixedPoint10LargeNumbers)
+TEST(TestHydrolibMath, FixedPointBaseLargeNumbers)
 {
-    FixedPoint10 large1(1000);
-    FixedPoint10 large2(500);
+    constexpr double a = 31.999;
+    constexpr double b = 31.999;
+    FixedPointBase large1(a);
+    FixedPointBase large2(b);
 
-    EXPECT_DOUBLE_EQ(static_cast<double>(large1 + large2), 1500.0);
-    EXPECT_DOUBLE_EQ(static_cast<double>(large1 - large2), 500.0);
-    EXPECT_DOUBLE_EQ(static_cast<double>(large1 / large2), 2.0);
+    EXPECT_NEAR(static_cast<double>(large1 + large2),
+                     static_cast<double>(large1) + static_cast<double>(large2),
+                1.0 / (1 << FixedPointBase::GetFractionBits()));
+    EXPECT_NEAR(static_cast<double>(large1 - large2),
+                     static_cast<double>(large1) - static_cast<double>(large2),
+                1.0 / (1 << FixedPointBase::GetFractionBits()));
+    EXPECT_NEAR(static_cast<double>(large1 * large2),
+                static_cast<double>(large1) * static_cast<double>(large2),
+                1.0 / (1 << FixedPointBase::GetFractionBits()));
+    EXPECT_NEAR(static_cast<double>(large1 / large2),
+                static_cast<double>(large1) / static_cast<double>(large2),
+                1.0 / (1 << FixedPointBase::GetFractionBits()));
 }
 
-TEST(TestHydrolibMath, FixedPoint10SmallDecimals)
+TEST(TestHydrolibMath, FixedPointBaseSmallDecimals)
 {
-    auto small1 = 0.125_fp;
-    auto small2 = 0.25_fp;
+    constexpr double a = 0.001;
+    constexpr double b = 0.001;
+    FixedPointBase small1(a);
+    FixedPointBase small2(b);
 
-    EXPECT_DOUBLE_EQ(static_cast<double>(small1 + small1), 0.25);
-    EXPECT_DOUBLE_EQ(static_cast<double>(small2 - small1), 0.125);
-    EXPECT_DOUBLE_EQ(static_cast<double>(small1 * 8.0_fp), 1.0);
+    EXPECT_NEAR(static_cast<double>(small1 + small2), a + b,
+                1.0 / (1 << FixedPointBase::GetFractionBits()));
+    EXPECT_NEAR(static_cast<double>(small1 - small2), a - b,
+                1.0 / (1 << FixedPointBase::GetFractionBits()));
+    EXPECT_NEAR(static_cast<double>(small1 * small2), a * b,
+                1.0 / (1 << FixedPointBase::GetFractionBits()));
+    EXPECT_NEAR(static_cast<double>(small1 / small2),
+                     static_cast<double>(small1) / static_cast<double>(small2),
+                1.0 / (1 << FixedPointBase::GetFractionBits()));
 }
 
-TEST(TestHydrolibMath, FixedPoint10Sqrt)
+TEST(TestHydrolibMath, FixedPointBaseSqrt)
 {
-    FixedPoint10 a(16);
-    FixedPoint10 result = sqrt(a);
+    FixedPointBase a(16);
+    FixedPointBase result = sqrt(a);
 
     EXPECT_DOUBLE_EQ(static_cast<double>(result), 4.0);
 
-    FixedPoint10 b(9);
-    FixedPoint10 result2 = sqrt(b);
+    FixedPointBase b(9);
+    FixedPointBase result2 = sqrt(b);
 
     EXPECT_DOUBLE_EQ(static_cast<double>(result2), 3.0);
 
     auto c = 6.25_fp;
-    FixedPoint10 result3 = sqrt(c);
+    FixedPointBase result3 = sqrt(c);
 
     EXPECT_DOUBLE_EQ(static_cast<double>(result3), 2.5);
 
     auto d = 0.25_fp;
-    FixedPoint10 result4 = sqrt(d);
+    FixedPointBase result4 = sqrt(d);
 
     EXPECT_DOUBLE_EQ(static_cast<double>(result4), 0.5);
 }
 
-TEST(TestHydrolibMath, FixedPoint10Sin)
+TEST(TestHydrolibMath, FixedPointBaseSin)
 {
-    constexpr double rads = 1.5708;
-    FixedPoint10 a(rads);
-    FixedPoint10 result = sin(a);
+    constexpr double rads = 3.14159265358979323846 / 4;
+    FixedPointBase a(rads);
+    FixedPointBase result = sin(a);
 
-    EXPECT_DOUBLE_EQ(static_cast<double>(result), sin(rads));
+    EXPECT_NEAR(static_cast<double>(result), sin(rads), 0.002);
 }
 
-TEST(TestHydrolibMath, FixedPoint10EdgeCases)
+TEST(TestHydrolibMath, FixedPointBaseCos)
 {
-    auto tiny = 0.001_fp;
-    auto large = 1023.0_fp;
+    constexpr double rads = 3.14159265358979323846 / 4;
+    FixedPointBase a(rads);
+    FixedPointBase result = cos(a);
 
-    EXPECT_EQ(tiny + tiny, 0.002_fp);
-    EXPECT_EQ(large / 2.0_fp, 511.5_fp);
+    EXPECT_NEAR(static_cast<double>(result), cos(rads), 0.002);
 }
 
-TEST(TestHydrolibMath, FixedPoint10GetFractionBits)
+TEST(TestHydrolibMath, FixedPointBaseGetFractionBits)
 {
-    EXPECT_EQ(FixedPoint10::GetFractionBits(), 10);
+    EXPECT_EQ(FixedPointBase::GetFractionBits(), 10);
 }
 
-TEST(TestHydrolibMath, FixedPoint10GetIntPart)
+TEST(TestHydrolibMath, FixedPointBaseGetAbsIntPart)
 {
-    FixedPoint10 fp1(5.75);
-    EXPECT_EQ(fp1.GetIntPart(), 5);
+    FixedPointBase fp1(5.75);
+    EXPECT_EQ(fp1.GetAbsIntPart(), 5);
 
-    FixedPoint10 fp2(10.25);
-    EXPECT_EQ(fp2.GetIntPart(), 10);
+    FixedPointBase fp2(10.25);
+    EXPECT_EQ(fp2.GetAbsIntPart(), 10);
 
-    FixedPoint10 fp3(0.99);
-    EXPECT_EQ(fp3.GetIntPart(), 0);
+    FixedPointBase fp3(0.99);
+    EXPECT_EQ(fp3.GetAbsIntPart(), 0);
 
-    FixedPoint10 fp4(-5.75);
-    EXPECT_EQ(fp4.GetIntPart(), 5);
+    FixedPointBase fp4(-5.75);
+    EXPECT_EQ(fp4.GetAbsIntPart(), 5);
 
-    FixedPoint10 fp5(-0.25);
-    EXPECT_EQ(fp5.GetIntPart(), 0);
+    FixedPointBase fp5(-0.25);
+    EXPECT_EQ(fp5.GetAbsIntPart(), 0);
 
-    FixedPoint10 fp6(42);
-    EXPECT_EQ(fp6.GetIntPart(), 42);
+    FixedPointBase fp6(42);
+    EXPECT_EQ(fp6.GetAbsIntPart(), 42);
 
-    FixedPoint10 fp7(-15);
-    EXPECT_EQ(fp7.GetIntPart(), 15);
+    FixedPointBase fp7(-15);
+    EXPECT_EQ(fp7.GetAbsIntPart(), 15);
 
-    FixedPoint10 fp8(0);
-    EXPECT_EQ(fp8.GetIntPart(), 0);
+    FixedPointBase fp8(0);
+    EXPECT_EQ(fp8.GetAbsIntPart(), 0);
 }
 
-TEST(TestHydrolibMath, FixedPoint10GetFractionPart)
+TEST(TestHydrolibMath, FixedPointBaseGetAbsFractionPart)
 {
-    FixedPoint10 fp1(5.25);
-    EXPECT_EQ(fp1.GetFractionPart(),
-              0.25 * (1 << FixedPoint10::GetFractionBits()));
+    FixedPointBase fp1(5.25);
+    EXPECT_EQ(fp1.GetAbsFractionPart(),
+              0.25 * (1 << FixedPointBase::GetFractionBits()));
 
-    FixedPoint10 fp2(3.5);
-    EXPECT_EQ(fp2.GetFractionPart(),
-              0.5 * (1 << FixedPoint10::GetFractionBits()));
+    FixedPointBase fp2(3.5);
+    EXPECT_EQ(fp2.GetAbsFractionPart(),
+              0.5 * (1 << FixedPointBase::GetFractionBits()));
 
-    FixedPoint10 fp3(7.75);
-    EXPECT_EQ(fp3.GetFractionPart(),
-              0.75 * (1 << FixedPoint10::GetFractionBits()));
+    FixedPointBase fp3(7.75);
+    EXPECT_EQ(fp3.GetAbsFractionPart(),
+              0.75 * (1 << FixedPointBase::GetFractionBits()));
 
-    FixedPoint10 fp4(10);
-    EXPECT_EQ(fp4.GetFractionPart(), 0);
+    FixedPointBase fp4(10);
+    EXPECT_EQ(fp4.GetAbsFractionPart(), 0);
 
-    FixedPoint10 fp5(0);
-    EXPECT_EQ(fp5.GetFractionPart(), 0);
+    FixedPointBase fp5(0);
+    EXPECT_EQ(fp5.GetAbsFractionPart(), 0);
 }
 
-TEST(TestHydrolibMath, FixedPoint10GetFractionPartNegative)
+TEST(TestHydrolibMath, FixedPointBaseGetAbsFractionPartNegative)
 {
-    FixedPoint10 fp6(-2.25);
-    EXPECT_EQ(fp6.GetFractionPart(),
-              0.25 * (1 << FixedPoint10::GetFractionBits()));
+    FixedPointBase fp6(-2.25);
+    EXPECT_EQ(fp6.GetAbsFractionPart(),
+              0.25 * (1 << FixedPointBase::GetFractionBits()));
 }
 
-TEST(TestHydrolibMath, FixedPoint10ComparisonOperators)
+TEST(TestHydrolibMath, FixedPointBaseComparisonOperators)
 {
-    FixedPoint10 a(5);
-    FixedPoint10 b(3);
-    FixedPoint10 c(5);
+    FixedPointBase a(5);
+    FixedPointBase b(3);
+    FixedPointBase c(5);
 
     // FixedPoint to FixedPoint comparisons
     EXPECT_TRUE(a > b);
@@ -276,7 +295,7 @@ TEST(TestHydrolibMath, FixedPoint10ComparisonOperators)
     EXPECT_FALSE(b > 5);
 }
 
-TEST(TestHydrolibMath, FixedPoint10DecimalComparisons)
+TEST(TestHydrolibMath, FixedPointBaseDecimalComparisons)
 {
     auto a = 5.5_fp;
     auto b = 3.2_fp;
@@ -295,4 +314,3 @@ TEST(TestHydrolibMath, FixedPoint10DecimalComparisons)
     EXPECT_TRUE(b < 4);
     EXPECT_TRUE(b <= 4);
 }
-

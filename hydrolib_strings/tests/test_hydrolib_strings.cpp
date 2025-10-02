@@ -35,7 +35,7 @@ int write(BytesReceiver &stream, const void *source, unsigned length)
 
 TEST(TestHydrolibStrings, TestFormatableString)
 {
-    constexpr StaticFormatableString<int, int, int, CString<4>, FixedPoint10> s(
+    constexpr StaticFormatableString<int, int, int, CString<4>, FixedPointBase> s(
         "Inserting values: {}, {}, {}, {}, {} End");
     BytesReceiver stream;
     s.ToBytes(stream, 1, 20, -33, CString<4>("haha"), 1.5_fp);

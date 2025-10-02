@@ -9,8 +9,8 @@ using namespace hydrolib::math;
 
 TEST(TestHydrolibMathRotations, Rotation)
 {
-    Vector3D<FixedPoint10> a{1, 1, 1};
-    Vector3D<FixedPoint10> b{0, 0, 1.732};
+    Vector3D<FixedPointBase> a{1, 1, 1};
+    Vector3D<FixedPointBase> b{0, 0, 1.732};
 
     auto q = GetRotation(a, b);
     auto result = Rotate(a, q);
@@ -21,12 +21,12 @@ TEST(TestHydrolibMathRotations, Rotation)
 
 TEST(TestHydrolibMathRotations, AxisRotation)
 {
-    Vector3D<FixedPoint10> x{1, 0, 0};
-    Vector3D<FixedPoint10> x_{0, 0, 1};
-    Vector3D<FixedPoint10> y{0, 1, 0};
-    Vector3D<FixedPoint10> y_{0, 1, 0};
-    Vector3D<FixedPoint10> z{0, 0, 1};
-    Vector3D<FixedPoint10> z_{-1, 0, 0};
+    Vector3D<FixedPointBase> x{1, 0, 0};
+    Vector3D<FixedPointBase> x_{0, 0, 1};
+    Vector3D<FixedPointBase> y{0, 1, 0};
+    Vector3D<FixedPointBase> y_{0, 1, 0};
+    Vector3D<FixedPointBase> z{0, 0, 1};
+    Vector3D<FixedPointBase> z_{-1, 0, 0};
 
     auto q = GetRotation(x, x_);
     auto result_y = Rotate(y, q);
@@ -43,4 +43,44 @@ TEST(TestHydrolibMathRotations, AxisRotation)
                 0.05);
     EXPECT_NEAR(static_cast<double>(z_.z), static_cast<double>(result_z.z),
                 0.05);
+}
+
+TEST(TestHydrolibMath, QuaternionExtractZRotation)
+{
+    Quaternion<FixedPointBase> q_z(0, 0, FixedPointBase(1), FixedPointBase(1));
+    q_z.Normalize();
+    Quaternion<FixedPointBase> q_xy(FixedPointBase(1), FixedPointBase(1), 0,
+                                    FixedPointBase(1));
+    q_xy.Normalize();
+    Quaternion<FixedPointBase> q = q_z * q_xy;
+
+    Quaternion<FixedPointBase> result = ExtractZRotation(q);
+    EXPECT_NEAR(static_cast<double>(result.x), static_cast<double>(q_z.x),
+                0.003);
+    EXPECT_NEAR(static_cast<double>(result.y), static_cast<double>(q_z.y),
+                0.003);
+    EXPECT_NEAR(static_cast<double>(result.z), static_cast<double>(q_z.z),
+                0.003);
+    EXPECT_NEAR(static_cast<double>(result.w), static_cast<double>(q_z.w),
+                0.003);
+    EXPECT_NEAR(static_cast<double>(q.x), static_cast<double>(q_xy.x), 0.003);
+    EXPECT_NEAR(static_cast<double>(q.y), static_cast<double>(q_xy.y), 0.003);
+    EXPECT_NEAR(static_cast<double>(q.z), static_cast<double>(q_xy.z), 0.003);
+    EXPECT_NEAR(static_cast<double>(q.w), static_cast<double>(q_xy.w), 0.003);
+}
+
+TEST(TestHydrolibMath, QuaternionExtractZRotationReversed)
+{
+    Quaternion<FixedPointBase> q(FixedPointBase(1), FixedPointBase(1),
+                                 FixedPointBase(1), FixedPointBase(1));
+    q.Normalize();
+
+    Quaternion<FixedPointBase> q_xy = q;
+
+    Quaternion<FixedPointBase> q_z = ExtractZRotation(q_xy);
+    auto result = q_z * q_xy;
+    EXPECT_NEAR(static_cast<double>(q.x), static_cast<double>(result.x), 0.002);
+    EXPECT_NEAR(static_cast<double>(q.y), static_cast<double>(result.y), 0.002);
+    EXPECT_NEAR(static_cast<double>(q.z), static_cast<double>(result.z), 0.002);
+    EXPECT_NEAR(static_cast<double>(q.w), static_cast<double>(result.w), 0.002);
 }

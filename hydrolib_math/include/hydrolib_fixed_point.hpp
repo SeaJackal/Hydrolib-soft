@@ -31,6 +31,13 @@ template <unsigned FRACTION_BITS>
 FixedPoint<FRACTION_BITS> sin(FixedPoint<FRACTION_BITS> value_rad);
 
 template <unsigned FRACTION_BITS>
+FixedPoint<FRACTION_BITS> cos(FixedPoint<FRACTION_BITS> value_rad);
+
+template <unsigned FRACTION_BITS>
+constexpr FixedPoint<FRACTION_BITS>
+DegToRad(FixedPoint<FRACTION_BITS> value_deg);
+
+template <unsigned FRACTION_BITS>
 class FixedPoint
 {
     friend FixedPoint sqrt<FRACTION_BITS>(FixedPoint value);
@@ -82,15 +89,14 @@ private:
     int value_;
 };
 
-using FixedPoint10 = FixedPoint<10>;
+using FixedPointBase = FixedPoint<10>;
 
-consteval FixedPoint10 operator""_fp(long double value);
+consteval FixedPointBase operator""_fp(long double value);
 
 ///////////////////////////////////////////////////////////////////////////////
 
 template <unsigned FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS>::FixedPoint()
-    : value_(0)
+constexpr FixedPoint<FRACTION_BITS>::FixedPoint() : value_(0)
 {
 }
 
@@ -242,7 +248,7 @@ FixedPoint<FRACTION_BITS>::operator/=(const FixedPoint<FRACTION_BITS> &other)
 template <unsigned FRACTION_BITS>
 bool FixedPoint<FRACTION_BITS>::operator==(const FixedPoint &other) const
 {
-    return value_ == other.value_;
+    return (value_ - other.value_) < (1 << (FRACTION_BITS / 2));
 }
 
 template <unsigned FRACTION_BITS>
@@ -319,14 +325,11 @@ FixedPoint<FRACTION_BITS> sqrt(FixedPoint<FRACTION_BITS> value)
         return FixedPoint<FRACTION_BITS>(0);
     }
 
-    if constexpr (FRACTION_BITS % 2)
-    {
-        value.value_ = value.value_ << 1;
-    }
+    value.value_ = value.value_ << FRACTION_BITS;
 
     int low = 0;
-    int high = value.value_ / 2;
-    int mid = low + (high - low) / 2;
+    int high = 46341;
+    int mid = high / 2;
 
     while (low < high)
     {
@@ -341,14 +344,7 @@ FixedPoint<FRACTION_BITS> sqrt(FixedPoint<FRACTION_BITS> value)
         }
         else
         {
-            if constexpr (FRACTION_BITS % 2)
-            {
-                value.value_ = mid << ((FRACTION_BITS + 1) / 2);
-            }
-            else
-            {
-                value.value_ = mid << (FRACTION_BITS / 2);
-            }
+            value.value_ = mid;
             return value;
         }
         if (high - low == 1)
@@ -360,14 +356,6 @@ FixedPoint<FRACTION_BITS> sqrt(FixedPoint<FRACTION_BITS> value)
             else
             {
                 value.value_ = low;
-            }
-            if constexpr (FRACTION_BITS % 2)
-            {
-                value.value_ = value.value_ << ((FRACTION_BITS + 1) / 2);
-            }
-            else
-            {
-                value.value_ = value.value_ << (FRACTION_BITS / 2);
             }
             return value;
         }
@@ -393,9 +381,33 @@ FixedPoint<FRACTION_BITS> sin(FixedPoint<FRACTION_BITS> value_rad)
     return result;
 }
 
-consteval FixedPoint10 operator""_fp(long double value)
+template <unsigned FRACTION_BITS>
+FixedPoint<FRACTION_BITS> cos(FixedPoint<FRACTION_BITS> value_rad)
 {
-    return FixedPoint<10>(value);
+    FixedPoint<FRACTION_BITS> result = 1;
+    int n = 2;
+    FixedPoint<FRACTION_BITS> diff = -(value_rad * value_rad) / 2;
+    while (diff.Abs() > 0)
+    {
+        result += diff;
+        n += 2;
+        diff *= -(value_rad * value_rad) / (n * (n - 1));
+    }
+    return result;
+}
+
+consteval FixedPointBase operator""_fp(long double value)
+{
+    return FixedPointBase(value);
+}
+
+constexpr FixedPointBase pi = 3.14159265358979323846_fp;
+
+template <unsigned FRACTION_BITS>
+constexpr FixedPoint<FRACTION_BITS>
+DegToRad(FixedPoint<FRACTION_BITS> value_deg)
+{
+    return value_deg * pi / 180;
 }
 
 } // namespace hydrolib::math

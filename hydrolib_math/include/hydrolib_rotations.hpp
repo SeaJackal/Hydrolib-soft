@@ -6,29 +6,67 @@
 
 namespace hydrolib::math
 {
-Quaternion<FixedPoint10> GetRotation(Vector3D<FixedPoint10> from,
-                                     Vector3D<FixedPoint10> to);
+Quaternion<FixedPointBase> GetRotation(Vector3D<FixedPointBase> from,
+                                     Vector3D<FixedPointBase> to);
 
-Vector3D<FixedPoint10> Rotate(Vector3D<FixedPoint10> source,
-                              Quaternion<FixedPoint10> rotation);
+Vector3D<FixedPointBase> Rotate(Vector3D<FixedPointBase> source,
+                              Quaternion<FixedPointBase> rotation);
+
+Quaternion<FixedPointBase> ExtractZRotation(Quaternion<FixedPointBase> &quaternion);
+
+Quaternion<FixedPointBase> GetMean(const Quaternion<FixedPointBase> &q1,
+                                 const Quaternion<FixedPointBase> &q2);
 
 /////////////////////////////////////////////////////////////////////////
 
-inline Quaternion<FixedPoint10> GetRotation(Vector3D<FixedPoint10> from,
-                                            Vector3D<FixedPoint10> to)
+inline Quaternion<FixedPointBase> GetRotation(Vector3D<FixedPointBase> from,
+                                            Vector3D<FixedPointBase> to)
 {
     from.Normalize();
     to.Normalize();
-    Quaternion<FixedPoint10> result =
-        Quaternion<FixedPoint10>(from.Cross(to), from.Dot(to) + 1);
+    Quaternion<FixedPointBase> result =
+        Quaternion<FixedPointBase>(from.Cross(to), from.Dot(to) + 1);
     result.Normalize();
     return result;
 }
 
-inline Vector3D<FixedPoint10> Rotate(Vector3D<FixedPoint10> source,
-                                     Quaternion<FixedPoint10> rotation)
+inline Vector3D<FixedPointBase> Rotate(Vector3D<FixedPointBase> source,
+                                     Quaternion<FixedPointBase> rotation)
 {
-    auto result = rotation * Quaternion<FixedPoint10>(source) * (!rotation);
+    auto result = rotation * Quaternion<FixedPointBase>(source) * (!rotation);
     return {.x = result.x, .y = result.y, .z = result.z};
+}
+
+inline Quaternion<FixedPointBase>
+ExtractZRotation(Quaternion<FixedPointBase> &quaternion)
+{
+    FixedPointBase new_w =
+        sqrt(quaternion.w * quaternion.w + quaternion.z * quaternion.z);
+    FixedPointBase sin_yaw = quaternion.z / new_w;
+    FixedPointBase cos_yaw = quaternion.w / new_w;
+    FixedPointBase new_x = quaternion.x * cos_yaw + quaternion.y * sin_yaw;
+    FixedPointBase new_y = quaternion.y * cos_yaw - quaternion.x * sin_yaw;
+    quaternion.x = new_x;
+    quaternion.y = new_y;
+    quaternion.z = 0;
+    quaternion.w = new_w;
+    return Quaternion<FixedPointBase>(0, 0, sin_yaw, cos_yaw);
+}
+
+inline Quaternion<FixedPointBase> GetMean(const Quaternion<FixedPointBase> &q1,
+                                        const Quaternion<FixedPointBase> &q2)
+{
+    if (q1.Dot(q2) < 0)
+    {
+        auto result = (q1 - q2) / 2;
+        result.Normalize();
+        return result;
+    }
+    else
+    {
+        auto result = (q1 + q2) / 2;
+        result.Normalize();
+        return result;
+    }
 }
 } // namespace hydrolib::math

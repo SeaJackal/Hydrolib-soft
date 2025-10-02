@@ -53,7 +53,7 @@ private:
     template <concepts::stream::ByteWritableStreamConcept DestType,
               typename... Ts>
     ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
-                        unsigned translated_length, math::FixedPoint10 param,
+                        unsigned translated_length, math::FixedPointBase param,
                         Ts...) const;
 
     template <concepts::stream::ByteWritableStreamConcept DestType>
@@ -204,7 +204,7 @@ template <typename... ArgTypes>
 template <concepts::stream::ByteWritableStreamConcept DestType, typename... Ts>
 ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
     DestType &buffer, unsigned next_param_index, unsigned translated_length,
-    math::FixedPoint10 param, Ts... others) const
+    math::FixedPointBase param, Ts... others) const
 {
     if (translated_length >= length_)
     {
@@ -255,7 +255,7 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
     }
     auto frac_res = WriteIntegerToBuffer_(
         buffer, (param.GetAbsFractionPart() * 1000) >>
-                    math::FixedPoint10::GetFractionBits());
+                    math::FixedPointBase::GetFractionBits());
     if (frac_res != ReturnCode::OK)
     {
         return frac_res;
