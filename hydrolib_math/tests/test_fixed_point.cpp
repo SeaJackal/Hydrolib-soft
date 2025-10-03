@@ -158,11 +158,14 @@ TEST(TestHydrolibMath, FixedPointBaseSmallDecimals)
     FixedPointBase small1(a);
     FixedPointBase small2(b);
 
-    EXPECT_NEAR(static_cast<double>(small1 + small2), a + b,
+    EXPECT_NEAR(static_cast<double>(small1 + small2),
+                static_cast<double>(small1) + static_cast<double>(small2),
                 1.0 / (1 << FixedPointBase::GetFractionBits()));
-    EXPECT_NEAR(static_cast<double>(small1 - small2), a - b,
+    EXPECT_NEAR(static_cast<double>(small1 - small2),
+                static_cast<double>(small1) - static_cast<double>(small2),
                 1.0 / (1 << FixedPointBase::GetFractionBits()));
-    EXPECT_NEAR(static_cast<double>(small1 * small2), a * b,
+    EXPECT_NEAR(static_cast<double>(small1 * small2),
+                static_cast<double>(small1) * static_cast<double>(small2),
                 1.0 / (1 << FixedPointBase::GetFractionBits()));
     EXPECT_NEAR(static_cast<double>(small1 / small2),
                 static_cast<double>(small1) / static_cast<double>(small2),
@@ -212,7 +215,7 @@ TEST(TestHydrolibMath, FixedPointBaseCos)
 
 TEST(TestHydrolibMath, FixedPointBaseGetFractionBits)
 {
-    EXPECT_EQ(FixedPointBase::GetFractionBits(), 10);
+    EXPECT_EQ(FixedPointBase::GetFractionBits(), 16);
 }
 
 TEST(TestHydrolibMath, FixedPointBaseGetAbsIntPart)

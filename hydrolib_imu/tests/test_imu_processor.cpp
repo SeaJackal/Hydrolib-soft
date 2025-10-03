@@ -47,11 +47,11 @@ TEST(TestIMUProcessor, Process)
               << static_cast<double>(target.w) << std::endl;
 
     EXPECT_NEAR(static_cast<double>(result.w), static_cast<double>(target.w),
-                0.05);
+                0.01);
     EXPECT_NEAR(static_cast<double>(result.x), static_cast<double>(target.x),
-                0.05);
+                0.01);
     EXPECT_NEAR(static_cast<double>(result.y), static_cast<double>(target.y),
-                0.05);
+                0.01);
     EXPECT_NEAR(static_cast<double>(result.z), static_cast<double>(target.z),
-                0.05);
+                0.01);
 }

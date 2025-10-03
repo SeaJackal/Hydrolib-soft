@@ -1,8 +1,8 @@
 #pragma once
 
-#include <concepts>
+#include <climits>
 #include <cmath>
-
+#include <concepts>
 
 namespace hydrolib::math
 {
@@ -93,7 +93,8 @@ private:
     int value_;
 };
 
-using FixedPointBase = FixedPoint<10>;
+using FixedPointBase = FixedPoint<16>;
+// using FixedPointBase = FixedPoint<10>;
 
 consteval FixedPointBase operator""_fp(long double value);
 
@@ -220,7 +221,9 @@ FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator*(
     const FixedPoint<FRACTION_BITS> &other) const
 {
     FixedPoint<FRACTION_BITS> result = *this;
-    result.value_ = (result.value_ * other.value_) >> FRACTION_BITS;
+    long long result_value =
+        (static_cast<long long>(result.value_) * other.value_) >> FRACTION_BITS;
+    result.value_ = result_value;
     return result;
 }
 
@@ -229,7 +232,9 @@ FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator/(
     const FixedPoint<FRACTION_BITS> &other) const
 {
     FixedPoint<FRACTION_BITS> result = *this;
-    result.value_ = (result.value_ << FRACTION_BITS) / other.value_;
+    long long result_value =
+        (static_cast<long long>(result.value_) << FRACTION_BITS) / other.value_;
+    result.value_ = result_value;
     return result;
 }
 
@@ -380,20 +385,20 @@ sqrt(hydrolib::math::FixedPoint<FRACTION_BITS> value)
         return hydrolib::math::FixedPoint<FRACTION_BITS>(0);
     }
 
-    value.value_ = value.value_ << FRACTION_BITS;
+    long long target_sq = static_cast<long long>(value.value_) << FRACTION_BITS;
 
     int low = 0;
-    int high = 46341;
+    int high = INT_MAX;
     int mid = high / 2;
 
     while (low < high)
     {
-        int sq = mid * mid;
-        if (sq > value.value_)
+        long long sq = static_cast<long long>(mid) * mid;
+        if (sq > target_sq)
         {
             high = mid;
         }
-        else if (sq < value.value_)
+        else if (sq < target_sq)
         {
             low = mid;
         }
@@ -404,7 +409,7 @@ sqrt(hydrolib::math::FixedPoint<FRACTION_BITS> value)
         }
         if (high - low == 1)
         {
-            if (high * high - value.value_ < value.value_ - low * low)
+            if (high * high - target_sq < target_sq - low * low)
             {
                 value.value_ = high;
             }
