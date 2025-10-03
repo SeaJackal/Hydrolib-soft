@@ -6,55 +6,60 @@
 
 namespace hydrolib::math
 {
-Quaternion<FixedPointBase> GetRotation(Vector3D<FixedPointBase> from,
-                                     Vector3D<FixedPointBase> to);
+template <ArithmeticConcept Number>
+Quaternion<Number> GetRotation(Vector3D<Number> from, Vector3D<Number> to);
 
-Vector3D<FixedPointBase> Rotate(Vector3D<FixedPointBase> source,
-                              Quaternion<FixedPointBase> rotation);
+template <ArithmeticConcept Number>
+Vector3D<Number> Rotate(Vector3D<Number> source, Quaternion<Number> rotation);
 
-Quaternion<FixedPointBase> ExtractZRotation(Quaternion<FixedPointBase> &quaternion);
+template <ArithmeticConcept Number>
+Quaternion<Number> ExtractZRotation(Quaternion<Number> &quaternion);
 
-Quaternion<FixedPointBase> GetMean(const Quaternion<FixedPointBase> &q1,
-                                 const Quaternion<FixedPointBase> &q2);
+template <ArithmeticConcept Number>
+Quaternion<Number> GetMean(const Quaternion<Number> &q1,
+                           const Quaternion<Number> &q2);
 
 /////////////////////////////////////////////////////////////////////////
 
-inline Quaternion<FixedPointBase> GetRotation(Vector3D<FixedPointBase> from,
-                                            Vector3D<FixedPointBase> to)
+template <ArithmeticConcept Number>
+inline Quaternion<Number> GetRotation(Vector3D<Number> from,
+                                      Vector3D<Number> to)
 {
     from.Normalize();
     to.Normalize();
-    Quaternion<FixedPointBase> result =
-        Quaternion<FixedPointBase>(from.Cross(to), from.Dot(to) + 1);
+    Quaternion<Number> result =
+        Quaternion<Number>(from.Cross(to), from.Dot(to) + 1);
     result.Normalize();
     return result;
 }
 
-inline Vector3D<FixedPointBase> Rotate(Vector3D<FixedPointBase> source,
-                                     Quaternion<FixedPointBase> rotation)
+template <ArithmeticConcept Number>
+inline Vector3D<Number> Rotate(Vector3D<Number> source,
+                               Quaternion<Number> rotation)
 {
-    auto result = rotation * Quaternion<FixedPointBase>(source) * (!rotation);
+    auto result = rotation * Quaternion<Number>(source) * (!rotation);
     return {.x = result.x, .y = result.y, .z = result.z};
 }
 
-inline Quaternion<FixedPointBase>
-ExtractZRotation(Quaternion<FixedPointBase> &quaternion)
+template <ArithmeticConcept Number>
+inline Quaternion<Number> ExtractZRotation(Quaternion<Number> &quaternion)
 {
-    FixedPointBase new_w =
+    Number new_w =
         sqrt(quaternion.w * quaternion.w + quaternion.z * quaternion.z);
-    FixedPointBase sin_yaw = quaternion.z / new_w;
-    FixedPointBase cos_yaw = quaternion.w / new_w;
-    FixedPointBase new_x = quaternion.x * cos_yaw + quaternion.y * sin_yaw;
-    FixedPointBase new_y = quaternion.y * cos_yaw - quaternion.x * sin_yaw;
+    Number sin_yaw = quaternion.z / new_w;
+    Number cos_yaw = quaternion.w / new_w;
+    Number new_x = quaternion.x * cos_yaw + quaternion.y * sin_yaw;
+    Number new_y = quaternion.y * cos_yaw - quaternion.x * sin_yaw;
     quaternion.x = new_x;
     quaternion.y = new_y;
     quaternion.z = 0;
     quaternion.w = new_w;
-    return Quaternion<FixedPointBase>(0, 0, sin_yaw, cos_yaw);
+    return Quaternion<Number>(0, 0, sin_yaw, cos_yaw);
 }
 
-inline Quaternion<FixedPointBase> GetMean(const Quaternion<FixedPointBase> &q1,
-                                        const Quaternion<FixedPointBase> &q2)
+template <ArithmeticConcept Number>
+inline Quaternion<Number> GetMean(const Quaternion<Number> &q1,
+                                  const Quaternion<Number> &q2)
 {
     if (q1.Dot(q2) < 0)
     {

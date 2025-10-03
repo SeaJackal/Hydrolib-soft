@@ -10,7 +10,7 @@ using namespace hydrolib::math;
 
 TEST(TestIMUProcessor, Process)
 {
-    RawIMUMock imu_mock;
+    RawIMUMock<FixedPointBase> imu_mock;
     Vector3D<FixedPointBase> axis{1, 1, 1};
     axis.Normalize();
     FixedPointBase angle_rad = FixedPointBase(40, 180) * pi;
@@ -19,7 +19,7 @@ TEST(TestIMUProcessor, Process)
 
     imu_mock.SetTarget(axis, angle_rad, 10);
 
-    IMUProcessor<1.0> imu_processor;
+    IMUProcessor<FixedPointBase, 1.0> imu_processor;
 
     Quaternion<FixedPointBase> result{0, 0, 0, 1};
 
@@ -28,8 +28,7 @@ TEST(TestIMUProcessor, Process)
     while (imu_mock.Step())
     {
         q = imu_mock.GetOrientation();
-        std::cout << static_cast<double>(q.x) << " " <<
-        static_cast<double>(q.y)
+        std::cout << static_cast<double>(q.x) << " " << static_cast<double>(q.y)
                   << " " << static_cast<double>(q.z) << " "
                   << static_cast<double>(q.w) << std::endl;
         result = imu_processor.Process(imu_mock.GetAcceleration(),

@@ -1,8 +1,26 @@
 #pragma once
 
+#include <concepts>
 #include <cmath>
 
-#include <concepts>
+
+namespace hydrolib::math
+{
+template <unsigned FRACTION_BITS>
+class FixedPoint;
+}
+
+template <unsigned FRACTION_BITS>
+hydrolib::math::FixedPoint<FRACTION_BITS>
+sin(hydrolib::math::FixedPoint<FRACTION_BITS> value_rad);
+
+template <unsigned FRACTION_BITS>
+hydrolib::math::FixedPoint<FRACTION_BITS>
+cos(hydrolib::math::FixedPoint<FRACTION_BITS> value_rad);
+
+template <unsigned FRACTION_BITS>
+hydrolib::math::FixedPoint<FRACTION_BITS>
+sqrt(hydrolib::math::FixedPoint<FRACTION_BITS> value); // TODO: fix accuracy
 
 namespace hydrolib::math
 {
@@ -21,19 +39,6 @@ concept ArithmeticConcept = requires(T a, T b) {
 };
 
 template <unsigned FRACTION_BITS>
-class FixedPoint;
-
-template <unsigned FRACTION_BITS>
-FixedPoint<FRACTION_BITS>
-sqrt(FixedPoint<FRACTION_BITS> value); // TODO: fix accuracy
-
-template <unsigned FRACTION_BITS>
-FixedPoint<FRACTION_BITS> sin(FixedPoint<FRACTION_BITS> value_rad);
-
-template <unsigned FRACTION_BITS>
-FixedPoint<FRACTION_BITS> cos(FixedPoint<FRACTION_BITS> value_rad);
-
-template <unsigned FRACTION_BITS>
 constexpr FixedPoint<FRACTION_BITS>
 DegToRad(FixedPoint<FRACTION_BITS> value_deg);
 
@@ -41,7 +46,6 @@ template <unsigned FRACTION_BITS>
 class FixedPoint
 {
     friend FixedPoint sqrt<FRACTION_BITS>(FixedPoint value);
-    friend FixedPoint sin<FRACTION_BITS>(FixedPoint value_rad);
 
 public:
     constexpr FixedPoint();
@@ -317,12 +321,63 @@ bool FixedPoint<FRACTION_BITS>::operator>=(int other) const
     return value_ >= (other << FRACTION_BITS);
 }
 
+consteval FixedPointBase operator""_fp(long double value)
+{
+    return FixedPointBase(value);
+}
+
+constexpr FixedPointBase pi = 3.14159265358979323846_fp;
+
 template <unsigned FRACTION_BITS>
-FixedPoint<FRACTION_BITS> sqrt(FixedPoint<FRACTION_BITS> value)
+constexpr FixedPoint<FRACTION_BITS>
+DegToRad(FixedPoint<FRACTION_BITS> value_deg)
+{
+    return value_deg * pi / 180;
+}
+
+} // namespace hydrolib::math
+
+template <unsigned FRACTION_BITS>
+hydrolib::math::FixedPoint<FRACTION_BITS>
+sin(hydrolib::math::FixedPoint<FRACTION_BITS> value_rad)
+{
+    hydrolib::math::FixedPoint<FRACTION_BITS> result = value_rad;
+    int n = 3;
+    hydrolib::math::FixedPoint<FRACTION_BITS> diff =
+        -(value_rad * value_rad * value_rad) / 3 / 2;
+    while (diff.Abs() > 0)
+    {
+        result += diff;
+        n += 2;
+        diff *= -(value_rad * value_rad) / (n * (n - 1));
+    }
+    return result;
+}
+
+template <unsigned FRACTION_BITS>
+hydrolib::math::FixedPoint<FRACTION_BITS>
+cos(hydrolib::math::FixedPoint<FRACTION_BITS> value_rad)
+{
+    hydrolib::math::FixedPoint<FRACTION_BITS> result = 1;
+    int n = 2;
+    hydrolib::math::FixedPoint<FRACTION_BITS> diff =
+        -(value_rad * value_rad) / 2;
+    while (diff.Abs() > 0)
+    {
+        result += diff;
+        n += 2;
+        diff *= -(value_rad * value_rad) / (n * (n - 1));
+    }
+    return result;
+}
+
+template <unsigned FRACTION_BITS>
+hydrolib::math::FixedPoint<FRACTION_BITS>
+sqrt(hydrolib::math::FixedPoint<FRACTION_BITS> value)
 {
     if (value.value_ == 0)
     {
-        return FixedPoint<FRACTION_BITS>(0);
+        return hydrolib::math::FixedPoint<FRACTION_BITS>(0);
     }
 
     value.value_ = value.value_ << FRACTION_BITS;
@@ -364,50 +419,3 @@ FixedPoint<FRACTION_BITS> sqrt(FixedPoint<FRACTION_BITS> value)
 
     return value;
 }
-
-template <unsigned FRACTION_BITS>
-FixedPoint<FRACTION_BITS> sin(FixedPoint<FRACTION_BITS> value_rad)
-{
-    FixedPoint<FRACTION_BITS> result = value_rad;
-    int n = 3;
-    FixedPoint<FRACTION_BITS> diff =
-        -(value_rad * value_rad * value_rad) / 3 / 2;
-    while (diff.Abs() > 0)
-    {
-        result += diff;
-        n += 2;
-        diff *= -(value_rad * value_rad) / (n * (n - 1));
-    }
-    return result;
-}
-
-template <unsigned FRACTION_BITS>
-FixedPoint<FRACTION_BITS> cos(FixedPoint<FRACTION_BITS> value_rad)
-{
-    FixedPoint<FRACTION_BITS> result = 1;
-    int n = 2;
-    FixedPoint<FRACTION_BITS> diff = -(value_rad * value_rad) / 2;
-    while (diff.Abs() > 0)
-    {
-        result += diff;
-        n += 2;
-        diff *= -(value_rad * value_rad) / (n * (n - 1));
-    }
-    return result;
-}
-
-consteval FixedPointBase operator""_fp(long double value)
-{
-    return FixedPointBase(value);
-}
-
-constexpr FixedPointBase pi = 3.14159265358979323846_fp;
-
-template <unsigned FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS>
-DegToRad(FixedPoint<FRACTION_BITS> value_deg)
-{
-    return value_deg * pi / 180;
-}
-
-} // namespace hydrolib::math

@@ -2,6 +2,8 @@
 
 #include <gtest/gtest.h>
 
+#include <cmath>
+
 using namespace hydrolib::math;
 
 TEST(TestHydrolibMath, FixedPointBaseConstructor)
@@ -136,10 +138,10 @@ TEST(TestHydrolibMath, FixedPointBaseLargeNumbers)
     FixedPointBase large2(b);
 
     EXPECT_NEAR(static_cast<double>(large1 + large2),
-                     static_cast<double>(large1) + static_cast<double>(large2),
+                static_cast<double>(large1) + static_cast<double>(large2),
                 1.0 / (1 << FixedPointBase::GetFractionBits()));
     EXPECT_NEAR(static_cast<double>(large1 - large2),
-                     static_cast<double>(large1) - static_cast<double>(large2),
+                static_cast<double>(large1) - static_cast<double>(large2),
                 1.0 / (1 << FixedPointBase::GetFractionBits()));
     EXPECT_NEAR(static_cast<double>(large1 * large2),
                 static_cast<double>(large1) * static_cast<double>(large2),
@@ -163,7 +165,7 @@ TEST(TestHydrolibMath, FixedPointBaseSmallDecimals)
     EXPECT_NEAR(static_cast<double>(small1 * small2), a * b,
                 1.0 / (1 << FixedPointBase::GetFractionBits()));
     EXPECT_NEAR(static_cast<double>(small1 / small2),
-                     static_cast<double>(small1) / static_cast<double>(small2),
+                static_cast<double>(small1) / static_cast<double>(small2),
                 1.0 / (1 << FixedPointBase::GetFractionBits()));
 }
 
