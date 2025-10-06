@@ -54,7 +54,7 @@ private:
     constexpr static char init_message_[] = "$VNWRG,75,2,8,01,0028*XX\r\n";
 
 public:
-    constexpr VectorNAVParser(InputStream &stream, Logger &logger);
+    consteval VectorNAVParser(InputStream &stream, Logger &logger);
 
 public:
     hydrolib_ReturnCode Reset();
@@ -87,8 +87,8 @@ private:
 
     bool header_found_;
 
-    Message_ current_data_;
-    Message_ rx_buffer_;
+    Message_ current_data_ = {};
+    Message_ rx_buffer_ = {};
 
     unsigned wrong_crc_counter_;
     unsigned rubbish_bytes_counter_;
@@ -101,7 +101,7 @@ private:
 };
 
 template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
-constexpr VectorNAVParser<InputStream, Logger>::VectorNAVParser(
+consteval VectorNAVParser<InputStream, Logger>::VectorNAVParser(
     InputStream &stream, Logger &logger)
     : stream_(stream),
       current_rx_length_(0),
