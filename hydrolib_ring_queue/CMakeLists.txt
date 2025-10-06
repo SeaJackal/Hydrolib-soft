@@ -1,17 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(HydrolibRingQueue VERSION 1.0)
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-include_directories(include)
+add_library(HydrolibRingQueue INTERFACE)
 
-add_library(HydrolibRingQueue src/hydrolib_ring_queue.c)
+target_include_directories(HydrolibRingQueue INTERFACE include)
 
-target_include_directories(HydrolibRingQueue PUBLIC include)
-
-target_link_libraries(HydrolibRingQueue HydrolibCommon)
+target_link_libraries(HydrolibRingQueue INTERFACE HydrolibReturnCodes)
 
 include(CTest)
 
@@ -19,7 +15,7 @@ if(BUILD_TESTING)
     find_package(GTest REQUIRED)
     include(GoogleTest)
 
-    file(GLOB TESTS tests/*.cpp)
+    file(GLOB TESTS tests/* .cpp)
     add_executable(TestRingBuffer ${TESTS})
     set_target_properties(TestRingBuffer
         PROPERTIES
