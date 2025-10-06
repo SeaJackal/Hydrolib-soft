@@ -113,7 +113,7 @@ constexpr FixedPoint<FRACTION_BITS>::FixedPoint(int value)
 
 template <unsigned FRACTION_BITS>
 constexpr FixedPoint<FRACTION_BITS>::FixedPoint(int value, int divider)
-    : value_(value * (1 << FRACTION_BITS) / divider)
+    : value_((static_cast<long long>(value) << FRACTION_BITS) / divider)
 {
 }
 

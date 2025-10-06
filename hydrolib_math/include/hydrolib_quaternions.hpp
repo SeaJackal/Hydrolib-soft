@@ -8,9 +8,9 @@ template <ArithmeticConcept Number>
 class Quaternion
 {
 public:
-    Quaternion(Number x, Number y, Number z, Number w);
-    Quaternion(Vector3D<Number> &vector);
-    Quaternion(Vector3D<Number> &&vector, Number w);
+    constexpr Quaternion(Number x, Number y, Number z, Number w);
+    constexpr Quaternion(Vector3D<Number> &vector);
+    constexpr Quaternion(Vector3D<Number> &&vector, Number w);
 
 public:
     Quaternion &operator+=(const Quaternion &other);
@@ -36,19 +36,19 @@ public:
 };
 
 template <ArithmeticConcept Number>
-inline Quaternion<Number>::Quaternion(Number x, Number y, Number z, Number w)
+constexpr Quaternion<Number>::Quaternion(Number x, Number y, Number z, Number w)
     : x(x), y(y), z(z), w(w)
 {
 }
 
 template <ArithmeticConcept Number>
-inline Quaternion<Number>::Quaternion(Vector3D<Number> &vector)
+constexpr Quaternion<Number>::Quaternion(Vector3D<Number> &vector)
     : x(vector.x), y(vector.y), z(vector.z), w(0)
 {
 }
 
 template <ArithmeticConcept Number>
-inline Quaternion<Number>::Quaternion(Vector3D<Number> &&vector, Number w)
+constexpr Quaternion<Number>::Quaternion(Vector3D<Number> &&vector, Number w)
     : x(vector.x), y(vector.y), z(vector.z), w(w)
 {
 }

@@ -11,13 +11,13 @@ using namespace hydrolib::math;
 TEST(TestIMUProcessor, Process)
 {
     RawIMUMock<FixedPointBase> imu_mock;
-    Vector3D<FixedPointBase> axis{1, 1, 1};
+    Vector3D<FixedPointBase> axis{2, 3, 1};
     axis.Normalize();
-    FixedPointBase angle_rad = FixedPointBase(40, 180) * pi;
+    FixedPointBase angle_rad = FixedPointBase(50, 180) * pi;
     Quaternion<FixedPointBase> target{axis * sin(angle_rad / 2),
                                       cos(angle_rad / 2)};
 
-    imu_mock.SetTarget(axis, angle_rad, 10);
+    imu_mock.SetTarget(axis, angle_rad, 15);
 
     IMUProcessor<FixedPointBase, 1.0> imu_processor;
 

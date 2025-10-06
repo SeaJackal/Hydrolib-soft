@@ -14,7 +14,7 @@ template <math::ArithmeticConcept Number, double PERIOD_S>
 class IMUProcessor
 {
 public:
-    IMUProcessor();
+    constexpr IMUProcessor();
 
 public:
     math::Quaternion<Number> Process(math::Vector3D<Number> accel_g,
@@ -25,7 +25,8 @@ private:
 };
 
 template <math::ArithmeticConcept Number, double PERIOD_S>
-IMUProcessor<Number, PERIOD_S>::IMUProcessor() : orientation_(0, 0, 0, 1)
+constexpr IMUProcessor<Number, PERIOD_S>::IMUProcessor()
+    : orientation_(0, 0, 0, 1)
 {
 }
 
@@ -49,9 +50,10 @@ IMUProcessor<Number, PERIOD_S>::Process(math::Vector3D<Number> accel_g,
         math::GetRotation({0, 0, -1}, accel_g);
     math::Quaternion<Number> completed_sensor_orientation =
         model_orientation_z * sensor_orientation;
-    math::Quaternion<Number> mean_orientation =
-        math::GetMean(model_orientation, completed_sensor_orientation);
-    orientation_ = mean_orientation;
+    completed_sensor_orientation.Normalize();
+    // math::Quaternion<Number> mean_orientation =
+    //     math::GetMean(model_orientation, completed_sensor_orientation);
+    orientation_ = sensor_orientation;
     return orientation_;
 }
 } // namespace hydrolib::sensors
