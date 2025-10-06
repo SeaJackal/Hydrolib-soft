@@ -5,10 +5,8 @@ class TestHydrolibRingQueuePush : public TestHydrolibRingQueue,
 {
 };
 
-INSTANTIATE_TEST_CASE_P(
-    Test,
-    TestHydrolibRingQueuePush,
-    ::testing::Range<uint16_t>(1, DEFAULT_CAPACITY));
+INSTANTIATE_TEST_CASE_P(Test, TestHydrolibRingQueuePush,
+                        ::testing::Range<uint16_t>(1, DEFAULT_CAPACITY));
 
 TEST_P(TestHydrolibRingQueuePush, Push)
 {
@@ -19,14 +17,17 @@ TEST_P(TestHydrolibRingQueuePush, Push)
         data[i] = i;
     }
 
-    hydrolib_ReturnCode push_status = hydrolib_RingQueue_Push(&ring_buffer, data, length);
-    EXPECT_EQ(push_status, HYDROLIB_RETURN_OK);
+    hydrolib::ReturnCode push_status =
+        test_queue.Push(  data, length);
+    EXPECT_EQ(push_status, hydrolib::ReturnCode::OK);
 
     for (uint16_t i = 0; i < length; i++)
     {
         uint8_t read_byte;
-        hydrolib_ReturnCode read_status = hydrolib_RingQueue_ReadByte(&ring_buffer, &read_byte, i);
-        EXPECT_EQ(read_status, HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode read_status =
+            test_queue.ReadByte(  &read_byte,
+                                                      i);
+        EXPECT_EQ(read_status, hydrolib::ReturnCode::OK);
         EXPECT_EQ(i, read_byte);
     }
 }
@@ -42,21 +43,24 @@ TEST_P(TestHydrolibRingQueuePush, PushShifted)
 
     for (uint16_t i = 0; i < DEFAULT_CAPACITY / 2; i++)
     {
-        hydrolib_ReturnCode filling_status =
-            hydrolib_RingQueue_PushByte(&ring_buffer, 0);
-        EXPECT_EQ(filling_status, hydrolib_ReturnCode::HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode filling_status =
+            test_queue.PushByte(  0);
+        EXPECT_EQ(filling_status, hydrolib::ReturnCode::OK);
     }
 
-    hydrolib_RingQueue_Drop(&ring_buffer, DEFAULT_CAPACITY / 2);
+    test_queue.Drop(  DEFAULT_CAPACITY / 2);
 
-    hydrolib_ReturnCode push_status = hydrolib_RingQueue_Push(&ring_buffer, data, length);
-    EXPECT_EQ(push_status, HYDROLIB_RETURN_OK);
+    hydrolib::ReturnCode push_status =
+        test_queue.Push(  data, length);
+    EXPECT_EQ(push_status, hydrolib::ReturnCode::OK);
 
     for (uint16_t i = 0; i < length; i++)
     {
         uint8_t read_byte;
-        hydrolib_ReturnCode read_status = hydrolib_RingQueue_ReadByte(&ring_buffer, &read_byte, i);
-        EXPECT_EQ(read_status, HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode read_status =
+            test_queue.ReadByte(  &read_byte,
+                                                      i);
+        EXPECT_EQ(read_status, hydrolib::ReturnCode::OK);
         EXPECT_EQ(i, read_byte);
     }
 }
@@ -69,8 +73,9 @@ TEST_F(TestHydrolibRingQueue, PushOverSimple)
         data[i] = i;
     }
 
-    hydrolib_ReturnCode push_status = hydrolib_RingQueue_Push(&ring_buffer, data, DEFAULT_CAPACITY + 1);
-    EXPECT_EQ(push_status, HYDROLIB_RETURN_FAIL);
+    hydrolib::ReturnCode push_status = test_queue.Push(
+          data, DEFAULT_CAPACITY + 1);
+    EXPECT_EQ(push_status, hydrolib::ReturnCode::FAIL);
 }
 
 TEST_P(TestHydrolibRingQueuePush, PushOverComplex)
@@ -84,19 +89,22 @@ TEST_P(TestHydrolibRingQueuePush, PushOverComplex)
 
     for (uint16_t i = 0; i < length; i++)
     {
-        hydrolib_ReturnCode filling_status =
-            hydrolib_RingQueue_PushByte(&ring_buffer, data[i]);
-        EXPECT_EQ(filling_status, hydrolib_ReturnCode::HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode filling_status =
+            test_queue.PushByte(  data[i]);
+        EXPECT_EQ(filling_status, hydrolib::ReturnCode::OK);
     }
 
-    hydrolib_ReturnCode push_status = hydrolib_RingQueue_Push(&ring_buffer, data, DEFAULT_CAPACITY - length + 1);
-    EXPECT_EQ(push_status, HYDROLIB_RETURN_FAIL);
+    hydrolib::ReturnCode push_status = test_queue.Push(
+          data, DEFAULT_CAPACITY - length + 1);
+    EXPECT_EQ(push_status, hydrolib::ReturnCode::FAIL);
 
     for (uint16_t i = 0; i < length; i++)
     {
         uint8_t read_byte;
-        hydrolib_ReturnCode read_status = hydrolib_RingQueue_ReadByte(&ring_buffer, &read_byte, i);
-        EXPECT_EQ(read_status, HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode read_status =
+            test_queue.ReadByte(  &read_byte,
+                                                      i);
+        EXPECT_EQ(read_status, hydrolib::ReturnCode::OK);
         EXPECT_EQ(i, read_byte);
     }
 }
@@ -112,15 +120,19 @@ TEST_P(TestHydrolibRingQueuePush, PushToLimit)
 
     for (uint16_t i = length; i <= DEFAULT_CAPACITY; i += length)
     {
-        hydrolib_ReturnCode push_status = hydrolib_RingQueue_Push(&ring_buffer, data + i - length, length);
-        EXPECT_EQ(push_status, HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode push_status =
+            test_queue.Push( 
+                                                  data + i - length, length);
+        EXPECT_EQ(push_status, hydrolib::ReturnCode::OK);
     }
 
     for (uint16_t i = 0; i < DEFAULT_CAPACITY / length * length; i++)
     {
         uint8_t read_byte;
-        hydrolib_ReturnCode read_status = hydrolib_RingQueue_ReadByte(&ring_buffer, &read_byte, i);
-        EXPECT_EQ(read_status, HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode read_status =
+            test_queue.ReadByte(  &read_byte,
+                                                      i);
+        EXPECT_EQ(read_status, hydrolib::ReturnCode::OK);
         EXPECT_EQ(i, read_byte);
     }
 }
