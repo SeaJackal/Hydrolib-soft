@@ -1,7 +1,7 @@
 #ifndef TEST_HYDROLIB_RQ_ENV_H_
 #define TEST_HYDROLIB_RQ_ENV_H_
 
-#include "hydrolib_ring_queue.h"
+#include "hydrolib_ring_queue.hpp"
 
 #include <gtest/gtest.h>
 
@@ -11,24 +11,20 @@ class TestHydrolibRingQueue : public ::testing::Test
 {
 protected:
     TestHydrolibRingQueue()
+        : buffer_capacity(DEFAULT_CAPACITY), test_queue(buffer, buffer_capacity)
     {
-        buffer_capacity = DEFAULT_CAPACITY;
-        buffer = new uint8_t[buffer_capacity];
-        hydrolib_RingQueue_Init(&ring_buffer, buffer, buffer_capacity);
     }
 
-    hydrolib_RingQueue ring_buffer;
     uint8_t buffer_capacity;
-    uint8_t *buffer;
+    uint8_t buffer[DEFAULT_CAPACITY] = {};
+    hydrolib::ring_queue::RingQueue test_queue;
 
-    ~TestHydrolibRingQueue()
-    {
-        delete buffer;
-    }
+    ~TestHydrolibRingQueue() {}
 };
 
-class TestHydrolibRingQueueCommon : public TestHydrolibRingQueue,
-                                    public ::testing::WithParamInterface<uint16_t>
+class TestHydrolibRingQueueCommon
+    : public TestHydrolibRingQueue,
+      public ::testing::WithParamInterface<uint16_t>
 {
 };
 
