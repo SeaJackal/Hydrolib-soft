@@ -253,9 +253,24 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
     {
         return ReturnCode::OVERFLOW;
     }
-    auto frac_res = WriteIntegerToBuffer_(
-        buffer, (param.GetAbsFractionPart() * 1000) >>
-                    math::FixedPointBase::GetFractionBits());
+    int fractional = (param.GetAbsFractionPart() * 1000) >>
+                     math::FixedPointBase::GetFractionBits();
+    int nulls_counter = 1000 / 10;
+    while (nulls_counter > fractional)
+    {
+        nulls_counter /= 10;
+        constexpr char null_char = '0';
+        auto null_res = write(buffer, &null_char, 1);
+        if (null_res == -1)
+        {
+            return ReturnCode::ERROR;
+        }
+        if (null_res != 1)
+        {
+            return ReturnCode::OVERFLOW;
+        }
+    }
+    auto frac_res = WriteIntegerToBuffer_(buffer, fractional);
     if (frac_res != ReturnCode::OK)
     {
         return frac_res;

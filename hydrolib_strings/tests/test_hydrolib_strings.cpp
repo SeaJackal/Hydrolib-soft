@@ -1,4 +1,5 @@
 #include "hydrolib_cstring.hpp"
+#include "hydrolib_fixed_point.hpp"
 #include "hydrolib_formatable_string.hpp"
 
 #include <cstring>
@@ -35,8 +36,8 @@ int write(BytesReceiver &stream, const void *source, unsigned length)
 
 TEST(TestHydrolibStrings, TestFormatableString)
 {
-    constexpr StaticFormatableString<int, int, int, CString<4>, FixedPointBase> s(
-        "Inserting values: {}, {}, {}, {}, {} End");
+    constexpr StaticFormatableString<int, int, int, CString<4>, FixedPointBase>
+        s("Inserting values: {}, {}, {}, {}, {} End");
     BytesReceiver stream;
     s.ToBytes(stream, 1, 20, -33, CString<4>("haha"), 1.5_fp);
     stream.buffer[stream.current_length] = '\0';
@@ -44,3 +45,18 @@ TEST(TestHydrolibStrings, TestFormatableString)
     EXPECT_EQ(0, strcmp(reinterpret_cast<char *>(stream.buffer),
                         "Inserting values: 1, 20, -33, haha, 1.500 End"));
 }
+
+// TEST(TestHydrolibStrings, Test)
+// {
+//     constexpr StaticFormatableString<FixedPointBase> s("{}");
+//     BytesReceiver stream;
+//     FixedPointBase a = 3.0;
+//     while (a >= -3)
+//     {
+//         s.ToBytes(stream, a);
+//         stream.buffer[stream.current_length] = '\0';
+//         cout << stream.buffer << std::endl;
+//         stream.current_length = 0;
+//         a -= 0.00005;
+//     }
+// }
