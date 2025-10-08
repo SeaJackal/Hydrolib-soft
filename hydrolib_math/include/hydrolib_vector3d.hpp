@@ -13,6 +13,12 @@ public:
     Number Length() const;
     void Normalize();
 
+    Vector3D &operator+=(Vector3D other);
+    Vector3D operator+(Vector3D other) const;
+    Vector3D operator-(Vector3D other) const;
+    Vector3D &operator-=(Vector3D other);
+    Vector3D operator-() const;
+
     Vector3D operator*(const Number &scalar) const;
     Vector3D &operator*=(const Number &scalar);
     Vector3D operator/(const Number &scalar) const;
@@ -60,6 +66,46 @@ inline void Vector3D<Number>::Normalize()
         y /= len;
         z /= len;
     }
+}
+
+template <ArithmeticConcept Number>
+inline Vector3D<Number> &Vector3D<Number>::operator+=(Vector3D<Number> other)
+{
+    x += other.x;
+    y += other.y;
+    z += other.z;
+    return *this;
+}
+
+template <ArithmeticConcept Number>
+inline Vector3D<Number>
+Vector3D<Number>::operator+(Vector3D<Number> other) const
+{
+    auto result = *this;
+    result += other;
+    return result;
+}
+
+template <ArithmeticConcept Number>
+inline Vector3D<Number> Vector3D<Number>::operator-() const
+{
+    return Vector3D<Number>(-x, -y, -z);
+}
+
+template <ArithmeticConcept Number>
+inline Vector3D<Number> &Vector3D<Number>::operator-=(Vector3D<Number> other)
+{
+    *this += -other;
+    return *this;
+}
+
+template <ArithmeticConcept Number>
+inline Vector3D<Number>
+Vector3D<Number>::operator-(Vector3D<Number> other) const
+{
+    auto result = *this;
+    result -= other;
+    return result;
 }
 
 template <ArithmeticConcept Number>
