@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_subdirectory(hydrolib_math)
+add_subdirectory(hydrolib_filter)
 add_subdirectory(hydrolib_common)
 add_subdirectory(hydrolib_concepts)
 # add_subdirectory(hydrolib_ring_queue)
