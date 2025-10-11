@@ -1,5 +1,7 @@
 #pragma once
 
+#include "hydrolib_thrusters_data.hpp"
+
 namespace hydrolib::controlling
 {
 
@@ -25,7 +27,7 @@ public:
                               int single_clamp, int sum_clamp = 0);
 
 public:
-    void ProcessWithFeedback(Control &control, int *dest);
+    void ProcessWithFeedback(ThrustersControlData &thrusters_data, int *dest);
 
 private:
     int x_rotation_gain_[THRUSTERS_COUNT];
@@ -63,18 +65,18 @@ constexpr ThrustGenerator<THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::ThrustGenerator(
 
 template <unsigned THRUSTERS_COUNT, bool ENABLE_SUM_CLAMP>
 void ThrustGenerator<THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::ProcessWithFeedback(
-    Control &control, int *dest)
+    ThrustersControlData &thrusters_data, int *dest)
 {
     int max = 0;
     int sum = 0;
     for (unsigned i = 0; i < THRUSTERS_COUNT; i++)
     {
-        dest[i] = x_rotation_gain_[i] * control.x_torque +
-                  x_linear_gain_[i] * control.x_force +
-                  y_rotation_gain_[i] * control.y_torque +
-                  y_linear_gain_[i] * control.y_force +
-                  z_rotation_gain_[i] * control.z_torque +
-                  z_linear_gain_[i] * control.z_force;
+        // dest[i] = x_rotation_gain_[i] * control.x_torque +
+        //           x_linear_gain_[i] * control.x_force +
+        //           y_rotation_gain_[i] * control.y_torque +
+        //           y_linear_gain_[i] * control.y_force +
+        //           z_rotation_gain_[i] * control.z_torque +
+        //           z_linear_gain_[i] * control.z_force;
         int dest_abs = dest[i] >= 0 ? dest[i] : -dest[i];
 
         if (dest_abs > max)
@@ -109,18 +111,18 @@ void ThrustGenerator<THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::ProcessWithFeedback(
         }
     }
 
-    if (enumerator == denumerator)
+    if (enumerator == denumerator) //TODO
     {
         for (unsigned i = 0; i < THRUSTERS_COUNT; i++)
         {
             dest[i] = dest[i] * enumerator / denumerator;
         }
-        control.x_torque = control.x_torque * enumerator / denumerator;
-        control.y_torque = control.y_torque * enumerator / denumerator;
-        control.z_torque = control.z_torque * enumerator / denumerator;
-        control.x_force = control.x_force * enumerator / denumerator;
-        control.y_force = control.y_force * enumerator / denumerator;
-        control.z_force = control.z_force * enumerator / denumerator;
+        // control.x_torque = control.x_torque * enumerator / denumerator;
+        // control.y_torque = control.y_torque * enumerator / denumerator;
+        // control.z_torque = control.z_torque * enumerator / denumerator;
+        // control.x_force = control.x_force * enumerator / denumerator;
+        // control.y_force = control.y_force * enumerator / denumerator;
+        // control.z_force = control.z_force * enumerator / denumerator;
     }
 }
 } // namespace hydrolib::controlling
