@@ -2313,6 +2313,9 @@ uint8_t test_data[] = {
 class TestStream
 {
 public:
+    consteval TestStream() {}
+
+public:
     unsigned Read(void *buffer, uint32_t length)
     {
         unsigned forward_length = sizeof(test_data) - pos_;
@@ -2372,17 +2375,18 @@ inline int write(TestLogStream &stream, const void *dest, unsigned length)
     return 0;
 }
 
-inline TestLogStream log_stream;
-inline LogDistributor distributor("[%s] [%l] %m\n", log_stream);
-inline Logger logger("vectorNAV", 0, distributor);
+inline constinit TestLogStream log_stream;
+inline constinit LogDistributor distributor("[%s] [%l] %m\n", log_stream);
+inline constinit Logger logger("vectorNAV", 0, distributor);
+
+constinit TestStream stream;
+constinit hydrolib::VectorNAVParser vector_nav(stream, logger);
 
 constexpr unsigned packages_count = 1000;
 
 TEST(TestVectorNAV, BasicTest)
 {
     distributor.SetAllFilters(0, hydrolib::logger::LogLevel::DEBUG);
-    TestStream stream;
-    hydrolib::VectorNAVParser vector_nav(stream, logger);
 
     for (unsigned i = 0; i < packages_count; i++)
     {
