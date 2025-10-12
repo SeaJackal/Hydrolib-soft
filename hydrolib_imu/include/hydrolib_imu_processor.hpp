@@ -1,7 +1,5 @@
 #pragma once
 
-#include "hydrolib_imu.hpp"
-
 #include "hydrolib_fixed_point.hpp"
 #include "hydrolib_quaternions.hpp"
 #include "hydrolib_rotations.hpp"
@@ -52,7 +50,8 @@ IMUProcessor<Number, PERIOD_S>::Process(math::Vector3D<Number> accel_g,
     math::Quaternion<Number> gyro_rotation = math::Quaternion<Number>(
         gyro_rad_per_s * sin(fi_rad / 2), cos(fi_rad / 2));
     math::Quaternion<Number> model_orientation = orientation_ * gyro_rotation;
-    math::Vector3D<Number> g_model = math::Rotate({0, 0, -1}, model_orientation);
+    math::Vector3D<Number> g_model =
+        math::Rotate({0, 0, -1}, model_orientation);
     math::Quaternion<Number> model_orientation_xy =
         math::GetRotation({0, 0, -1}, g_model);
     math::Quaternion<Number> model_orientation_z =
@@ -64,7 +63,7 @@ IMUProcessor<Number, PERIOD_S>::Process(math::Vector3D<Number> accel_g,
     completed_sensor_orientation.Normalize();
     // math::Quaternion<Number> mean_orientation =
     //     math::GetMean(model_orientation, completed_sensor_orientation);
-    orientation_ = sensor_orientation;
+    orientation_ = completed_sensor_orientation;
     return orientation_;
 }
 
