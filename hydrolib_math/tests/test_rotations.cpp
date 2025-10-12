@@ -43,6 +43,21 @@ TEST(TestHydrolibMathRotations, RotationReversed)
     EXPECT_NEAR(c.z, b.z, 0.0001);
 }
 
+TEST(TestHydrolibMathRotations, RotationCornerCase)
+{
+    Vector3D<double> a{1, 0, 0};
+    Vector3D<double> b{-1, 0, 0};
+
+    b.Normalize();
+    b *= a.Length();
+
+    auto q = GetRotation(a, b);
+    auto result = Rotate(a, q);
+    EXPECT_NEAR(b.x, result.x, 0.0001);
+    EXPECT_NEAR(b.y, result.y, 0.0001);
+    EXPECT_NEAR(b.z, result.z, 0.0001);
+}
+
 TEST(TestHydrolibMathRotations, AxisRotation)
 {
     Vector3D<double> x{1, 0, 0};

@@ -27,10 +27,18 @@ inline Quaternion<Number> GetRotation(Vector3D<Number> from,
 {
     from.Normalize();
     to.Normalize();
-    Quaternion<Number> result =
-        Quaternion<Number>(from.Cross(to), from.Dot(to) + 1);
-    result.Normalize();
-    return result;
+    Number w = from.Dot(to) + 1;
+    if (w != 0)
+    {
+        Quaternion<Number> result = Quaternion<Number>(from.Cross(to), w);
+        result.Normalize();
+        return result;
+    }
+    else
+    {
+        Quaternion<Number> result = Quaternion<Number>(from.y, -from.x, 0, 0);
+        return result;
+    }
 }
 
 template <ArithmeticConcept Number>

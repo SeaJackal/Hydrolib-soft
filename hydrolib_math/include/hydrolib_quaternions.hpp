@@ -132,10 +132,13 @@ template <ArithmeticConcept Number>
 inline void Quaternion<Number>::Normalize()
 {
     Number norm = GetNorm();
-    x /= norm;
-    y /= norm;
-    z /= norm;
-    w /= norm;
+    if (norm)
+    {
+        x /= norm;
+        y /= norm;
+        z /= norm;
+        w /= norm;
+    }
 }
 
 } // namespace hydrolib::math
