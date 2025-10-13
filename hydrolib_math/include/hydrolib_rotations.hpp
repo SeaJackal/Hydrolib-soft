@@ -36,7 +36,12 @@ inline Quaternion<Number> GetRotation(Vector3D<Number> from,
     }
     else
     {
+        if (from.y == 0 && from.x == 0)
+        {
+            return {1, 0, 0, 0};
+        }
         Quaternion<Number> result = Quaternion<Number>(from.y, -from.x, 0, 0);
+        result.Normalize();
         return result;
     }
 }

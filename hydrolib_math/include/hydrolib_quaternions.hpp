@@ -132,7 +132,7 @@ template <ArithmeticConcept Number>
 inline void Quaternion<Number>::Normalize()
 {
     Number norm = GetNorm();
-    if (norm)
+    if (norm != 0)
     {
         x /= norm;
         y /= norm;
