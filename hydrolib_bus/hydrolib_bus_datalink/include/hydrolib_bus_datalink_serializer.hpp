@@ -56,6 +56,7 @@ ReturnCode Serializer<TxStream, Logger>::Process(AddressType dest_address,
 {
     current_header_->dest_address = dest_address;
     current_header_->src_address = address_;
+    current_header_->cobs_length = 0;
     current_header_->length =
         static_cast<uint8_t>(sizeof(MessageHeader) + data_length + kCRCLength);
     memcpy(current_message_ + sizeof(MessageHeader), data, data_length);
