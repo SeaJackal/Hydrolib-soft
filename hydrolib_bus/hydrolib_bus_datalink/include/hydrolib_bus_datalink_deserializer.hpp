@@ -23,10 +23,11 @@ public:
     AddressType GetSourceAddress() const;
     const uint8_t *GetData();
     unsigned GetDataLength() const;
+    int GetLostBytes();
 
 public:
-    static void COBSDecoding(uint8_t magic_byte, uint8_t *data,
-                             unsigned data_length);
+    static ReturnCode COBSDecoding(uint8_t magic_byte, uint8_t *data,
+                                   unsigned data_length);
 
 private:
     ReturnCode FindHeader_();
@@ -50,6 +51,8 @@ private:
     uint8_t second_rx_buffer_[kMaxMessageLength];
 
     MessageHeader *current_header_;
+
+    int lost_bytes_;
 };
 
 template <concepts::stream::ByteReadableStreamConcept RxStream,
@@ -64,7 +67,8 @@ constexpr Deserializer<RxStream, Distributor>::Deserializer(
       current_rx_buffer_(first_rx_buffer_),
       next_rx_buffer_(second_rx_buffer_),
       message_ready_(false),
-      current_header_(reinterpret_cast<MessageHeader *>(current_rx_buffer_))
+      current_header_(reinterpret_cast<MessageHeader *>(current_rx_buffer_)),
+      lost_bytes_(0)
 {
     for (unsigned i = 0; i < kMaxMessageLength; i++)
     {
@@ -110,20 +114,36 @@ ReturnCode Deserializer<RxStream, Distributor>::Process()
             return ReturnCode::NO_DATA;
         }
 
-        COBSDecoding(kMagicByte,
-                     current_rx_buffer_ + sizeof(MessageHeader) -
-                         sizeof(MessageHeader::cobs_length),
-                     current_header_->length - sizeof(MessageHeader) +
-                         sizeof(MessageHeader::cobs_length));
+        ReturnCode res =
+            COBSDecoding(kMagicByte,
+                         current_rx_buffer_ + sizeof(MessageHeader) -
+                             sizeof(MessageHeader::cobs_length),
+                         current_header_->length - sizeof(MessageHeader) +
+                             sizeof(MessageHeader::cobs_length));
 
-        current_processed_length_ = 0;
-        if (CheckCRC_())
+        if (res == ReturnCode::OK)
         {
-            uint8_t *temp = current_rx_buffer_;
-            current_rx_buffer_ = next_rx_buffer_;
-            next_rx_buffer_ = temp;
-            message_ready_ = true;
-            return ReturnCode::OK;
+            if (CheckCRC_())
+            {
+                uint8_t *temp = current_rx_buffer_;
+                current_rx_buffer_ = next_rx_buffer_;
+                next_rx_buffer_ = temp;
+                message_ready_ = true;
+                current_processed_length_ = 0;
+                return ReturnCode::OK;
+            }
+            else
+            {
+                lost_bytes_ += current_processed_length_;
+                current_processed_length_ = 0;
+            }
+        }
+        else
+        {
+            lost_bytes_ += current_processed_length_;
+            LOG(logger_, logger::LogLevel::WARNING, "COBS error, lost {} bytes",
+                current_processed_length_);
+            current_processed_length_ = 0;
         }
     }
 }
@@ -168,11 +188,22 @@ unsigned Deserializer<RxStream, Distributor>::GetDataLength() const
 
 template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
-void Deserializer<RxStream, Distributor>::COBSDecoding(uint8_t magic_byte,
-                                                       uint8_t *data,
-                                                       unsigned data_length)
+int Deserializer<RxStream, Distributor>::GetLostBytes()
+{
+    return lost_bytes_;
+}
+
+template <concepts::stream::ByteReadableStreamConcept RxStream,
+          logger::LogDistributorConcept Distributor>
+ReturnCode Deserializer<RxStream, Distributor>::COBSDecoding(
+    uint8_t magic_byte, uint8_t *data, unsigned data_length)
 {
     unsigned current_appearance = data[0];
+    if(current_appearance == 0)
+    {
+        return ReturnCode::OK;
+    }
+    data[0] = 0;
     while (data[current_appearance] != 0)
     {
         unsigned next_appearance =
@@ -181,10 +212,11 @@ void Deserializer<RxStream, Distributor>::COBSDecoding(uint8_t magic_byte,
         current_appearance = next_appearance;
         if (current_appearance > data_length)
         {
-            return; // TODO: Make troubleshouting
+            return ReturnCode::ERROR;
         }
     }
-    return;
+    data[current_appearance] = magic_byte;
+    return ReturnCode::OK;
 }
 
 template <concepts::stream::ByteReadableStreamConcept RxStream,
@@ -244,8 +276,7 @@ bool Deserializer<RxStream, Distributor>::CheckCRC_()
     if (target_crc != current_crc)
     {
         LOG(logger_, logger::LogLevel::WARNING,
-                         "Wrong CRC: expected {}, got {}", target_crc,
-                         current_crc);
+            "Wrong CRC: expected {}, got {}", target_crc, current_crc);
         return false;
     }
     return true;

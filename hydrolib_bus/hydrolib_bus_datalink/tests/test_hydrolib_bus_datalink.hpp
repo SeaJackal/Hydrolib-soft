@@ -12,7 +12,7 @@
 
 #include <gtest/gtest.h>
 
-#define PUBLIC_MEMORY_LENGTH 20
+#define PUBLIC_MEMORY_LENGTH 10
 
 #define SERIALIZER_ADDRESS 3
 #define DESERIALIZER_ADDRESS 4
@@ -24,7 +24,7 @@ public:
     {
         for (unsigned i = 0; i < length; i++)
         {
-            std::cout << (reinterpret_cast<const char *>(data))[i];
+            std::cout << (static_cast<const char *>(data))[i];
         }
         return HYDROLIB_RETURN_OK;
     }
@@ -39,6 +39,11 @@ class TestStream
 {
     friend int read(TestStream &stream, void *dest, unsigned length);
     friend int write(TestStream &stream, const void *dest, unsigned length);
+
+public:
+void WriteByte(unsigned byte_index, unsigned byte);
+unsigned ReadByte(unsigned byte_index);
+int GetQueueSize();
 
 private:
     std::deque<uint8_t> queue_;
