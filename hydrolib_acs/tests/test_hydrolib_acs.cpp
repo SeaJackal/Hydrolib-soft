@@ -18,7 +18,7 @@ public:
     IMUData GetIMUData() { return imu_data_; }
     PressureSensorData GetPressureData() { return pressure_data_; }
 
-    void SetControl(ThrusterControlData thruster_control)
+    void SetControl(ThrustersControlData thruster_control)
     {
         thruster_control_last_ = thruster_control_current_;
         thruster_control_current_ = thruster_control;
@@ -75,8 +75,8 @@ public:
 private:
     IMUData imu_data_ = {0, 0, 0, 0, 0, 0};
     PressureSensorData pressure_data_ = {0, 0};
-    ThrusterControlData thruster_control_current_ = {0, 0, 0, 0};
-    ThrusterControlData thruster_control_last_ = {0, 0, 0, 0};
+    ThrustersControlData thruster_control_current_ = {0, 0, 0, 0};
+    ThrustersControlData thruster_control_last_ = {0, 0, 0, 0};
 };
 
 TEST(TestACS, ControlTest)

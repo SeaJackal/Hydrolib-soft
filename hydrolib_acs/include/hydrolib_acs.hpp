@@ -6,17 +6,10 @@
 #include "hydrolib_imu.hpp"
 #include "hydrolib_pid.hpp"
 #include "hydrolib_pressure_sensor.hpp"
+#include "hydrolib_thrusters_control.hpp"
 
 namespace hydrolib::controlling
 {
-
-struct ThrusterControlData
-{
-    int yaw_torque;
-    int pitch_torque;
-    int roll_torque;
-    int depth_torque;
-};
 
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
@@ -486,11 +479,11 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::Process()
         depth_pid_.Process(depth_epsilon) -
         pressure_data.depth_rate_mm_per_s * closing_contours_.depth_circuit;
 
-    ThrusterControlData thruster_control = {
+    hydrolib::controlling::ThrustersControlData thruster_control = {
         .yaw_torque = yaw_rate_pid_.Process(yaw_rate_epsilon),
         .pitch_torque = pitch_rate_pid_.Process(pitch_rate_epsilon),
         .roll_torque = roll_rate_pid_.Process(roll_rate_epsilon),
-        .depth_torque = depth_rate_pid_.Process(depth_rate_epsilon)};
+        .z_force = depth_rate_pid_.Process(depth_rate_epsilon)};
 
     thruster_.SetControl(thruster_control);
 }
