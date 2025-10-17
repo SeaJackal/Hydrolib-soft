@@ -6,26 +6,30 @@ TEST_P(TestHydrolibRingQueueCommon, FindByte)
 
     for (uint16_t i = 0; i < buffer_capacity / 2; i++)
     {
-        hydrolib_ReturnCode push_status = hydrolib_RingQueue_PushByte(&ring_buffer, i);
-        EXPECT_EQ(push_status, hydrolib_ReturnCode::HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode push_status =
+            test_queue.PushByte(  i);
+        EXPECT_EQ(push_status, hydrolib::ReturnCode::OK);
     }
 
     for (uint16_t i = 0; i < buffer_capacity / 2; i++)
     {
         uint8_t read_byte;
-        hydrolib_ReturnCode emptying_status = hydrolib_RingQueue_PullByte(&ring_buffer, &read_byte);
-        EXPECT_EQ(emptying_status, hydrolib_ReturnCode::HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode emptying_status =
+            test_queue.PullByte(  &read_byte);
+        EXPECT_EQ(emptying_status, hydrolib::ReturnCode::OK);
     }
 
     for (uint16_t i = 0; i < buffer_capacity; i++)
     {
-        hydrolib_ReturnCode filling_status = hydrolib_RingQueue_PushByte(&ring_buffer, i);
-        EXPECT_EQ(filling_status, hydrolib_ReturnCode::HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode filling_status =
+            test_queue.PushByte(  i);
+        EXPECT_EQ(filling_status, hydrolib::ReturnCode::OK);
     }
 
     for (uint16_t i = 0; i < buffer_capacity; i++)
     {
-        uint16_t found_index = hydrolib_RingQueue_FindByte(&ring_buffer, i, shift);
+        uint16_t found_index =
+            test_queue.FindByte(i, shift);
         if (i >= shift)
         {
             EXPECT_EQ(i, found_index);
@@ -36,7 +40,8 @@ TEST_P(TestHydrolibRingQueueCommon, FindByte)
         }
     }
 
-    uint16_t found_index = hydrolib_RingQueue_FindByte(&ring_buffer, buffer_capacity, shift);
+    uint16_t found_index = test_queue.FindByte(
+          buffer_capacity, shift);
     EXPECT_EQ((uint16_t)(-1), found_index);
 }
 
@@ -46,27 +51,31 @@ TEST_P(TestHydrolibRingQueueCommon, Find2BytesLE)
 
     for (uint16_t i = 0; i < buffer_capacity / 2; i++)
     {
-        hydrolib_ReturnCode push_status = hydrolib_RingQueue_PushByte(&ring_buffer, i);
-        EXPECT_EQ(push_status, hydrolib_ReturnCode::HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode push_status =
+            test_queue.PushByte(  i);
+        EXPECT_EQ(push_status, hydrolib::ReturnCode::OK);
     }
 
     for (uint16_t i = 0; i < buffer_capacity / 2; i++)
     {
         uint8_t read_byte;
-        hydrolib_ReturnCode emptying_status = hydrolib_RingQueue_PullByte(&ring_buffer, &read_byte);
-        EXPECT_EQ(emptying_status, hydrolib_ReturnCode::HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode emptying_status =
+            test_queue.PullByte(  &read_byte);
+        EXPECT_EQ(emptying_status, hydrolib::ReturnCode::OK);
     }
 
     for (uint16_t i = 0; i < buffer_capacity; i++)
     {
-        hydrolib_ReturnCode filling_status = hydrolib_RingQueue_PushByte(&ring_buffer, i);
-        EXPECT_EQ(filling_status, hydrolib_ReturnCode::HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode filling_status =
+            test_queue.PushByte(  i);
+        EXPECT_EQ(filling_status, hydrolib::ReturnCode::OK);
     }
 
     for (uint16_t i = 0; i < buffer_capacity - 1; i++)
     {
         uint16_t test_bytes = i | (i + 1) << 8;
-        uint16_t found_index = hydrolib_RingQueue_Find2BytesLE(&ring_buffer, test_bytes, shift);
+        uint16_t found_index = test_queue.Find2BytesLE(
+              test_bytes, shift);
         if (i >= shift)
         {
             EXPECT_EQ(i, found_index);
@@ -77,7 +86,8 @@ TEST_P(TestHydrolibRingQueueCommon, Find2BytesLE)
         }
     }
 
-    uint16_t found_index = hydrolib_RingQueue_Find2BytesLE(&ring_buffer, buffer_capacity, shift);
+    uint16_t found_index =
+        test_queue.Find2BytesLE(  buffer_capacity, shift);
     EXPECT_EQ((uint16_t)(-1), found_index);
 }
 
@@ -87,27 +97,31 @@ TEST_P(TestHydrolibRingQueueCommon, Find4BytesLE)
 
     for (uint16_t i = 0; i < buffer_capacity / 2; i++)
     {
-        hydrolib_ReturnCode push_status = hydrolib_RingQueue_PushByte(&ring_buffer, i);
-        EXPECT_EQ(push_status, hydrolib_ReturnCode::HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode push_status =
+            test_queue.PushByte(  i);
+        EXPECT_EQ(push_status, hydrolib::ReturnCode::OK);
     }
 
     for (uint16_t i = 0; i < buffer_capacity / 2; i++)
     {
         uint8_t read_byte;
-        hydrolib_ReturnCode emptying_status = hydrolib_RingQueue_PullByte(&ring_buffer, &read_byte);
-        EXPECT_EQ(emptying_status, hydrolib_ReturnCode::HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode emptying_status =
+            test_queue.PullByte(  &read_byte);
+        EXPECT_EQ(emptying_status, hydrolib::ReturnCode::OK);
     }
 
     for (uint16_t i = 0; i < buffer_capacity; i++)
     {
-        hydrolib_ReturnCode filling_status = hydrolib_RingQueue_PushByte(&ring_buffer, i);
-        EXPECT_EQ(filling_status, hydrolib_ReturnCode::HYDROLIB_RETURN_OK);
+        hydrolib::ReturnCode filling_status =
+            test_queue.PushByte(  i);
+        EXPECT_EQ(filling_status, hydrolib::ReturnCode::OK);
     }
 
     for (uint16_t i = 0; i < buffer_capacity - 3; i++)
     {
         uint32_t test_bytes = i | (i + 1) << 8 | (i + 2) << 16 | (i + 3) << 24;
-        uint16_t found_index = hydrolib_RingQueue_Find4BytesLE(&ring_buffer, test_bytes, shift);
+        uint16_t found_index = test_queue.Find4BytesLE(
+              test_bytes, shift);
         if (i >= shift)
         {
             EXPECT_EQ(i, found_index);
@@ -118,6 +132,7 @@ TEST_P(TestHydrolibRingQueueCommon, Find4BytesLE)
         }
     }
 
-    uint16_t found_index = hydrolib_RingQueue_Find4BytesLE(&ring_buffer, buffer_capacity, shift);
+    uint16_t found_index = test_queue.Find4BytesLE(
+          buffer_capacity, shift);
     EXPECT_EQ((uint16_t)(-1), found_index);
 }
