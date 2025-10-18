@@ -479,7 +479,7 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::Process()
         depth_pid_.Process(depth_epsilon) -
         pressure_data.depth_rate_mm_per_s * closing_contours_.depth_circuit;
 
-    hydrolib::controlling::ThrustersControlData thruster_control = {
+    ThrustersControlData thruster_control = {
         .yaw_torque = yaw_rate_pid_.Process(yaw_rate_epsilon),
         .pitch_torque = pitch_rate_pid_.Process(pitch_rate_epsilon),
         .roll_torque = roll_rate_pid_.Process(roll_rate_epsilon),

@@ -1,6 +1,7 @@
 #include "hydrolib_acs.hpp"
 #include "hydrolib_imu.hpp"
 #include "hydrolib_pressure_sensor.hpp"
+#include "hydrolib_thrusters_control.hpp"
 
 #include <gtest/gtest.h>
 #include <iostream>
@@ -51,8 +52,8 @@ public:
 
         pressure_data_.depth_mm =
             1 / (2 * kTau + kPeriod_s) *
-            (kPeriod_s * (thruster_control_current_.depth_torque +
-                          thruster_control_last_.depth_torque) -
+            (kPeriod_s * (thruster_control_current_.z_force +
+                          thruster_control_last_.z_force) -
              (kPeriod_s - 2 * kTau) * last_depth);
 
         imu_data_.yaw_rate_mdeg_per_s =

@@ -23,5 +23,6 @@ add_subdirectory(hydrolib_thrust_generator)
 add_subdirectory(hydrolib_acs)
 add_subdirectory(hydrolib_imu)
 add_subdirectory(hydrolib_pressure_sensor)
+add_subdirectory(hydrolib_thrusters_control)
 
 enable_testing()

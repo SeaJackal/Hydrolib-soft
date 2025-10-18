@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "hydrolib_thrust_generator.hpp"
+#include "hydrolib_thrusters_control.hpp"
 
 constexpr int THRUST_COUNT = 6;
 constexpr int DEGREES_OF_FREEDOM_COUNT = 6;
@@ -26,9 +27,9 @@ TEST(TestHydrolibThrustGenerator, GenerationThrust)
     //     control.y_force += thrust_matrix[4][i] * thrust_expectency[i];
     //     control.z_force += thrust_matrix[5][i] * thrust_expectency[i];
     // }
-    hydrolib::controlling::Control control = {1, 1, 1, 1, 1, 1};
+    hydrolib::controlling::ThrustersControlData thrusters_control_data = {1, 1, 1, 1, 1, 1};
     int thrust_result[THRUST_COUNT];
-    generator.ProcessWithFeedback(control, thrust_result);
+    generator.ProcessWithFeedback(thrusters_control_data, thrust_result);
     for (int i = 0; i < THRUST_COUNT; i++)
     {
         EXPECT_EQ(thrust_result[i], thrust_expectency[i]);
