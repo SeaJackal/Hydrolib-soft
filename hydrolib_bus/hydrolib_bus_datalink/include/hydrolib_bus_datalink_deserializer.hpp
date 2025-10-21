@@ -101,7 +101,7 @@ ReturnCode Deserializer<RxStream, Distributor>::Process()
         }
 
         current_processed_length_ +=
-            read(rx_stream_, current_rx_buffer_ + sizeof(MessageHeader),
+            read(rx_stream_, current_rx_buffer_ + current_processed_length_,
                  current_header_->length - current_processed_length_);
 
         if (current_processed_length_ != current_header_->length)
@@ -211,7 +211,7 @@ template <concepts::stream::ByteReadableStreamConcept RxStream,
           logger::LogDistributorConcept Distributor>
 ReturnCode Deserializer<RxStream, Distributor>::ParseHeader_()
 {
-    int res = read(rx_stream_, current_rx_buffer_ + sizeof(kMagicByte),
+    int res = read(rx_stream_, current_rx_buffer_ + current_processed_length_,
                    sizeof(MessageHeader) - current_processed_length_);
     if (res < 0)
     {
