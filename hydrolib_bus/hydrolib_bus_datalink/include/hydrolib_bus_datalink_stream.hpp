@@ -9,32 +9,17 @@ namespace hydrolib::bus::datalink
 {
 template <concepts::stream::ByteFullStreamConcept RxTxStream,
           logger::LogDistributorConcept Distributor, int MATES_COUNT = 3>
+class Stream;
+
+template <concepts::stream::ByteFullStreamConcept RxTxStream,
+          logger::LogDistributorConcept Distributor, int MATES_COUNT = 3>
 class StreamManager
 {
+    friend class Stream<RxTxStream, Distributor, MATES_COUNT>;
+
 private:
     using SerializerType = Serializer<RxTxStream, Distributor>;
     using DeserializerType = Deserializer<RxTxStream, Distributor>;
-
-public:
-    class Stream
-    {
-        friend class StreamManager;
-
-    public:
-        constexpr Stream(StreamManager &stream_manager,
-                         AddressType mate_address);
-
-    public:
-        int Read(void *dest, unsigned length);
-        int Write(const void *dest, unsigned length);
-
-    private:
-        StreamManager &stream_manager_;
-        const AddressType mate_address_;
-
-        uint8_t buffer[kMaxMessageLength] = {0}; // TODO: Make queue
-        unsigned message_length_;
-    };
 
 public:
     constexpr StreamManager(AddressType self_address, RxTxStream &stream,
@@ -51,8 +36,32 @@ private:
 
     DeserializerType deserializer_;
 
-    Stream *streams_[MATES_COUNT] = {nullptr};
+    Stream<RxTxStream, Distributor, MATES_COUNT> *streams_[MATES_COUNT] = {
+        nullptr};
     int streams_count_;
+};
+
+template <concepts::stream::ByteFullStreamConcept RxTxStream,
+          logger::LogDistributorConcept Distributor, int MATES_COUNT>
+class Stream
+{
+    friend class StreamManager<RxTxStream, Distributor, MATES_COUNT>;
+
+public:
+    constexpr Stream(
+        StreamManager<RxTxStream, Distributor, MATES_COUNT> &stream_manager,
+        AddressType mate_address);
+
+public:
+    int Read(void *dest, unsigned length);
+    int Write(const void *dest, unsigned length);
+
+private:
+    StreamManager<RxTxStream, Distributor, MATES_COUNT> &stream_manager_;
+    const AddressType mate_address_;
+
+    uint8_t buffer[kMaxMessageLength] = {0}; // TODO: Make queue
+    unsigned message_length_;
 };
 
 template <concepts::stream::ByteFullStreamConcept RxTxStream,
@@ -93,8 +102,9 @@ void StreamManager<RxTxStream, Distributor, MATES_COUNT>::Process()
 
 template <concepts::stream::ByteFullStreamConcept RxTxStream,
           logger::LogDistributorConcept Distributor, int MATES_COUNT>
-constexpr StreamManager<RxTxStream, Distributor, MATES_COUNT>::Stream::Stream(
-    StreamManager &stream_manager, AddressType mate_address)
+constexpr Stream<RxTxStream, Distributor, MATES_COUNT>::Stream(
+    StreamManager<RxTxStream, Distributor, MATES_COUNT> &stream_manager,
+    AddressType mate_address)
     : stream_manager_(stream_manager),
       mate_address_(mate_address),
       message_length_(0)
@@ -105,8 +115,8 @@ constexpr StreamManager<RxTxStream, Distributor, MATES_COUNT>::Stream::Stream(
 
 template <concepts::stream::ByteFullStreamConcept RxTxStream,
           logger::LogDistributorConcept Distributor, int MATES_COUNT>
-int StreamManager<RxTxStream, Distributor, MATES_COUNT>::Stream::Read(
-    void *dest, unsigned length)
+int Stream<RxTxStream, Distributor, MATES_COUNT>::Read(void *dest,
+                                                       unsigned length)
 {
     if (length > message_length_)
     {
@@ -118,11 +128,12 @@ int StreamManager<RxTxStream, Distributor, MATES_COUNT>::Stream::Read(
 
 template <concepts::stream::ByteFullStreamConcept RxTxStream,
           logger::LogDistributorConcept Distributor, int MATES_COUNT>
-int StreamManager<RxTxStream, Distributor, MATES_COUNT>::Stream::Write(
-    const void *dest, unsigned length)
+int Stream<RxTxStream, Distributor, MATES_COUNT>::Write(const void *dest,
+                                                        unsigned length)
 {
-    SerializerType serializer(stream_manager_.self_address_,
-                              stream_manager_.stream_, stream_manager_.logger_);
+    typename StreamManager<RxTxStream, Distributor, MATES_COUNT>::SerializerType
+        serializer(stream_manager_.self_address_, stream_manager_.stream_,
+                   stream_manager_.logger_);
     ReturnCode result = serializer.Process(mate_address_, dest, length);
 
     if (result == ReturnCode::OK)
@@ -138,21 +149,21 @@ int StreamManager<RxTxStream, Distributor, MATES_COUNT>::Stream::Write(
 template <hydrolib::concepts::stream::ByteFullStreamConcept RxTxStream,
           hydrolib::logger::LogDistributorConcept Distributor,
           int MATES_COUNT = 3>
-int read(typename hydrolib::bus::datalink::StreamManager<
-             RxTxStream, Distributor, MATES_COUNT>::Stream &stream,
+int read(typename hydrolib::bus::datalink::Stream<RxTxStream, Distributor,
+                                                  MATES_COUNT> &stream,
          void *dest, unsigned length);
 
 template <hydrolib::concepts::stream::ByteFullStreamConcept RxTxStream,
           hydrolib::logger::LogDistributorConcept Distributor,
           int MATES_COUNT = 3>
-int write(typename hydrolib::bus::datalink::StreamManager<
-              RxTxStream, Distributor, MATES_COUNT>::Stream &stream,
+int write(typename hydrolib::bus::datalink::Stream<RxTxStream, Distributor,
+                                                   MATES_COUNT> &stream,
           const void *dest, unsigned length);
 
 template <hydrolib::concepts::stream::ByteFullStreamConcept RxTxStream,
           hydrolib::logger::LogDistributorConcept Distributor, int MATES_COUNT>
-int read(typename hydrolib::bus::datalink::StreamManager<
-             RxTxStream, Distributor, MATES_COUNT>::Stream &stream,
+int read(typename hydrolib::bus::datalink::Stream<RxTxStream, Distributor,
+                                                  MATES_COUNT> &stream,
          void *dest, unsigned length)
 {
     return stream.Read(dest, length);
@@ -160,8 +171,8 @@ int read(typename hydrolib::bus::datalink::StreamManager<
 
 template <hydrolib::concepts::stream::ByteFullStreamConcept RxTxStream,
           hydrolib::logger::LogDistributorConcept Distributor, int MATES_COUNT>
-int write(typename hydrolib::bus::datalink::StreamManager<
-              RxTxStream, Distributor, MATES_COUNT>::Stream &stream,
+int write(typename hydrolib::bus::datalink::Stream<RxTxStream, Distributor,
+                                                   MATES_COUNT> &stream,
           const void *dest, unsigned length)
 {
     return stream.Write(dest, length);

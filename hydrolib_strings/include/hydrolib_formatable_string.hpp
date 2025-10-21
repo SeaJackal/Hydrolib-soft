@@ -41,8 +41,7 @@ private:
     template <concepts::stream::ByteWritableStreamConcept DestType,
               typename... Ts>
     ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
-                        unsigned translated_length, int param,
-                        Ts... others) const;
+                        int translated_length, int param, Ts... others) const;
 
     template <concepts::stream::ByteWritableStreamConcept DestType,
               StringConsept String, typename... Ts>
@@ -51,7 +50,7 @@ private:
 
     template <concepts::stream::ByteWritableStreamConcept DestType>
     ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
-                        unsigned translated_length) const;
+                        int translated_length) const;
 
 private:
     static consteval unsigned CountLength_(const char *string);
@@ -59,8 +58,8 @@ private:
 
 private:
     const char *const string_;
-    const unsigned length_;
-    const unsigned param_count_;
+    const int length_;
+    const int param_count_;
     unsigned short param_pos_diffs_[MAX_PARAMETERS_COUNT];
 };
 
@@ -85,7 +84,7 @@ consteval StaticFormatableString<ArgTypes...>::StaticFormatableString(
     }
     unsigned param_number = 0;
     unsigned last_param = 0;
-    for (unsigned i = 0; i < length_; i++)
+    for (int i = 0; i < length_; i++)
     {
         if (string_[i] == '{')
         {
@@ -121,7 +120,7 @@ constexpr StaticFormatableString<ArgTypes...>::operator const char *() const
 template <typename... ArgTypes>
 template <concepts::stream::ByteWritableStreamConcept DestType, typename... Ts>
 ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
-    DestType &buffer, unsigned next_param_index, unsigned translated_length,
+    DestType &buffer, unsigned next_param_index, int translated_length,
     int param, Ts... others) const
 {
     if (translated_length >= length_)
@@ -240,10 +239,8 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
 
 template <typename... ArgTypes>
 template <concepts::stream::ByteWritableStreamConcept DestType>
-ReturnCode
-StaticFormatableString<ArgTypes...>::ToBytes_(DestType &buffer,
-                                              unsigned next_param_index,
-                                              unsigned translated_length) const
+ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
+    DestType &buffer, unsigned next_param_index, int translated_length) const
 {
     (void)next_param_index;
     int write_res =

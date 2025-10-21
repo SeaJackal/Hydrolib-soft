@@ -28,7 +28,7 @@ private:
     logger::Logger<Distributor> &logger_;
 
     void *requested_data_;
-    unsigned requested_length_;
+    int requested_length_;
 
     uint8_t rx_buffer_[kMaxMessageLength];
     uint8_t tx_buffer_[kMaxMessageLength];
@@ -69,7 +69,8 @@ bool Master<TxRxStream, Distributor>::Process()
     switch (command)
     {
     case Command::RESPONSE:
-        if (requested_length_ + sizeof(Command) != read_length)
+        if (requested_length_ + static_cast<int>(sizeof(Command)) !=
+            read_length)
         {
             return false;
         }

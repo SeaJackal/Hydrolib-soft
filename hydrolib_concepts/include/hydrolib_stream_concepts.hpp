@@ -10,20 +10,10 @@ namespace hydrolib::concepts::stream
 {
 
 template <typename T>
-concept ByteWritableStreamConceptPOSIX =
+concept ByteWritableStreamConcept =
     requires(T stream, const void *source, unsigned length) {
         { write(stream, source, length) } -> std::convertible_to<int>;
     };
-
-template <typename T>
-concept ByteWritableStreamConceptMethod =
-    requires(T stream, const void *source, unsigned length) {
-        { stream.Push(source, length) } -> std::same_as<hydrolib_ReturnCode>;
-    };
-
-template <typename T>
-concept ByteWritableStreamConcept =
-    ByteWritableStreamConceptPOSIX<T> || ByteWritableStreamConceptMethod<T>;
 
 template <typename T>
 concept ByteReadableStreamConcept =

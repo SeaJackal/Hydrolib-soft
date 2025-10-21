@@ -49,10 +49,10 @@ TestHydrolibBusDatalink::TestHydrolibBusDatalink()
 
 TEST_F(TestHydrolibBusDatalink, ExchangeTest)
 {
-    hydrolib::bus::datalink::StreamManager<TestStream, hydrolib::logger::LogDistributor<TestLogStream>>::Stream
-        tx_stream(sender_manager, DESERIALIZER_ADDRESS);
-    hydrolib::bus::datalink::StreamManager<TestStream, hydrolib::logger::LogDistributor<TestLogStream>>::Stream
-        rx_stream(receiver_manager, SERIALIZER_ADDRESS);
+    hydrolib::bus::datalink::Stream tx_stream(sender_manager,
+                                              DESERIALIZER_ADDRESS);
+    hydrolib::bus::datalink::Stream rx_stream(receiver_manager,
+                                              SERIALIZER_ADDRESS);
 
     for (unsigned j = 0; j < 500; j++)
     {
