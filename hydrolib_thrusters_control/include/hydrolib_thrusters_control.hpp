@@ -12,4 +12,10 @@ struct ThrustersControlData
     int y_force;
     int z_force;
 };
+
+template <typename T>
+concept ThrusterConcept =
+    requires(T thruster, ThrustersControlData thruster_control) {
+        { thruster.SetControl(thruster_control) };
+    };
 } // namespace hydrolib::controlling

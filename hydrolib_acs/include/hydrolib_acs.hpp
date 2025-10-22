@@ -14,7 +14,8 @@ namespace hydrolib::controlling
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 class ControlSystem
 {
 private:
@@ -101,7 +102,8 @@ private:
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-             hydrolib::sensors::PressureSensorConcept<PressureModel>
+             hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+             hydrolib::controlling::ThrusterConcept<Thrusters>
 ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::ControlSystem(
     IMUModel &imu_model, PressureModel &pressure_model, Thrusters &thruster)
     : imu_(imu_model),
@@ -118,7 +120,8 @@ ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::ControlSystem(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetControl(
     int yaw_mdeg, int pitch_mdeg, int roll_mdeg, int depth_mm)
 {
@@ -131,7 +134,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetControl(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetYawP(
     unsigned p)
 {
@@ -141,7 +145,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetYawP(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetYawI(
     unsigned i)
 {
@@ -151,7 +156,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetYawI(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::SetYawDivideShift(unsigned divide_shift)
 {
@@ -161,7 +167,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetPitchP(
     unsigned p)
 {
@@ -171,7 +178,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetPitchP(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetPitchI(
     unsigned i)
 {
@@ -181,7 +189,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetPitchI(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::SetPitchDivideShift(unsigned divide_shift)
 {
@@ -191,7 +200,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetRollP(
     unsigned p)
 {
@@ -201,7 +211,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetRollP(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetRollI(
     unsigned i)
 {
@@ -211,7 +222,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetRollI(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::SetRollDivideShift(unsigned divide_shift)
 {
@@ -221,7 +233,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetDepthP(
     unsigned p)
 {
@@ -231,7 +244,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetDepthP(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetDepthI(
     unsigned i)
 {
@@ -241,7 +255,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetDepthI(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::SetDepthDivideShift(unsigned divide_shift)
 {
@@ -251,7 +266,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetYawRateP(
     unsigned p)
 {
@@ -261,7 +277,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetYawRateP(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetYawRateI(
     unsigned i)
 {
@@ -271,7 +288,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetYawRateI(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::SetYawRateDivideShift(unsigned divide_shift)
 {
@@ -281,7 +299,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetPitchRateP(
     unsigned p)
 {
@@ -291,7 +310,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetPitchRateP(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetPitchRateI(
     unsigned i)
 {
@@ -301,7 +321,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetPitchRateI(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::SetPitchRateDivideShift(unsigned divide_shift)
 {
@@ -311,7 +332,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetRollRateP(
     unsigned p)
 {
@@ -321,7 +343,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetRollRateP(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetRollRateI(
     unsigned i)
 {
@@ -331,7 +354,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetRollRateI(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::SetRollRateDivideShift(unsigned divide_shift)
 {
@@ -341,7 +365,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetDepthRateP(
     unsigned p)
 {
@@ -351,7 +376,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetDepthRateP(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetDepthRateI(
     unsigned i)
 {
@@ -361,7 +387,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::SetDepthRateI(
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::SetDepthRateDivideShift(unsigned divide_shift)
 {
@@ -371,7 +398,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::CloseYawContour()
 {
@@ -381,7 +409,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::ClosePitchContour()
 {
@@ -391,7 +420,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::CloseRollContour()
 {
@@ -401,7 +431,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::CloseDepthContour()
 {
@@ -411,7 +442,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::OpenYawContour()
 {
@@ -421,7 +453,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::OpenPitchContour()
 {
@@ -431,7 +464,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::OpenRollContour()
 {
@@ -441,7 +475,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters,
                    FREQ_HZ>::OpenDepthContour()
 {
@@ -451,7 +486,8 @@ void ControlSystem<IMUModel, PressureModel, Thrusters,
 template <typename IMUModel, typename PressureModel, typename Thrusters,
           unsigned FREQ_HZ>
 requires hydrolib::sensors::IMUConcept<IMUModel> &&
-         hydrolib::sensors::PressureSensorConcept<PressureModel>
+         hydrolib::sensors::PressureSensorConcept<PressureModel> &&
+         hydrolib::controlling::ThrusterConcept<Thrusters>
 void ControlSystem<IMUModel, PressureModel, Thrusters, FREQ_HZ>::Process()
 {
     hydrolib::sensors::IMUData imu_data = imu_.GetIMUData();
