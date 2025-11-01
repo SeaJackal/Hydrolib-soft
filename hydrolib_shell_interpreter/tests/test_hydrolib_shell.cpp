@@ -96,7 +96,9 @@ struct TestCommandMap
     std::unordered_map<std::string, HandlerType> storage;
 };
 
-using ShellUnderTest = hydrolib::shell::Shell<FakeStream, TestCommandMap>;
+using ShellUnderTest =
+    hydrolib::shell::Shell<FakeStream, std::function<int(int, char *[])>,
+                           TestCommandMap>;
 
 TEST(ShellProcess, ReturnsTerminalResultWhenNoData)
 {
