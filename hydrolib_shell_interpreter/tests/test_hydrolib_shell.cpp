@@ -183,3 +183,68 @@ TEST(ShellProcess, ReturnsErrorWhenHandlerMissing)
     EXPECT_EQ(ReturnCode::ERROR, shell.Process());
     EXPECT_EQ("unknown\n", stream.OutputAsString());
 }
+
+TEST(ShellProcess, ProcessesMultipleCommandsWithDifferentLengths)
+{
+    FakeStream stream;
+    stream.AppendInput("a\nreset-now\nx\n");
+
+    TestCommandMap handlers;
+    std::vector<std::string> call_order;
+
+    auto make_handler = [&](const std::string &name)
+    {
+        return std::function<int(int, char *[])>(
+            [&, name](int argc, char *argv[])
+            {
+                EXPECT_GT(argc, 0);
+                EXPECT_STREQ(name.c_str(), argv[0]);
+                call_order.emplace_back(argv[0]);
+                return 0;
+            });
+    };
+
+    handlers.storage["a"] = make_handler("a");
+    handlers.storage["reset-now"] = make_handler("reset-now");
+    handlers.storage["x"] = make_handler("x");
+
+    ShellUnderTest shell(stream, handlers);
+
+    EXPECT_EQ(ReturnCode::OK, shell.Process());
+    EXPECT_EQ(ReturnCode::OK, shell.Process());
+    EXPECT_EQ(ReturnCode::OK, shell.Process());
+    EXPECT_EQ(ReturnCode::NO_DATA, shell.Process());
+
+    EXPECT_EQ((std::vector<std::string>{"a", "reset-now", "x"}), call_order);
+    EXPECT_EQ("a\nreset-now\nx\n", stream.OutputAsString());
+}
+
+TEST(ShellProcess, InvokesHandlerWithArguments)
+{
+    FakeStream stream;
+    stream.AppendInput("set value1 42\n");
+
+    TestCommandMap handlers;
+    int received_argc = -1;
+    std::vector<std::string> received_arguments;
+
+    handlers.storage["set"] = std::function<int(int, char *[])>(
+        [&](int argc, char *argv[])
+        {
+            received_argc = argc;
+            received_arguments.clear();
+            for (int i = 0; i < argc; ++i)
+            {
+                received_arguments.emplace_back(argv[i]);
+            }
+            return 0;
+        });
+
+    ShellUnderTest shell(stream, handlers);
+
+    EXPECT_EQ(ReturnCode::OK, shell.Process());
+    EXPECT_EQ(3, received_argc);
+    EXPECT_EQ((std::vector<std::string>{"set", "value1", "42"}),
+              received_arguments);
+    EXPECT_EQ("set value1 42\n", stream.OutputAsString());
+}

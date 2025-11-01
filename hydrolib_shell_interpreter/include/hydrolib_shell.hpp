@@ -38,21 +38,14 @@ hydrolib::ReturnCode Shell<Stream, Map>::Process()
         return terminal_result;
     }
     auto command = terminal_.GetCommand();
-    if (command.has_value())
+    last_error_code_ = interpreter_.Process(command);
+    if (last_error_code_ != 0)
     {
-        last_error_code_ = interpreter_.Process(command.value());
-        if (last_error_code_ != 0)
-        {
-            return hydrolib::ReturnCode::ERROR;
-        }
-        else
-        {
-            return hydrolib::ReturnCode::OK;
-        }
+        return hydrolib::ReturnCode::ERROR;
     }
     else
     {
-        return hydrolib::ReturnCode::ERROR;
+        return hydrolib::ReturnCode::OK;
     }
 }
 
