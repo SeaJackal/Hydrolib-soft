@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <deque>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -26,10 +25,7 @@ struct FakeStream
         input_.insert(input_.end(), data.begin(), data.end());
     }
 
-    void AppendChar(char ch)
-    {
-        input_.push_back(ch);
-    }
+    void AppendChar(char ch) { input_.push_back(ch); }
 
     std::string OutputAsString() const
     {
@@ -72,7 +68,8 @@ struct FakeStream
     return static_cast<int>(to_copy);
 }
 
-[[maybe_unused]] int write(FakeStream &stream, const void *source, unsigned length)
+[[maybe_unused]] int write(FakeStream &stream, const void *source,
+                           unsigned length)
 {
     const auto *char_source = static_cast<const char *>(source);
     stream.output_.insert(stream.output_.end(), char_source,
@@ -91,7 +88,11 @@ std::string CommandToStdString(const hydrolib::shell::CommandString &command)
 {
     const auto length = static_cast<std::size_t>(command.GetLength());
     const char *data = static_cast<const char *>(command);
-    return std::string(data, data + length);
+
+    EXPECT_GT(length, 0u);
+    EXPECT_EQ('\0', data[length - 1]);
+
+    return std::string(data, data + length - 1);
 }
 
 } // namespace
@@ -103,7 +104,6 @@ TEST(TerminalProcess, EchoesPrintableCharacters)
 
     EXPECT_EQ(ReturnCode::NO_DATA, terminal.Process());
     EXPECT_EQ(std::string("a"), stream.OutputAsString());
-    EXPECT_FALSE(terminal.GetCommand().has_value());
 }
 
 TEST(TerminalProcess, HandlesBackspace)
@@ -121,7 +121,6 @@ TEST(TerminalProcess, HandlesBackspace)
     EXPECT_EQ(ReturnCode::NO_DATA, terminal.Process());
 
     EXPECT_EQ(std::string("a\b \bc"), stream.OutputAsString());
-    EXPECT_FALSE(terminal.GetCommand().has_value());
 }
 
 TEST(TerminalProcess, HandlesDelete)
@@ -139,7 +138,6 @@ TEST(TerminalProcess, HandlesDelete)
     EXPECT_EQ(ReturnCode::NO_DATA, terminal.Process());
 
     EXPECT_EQ(std::string("a\b \bz"), stream.OutputAsString());
-    EXPECT_FALSE(terminal.GetCommand().has_value());
 }
 
 TEST(TerminalProcess, HandlesBackspaceWithoutPrintableCharacters)
@@ -149,7 +147,6 @@ TEST(TerminalProcess, HandlesBackspaceWithoutPrintableCharacters)
 
     EXPECT_EQ(ReturnCode::NO_DATA, terminal.Process());
     EXPECT_EQ(std::string("\b \b"), stream.OutputAsString());
-    EXPECT_FALSE(terminal.GetCommand().has_value());
 }
 
 TEST(TerminalProcess, HandlesDeleteWithoutPrintableCharacters)
@@ -159,7 +156,6 @@ TEST(TerminalProcess, HandlesDeleteWithoutPrintableCharacters)
 
     EXPECT_EQ(ReturnCode::NO_DATA, terminal.Process());
     EXPECT_EQ(std::string("\b \b"), stream.OutputAsString());
-    EXPECT_FALSE(terminal.GetCommand().has_value());
 }
 
 TEST(TerminalProcess, MirrorsCarriageReturn)
@@ -169,7 +165,6 @@ TEST(TerminalProcess, MirrorsCarriageReturn)
 
     EXPECT_EQ(ReturnCode::NO_DATA, terminal.Process());
     EXPECT_EQ(std::string("\r"), stream.OutputAsString());
-    EXPECT_FALSE(terminal.GetCommand().has_value());
 }
 
 TEST(TerminalProcess, ProducesCommandAfterNewline)
@@ -179,23 +174,18 @@ TEST(TerminalProcess, ProducesCommandAfterNewline)
 
     stream.AppendChar('r');
     EXPECT_EQ(ReturnCode::NO_DATA, terminal.Process());
-    EXPECT_FALSE(terminal.GetCommand().has_value());
 
     stream.AppendChar('u');
     EXPECT_EQ(ReturnCode::NO_DATA, terminal.Process());
-    EXPECT_FALSE(terminal.GetCommand().has_value());
 
     stream.AppendChar('n');
     EXPECT_EQ(ReturnCode::NO_DATA, terminal.Process());
-    EXPECT_FALSE(terminal.GetCommand().has_value());
 
     stream.AppendInput(std::string_view("\n", 1));
     EXPECT_EQ(ReturnCode::OK, terminal.Process());
 
     const auto command = terminal.GetCommand();
-    ASSERT_TRUE(command.has_value());
-    EXPECT_EQ(std::string("run"), CommandToStdString(*command));
-    EXPECT_FALSE(terminal.GetCommand().has_value());
+    EXPECT_EQ(std::string("run"), CommandToStdString(command));
 }
 
 TEST(TerminalProcess, EchoesNewlineCharacter)
@@ -208,8 +198,7 @@ TEST(TerminalProcess, EchoesNewlineCharacter)
     EXPECT_EQ(std::string("\n"), stream.OutputAsString());
 
     const auto command = terminal.GetCommand();
-    ASSERT_TRUE(command.has_value());
-    EXPECT_TRUE(CommandToStdString(*command).empty());
+    EXPECT_TRUE(CommandToStdString(command).empty());
 }
 
 TEST(TerminalProcess, EchoesComplexSequence)
@@ -239,7 +228,6 @@ TEST(TerminalProcess, EchoesComplexSequence)
     EXPECT_EQ(ReturnCode::NO_DATA, terminal.Process());
 
     EXPECT_EQ(std::string("abc\b \bd\b \bef"), stream.OutputAsString());
-    EXPECT_FALSE(terminal.GetCommand().has_value());
 }
 
 TEST(TerminalProcess, ProducesCommandWithDeletes)
@@ -272,8 +260,7 @@ TEST(TerminalProcess, ProducesCommandWithDeletes)
     EXPECT_EQ(ReturnCode::OK, terminal.Process());
 
     const auto command = terminal.GetCommand();
-    ASSERT_TRUE(command.has_value());
-    EXPECT_EQ(std::string("abef"), CommandToStdString(*command));
+    EXPECT_EQ(std::string("abef"), CommandToStdString(command));
 }
 
 TEST(TerminalProcess, ProducesCommandAfterExcessDeletes)
@@ -302,8 +289,7 @@ TEST(TerminalProcess, ProducesCommandAfterExcessDeletes)
     EXPECT_EQ(ReturnCode::OK, terminal.Process());
 
     const auto command = terminal.GetCommand();
-    ASSERT_TRUE(command.has_value());
-    EXPECT_EQ(std::string("cd"), CommandToStdString(*command));
+    EXPECT_EQ(std::string("cd"), CommandToStdString(command));
 }
 
 TEST(TerminalProcess, ProcessesSequentialCommands)
@@ -314,7 +300,8 @@ TEST(TerminalProcess, ProcessesSequentialCommands)
     const std::string first_command = "status";
     const std::string second_command = "reset";
 
-    auto feed_command = [&](std::string_view command) {
+    auto feed_command = [&](std::string_view command)
+    {
         for (char ch : command)
         {
             stream.AppendChar(ch);
@@ -326,13 +313,11 @@ TEST(TerminalProcess, ProcessesSequentialCommands)
 
     feed_command(first_command);
     const auto first = terminal.GetCommand();
-    ASSERT_TRUE(first.has_value());
-    EXPECT_EQ(first_command, CommandToStdString(*first));
+    EXPECT_EQ(first_command, CommandToStdString(first));
 
     feed_command(second_command);
     const auto second = terminal.GetCommand();
-    ASSERT_TRUE(second.has_value());
-    EXPECT_EQ(second_command, CommandToStdString(*second));
+    EXPECT_EQ(second_command, CommandToStdString(second));
 
     EXPECT_EQ(first_command + "\n" + second_command + "\n",
               stream.OutputAsString());
@@ -353,8 +338,7 @@ TEST(TerminalProcess, ProcessesSequentialCommandsWithEditing)
     EXPECT_EQ(ReturnCode::OK, terminal.Process());
 
     const auto first = terminal.GetCommand();
-    ASSERT_TRUE(first.has_value());
-    EXPECT_EQ(first_command, CommandToStdString(*first));
+    EXPECT_EQ(first_command, CommandToStdString(first));
 
     stream.AppendChar('b');
     EXPECT_EQ(ReturnCode::NO_DATA, terminal.Process());
@@ -375,8 +359,7 @@ TEST(TerminalProcess, ProcessesSequentialCommandsWithEditing)
     EXPECT_EQ(ReturnCode::OK, terminal.Process());
 
     const auto second = terminal.GetCommand();
-    ASSERT_TRUE(second.has_value());
-    EXPECT_EQ(std::string("best"), CommandToStdString(*second));
+    EXPECT_EQ(std::string("best"), CommandToStdString(second));
 
     EXPECT_EQ(first_command + "\nbet\b \bst\n", stream.OutputAsString());
 }
@@ -395,7 +378,6 @@ TEST(TerminalProcess, ReportsOverflowWhenCommandTooLong)
     }
 
     EXPECT_EQ(long_command, stream.OutputAsString());
-    EXPECT_FALSE(terminal.GetCommand().has_value());
 
     stream.AppendChar('y');
     auto process_result = terminal.Process();
@@ -419,8 +401,7 @@ TEST(TerminalProcess, CarriageReturnBeforeNewlineProducesCommand)
     EXPECT_EQ(ReturnCode::OK, terminal.Process());
 
     const auto command = terminal.GetCommand();
-    ASSERT_TRUE(command.has_value());
-    EXPECT_EQ(std::string("hi"), CommandToStdString(*command));
+    EXPECT_EQ(std::string("hi"), CommandToStdString(command));
     EXPECT_EQ(std::string("hi\r\n"), stream.OutputAsString());
 }
 
@@ -429,12 +410,12 @@ TEST(TerminalProcess, ProducesEmptyCommandsSequentially)
     FakeStream stream;
     hydrolib::shell::Terminal<FakeStream> terminal(stream);
 
-    auto feed_empty_command = [&]() {
+    auto feed_empty_command = [&]()
+    {
         stream.AppendInput(std::string_view("\n", 1));
         EXPECT_EQ(ReturnCode::OK, terminal.Process());
         const auto command = terminal.GetCommand();
-        ASSERT_TRUE(command.has_value());
-        EXPECT_TRUE(CommandToStdString(*command).empty());
+        EXPECT_TRUE(CommandToStdString(command).empty());
     };
 
     feed_empty_command();
@@ -450,7 +431,6 @@ TEST(TerminalProcess, ReturnsNoDataForEmptyStream)
 
     EXPECT_EQ(ReturnCode::NO_DATA, terminal.Process());
     EXPECT_TRUE(stream.OutputAsString().empty());
-    EXPECT_FALSE(terminal.GetCommand().has_value());
 }
 
 TEST(TerminalProcess, ReturnsErrorWhenReadFails)
@@ -461,5 +441,4 @@ TEST(TerminalProcess, ReturnsErrorWhenReadFails)
 
     EXPECT_EQ(ReturnCode::ERROR, terminal.Process());
     EXPECT_TRUE(stream.OutputAsString().empty());
-    EXPECT_FALSE(terminal.GetCommand().has_value());
 }
