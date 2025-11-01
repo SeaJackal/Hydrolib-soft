@@ -47,7 +47,7 @@ private:
     template <concepts::stream::ByteWritableStreamConcept DestType,
               StringConsept String, typename... Ts>
     ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
-                        unsigned translated_length, String param, Ts...) const;
+                        int translated_length, String param, Ts...) const;
 
     template <concepts::stream::ByteWritableStreamConcept DestType,
               typename... Ts>
@@ -164,7 +164,7 @@ template <typename... ArgTypes>
 template <concepts::stream::ByteWritableStreamConcept DestType,
           StringConsept String, typename... Ts>
 ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
-    DestType &buffer, unsigned next_param_index, unsigned translated_length,
+    DestType &buffer, unsigned next_param_index, int translated_length,
     String param, Ts... others) const
 {
     if (translated_length >= length_)
