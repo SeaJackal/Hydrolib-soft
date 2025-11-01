@@ -48,12 +48,15 @@ private:
               StringConsept String, typename... Ts>
     ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
                         int translated_length, String param, Ts...) const;
+<<<<<<< HEAD
 
     template <concepts::stream::ByteWritableStreamConcept DestType,
               typename... Ts>
     ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
                         unsigned translated_length, math::FixedPointBase param,
                         Ts...) const;
+=======
+>>>>>>> e534c95 (Hydrolib shell added)
 
     template <concepts::stream::ByteWritableStreamConcept DestType>
     ReturnCode ToBytes_(DestType &buffer, unsigned next_param_index,
