@@ -66,7 +66,9 @@ TEST(InterpreterProcess, TrimsLeadingSpaces)
     RecordingHandlersMap handlers;
     handlers.AddHandler("run", 7);
     handlers.AddHandler("execute", 8);
-    hydrolib::shell::Interpreter interpreter(handlers);
+    hydrolib::shell::Interpreter<std::function<int(int, char *[])>,
+                                 RecordingHandlersMap>
+        interpreter(handlers);
 
     const int run_result = interpreter.Process("   run arg1 arg2");
     const int execute_result =
@@ -92,7 +94,9 @@ TEST(InterpreterProcess, TrimsTrailingSpaces)
     RecordingHandlersMap handlers;
     handlers.AddHandler("run", 11);
     handlers.AddHandler("deploy", 12);
-    hydrolib::shell::Interpreter interpreter(handlers);
+    hydrolib::shell::Interpreter<std::function<int(int, char *[])>,
+                                 RecordingHandlersMap>
+        interpreter(handlers);
 
     const int run_result = interpreter.Process("run arg1 arg2   ");
     const int deploy_result = interpreter.Process("  deploy    release   ");
@@ -116,7 +120,9 @@ TEST(InterpreterProcess, HandlesConsecutiveSpaces)
     RecordingHandlersMap handlers;
     handlers.AddHandler("run", 5);
     handlers.AddHandler("launch", 6);
-    hydrolib::shell::Interpreter interpreter(handlers);
+    hydrolib::shell::Interpreter<std::function<int(int, char *[])>,
+                                 RecordingHandlersMap>
+        interpreter(handlers);
 
     const int run_result = interpreter.Process("run   arg1     arg2    arg3");
     const int launch_result = interpreter.Process(" launch    one      two  ");
@@ -140,7 +146,9 @@ TEST(InterpreterProcess, ReturnsErrorForUnknownCommand)
     RecordingHandlersMap handlers;
     handlers.AddHandler("expected", 13);
     handlers.AddHandler("expected_alt", 14);
-    hydrolib::shell::Interpreter interpreter(handlers);
+    hydrolib::shell::Interpreter<std::function<int(int, char *[])>,
+                                 RecordingHandlersMap>
+        interpreter(handlers);
 
     const int unknown_result = interpreter.Process("unknown arg");
     EXPECT_EQ(-2, unknown_result);
@@ -171,7 +179,9 @@ TEST(InterpreterProcess, HandlesCommandWithoutArguments)
     RecordingHandlersMap handlers;
     handlers.AddHandler("run", 3);
     handlers.AddHandler("start", 4);
-    hydrolib::shell::Interpreter interpreter(handlers);
+    hydrolib::shell::Interpreter<std::function<int(int, char *[])>,
+                                 RecordingHandlersMap>
+        interpreter(handlers);
 
     const int run_result = interpreter.Process("run");
     const int start_result = interpreter.Process(" start   ");
@@ -195,7 +205,9 @@ TEST(InterpreterProcess, ProcessesMultipleCommandsSequentially)
     handlers.AddHandler("run", 1);
     handlers.AddHandler("stop", 2);
     handlers.AddHandler("status", 3);
-    hydrolib::shell::Interpreter interpreter(handlers);
+    hydrolib::shell::Interpreter<std::function<int(int, char *[])>,
+                                 RecordingHandlersMap>
+        interpreter(handlers);
 
     const int run_result = interpreter.Process("run    start");
     const int stop_result = interpreter.Process("   stop   final   ");
@@ -226,7 +238,9 @@ TEST(InterpreterProcess, MultipleCommandsWithIntermediateUnknown)
     handlers.AddHandler("first", 3);
     handlers.AddHandler("second", 4);
     handlers.AddHandler("third", 5);
-    hydrolib::shell::Interpreter interpreter(handlers);
+    hydrolib::shell::Interpreter<std::function<int(int, char *[])>,
+                                 RecordingHandlersMap>
+        interpreter(handlers);
 
     EXPECT_EQ(3, interpreter.Process("first   arg"));
     EXPECT_EQ(-2, interpreter.Process("unknown"));
@@ -251,7 +265,9 @@ TEST(InterpreterProcess, MultipleCommandsWithIntermediateUnknown)
 TEST(InterpreterProcess, ReturnsErrorForEmptyCommand)
 {
     RecordingHandlersMap handlers;
-    hydrolib::shell::Interpreter interpreter(handlers);
+    hydrolib::shell::Interpreter<std::function<int(int, char *[])>,
+                                 RecordingHandlersMap>
+        interpreter(handlers);
 
     const int result = interpreter.Process("");
 

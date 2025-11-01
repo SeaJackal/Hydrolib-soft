@@ -7,7 +7,8 @@
 
 namespace hydrolib::shell
 {
-template <concepts::stream::ByteFullStreamConcept Stream, CommandMapConcept Map>
+template <concepts::stream::ByteFullStreamConcept Stream, typename Func,
+          CommandMapConcept<Func> Map>
 class Shell
 {
 public:
@@ -18,19 +19,21 @@ public:
 
 private:
     Terminal<Stream> terminal_;
-    Interpreter<Map> interpreter_;
+    Interpreter<Func, Map> interpreter_;
 
     int last_error_code_;
 };
 
-template <concepts::stream::ByteFullStreamConcept Stream, CommandMapConcept Map>
-constexpr Shell<Stream, Map>::Shell(Stream &stream, Map &handlers)
+template <concepts::stream::ByteFullStreamConcept Stream, typename Func,
+          CommandMapConcept<Func> Map>
+constexpr Shell<Stream, Func, Map>::Shell(Stream &stream, Map &handlers)
     : terminal_(stream), interpreter_(handlers), last_error_code_(0)
 {
 }
 
-template <concepts::stream::ByteFullStreamConcept Stream, CommandMapConcept Map>
-hydrolib::ReturnCode Shell<Stream, Map>::Process()
+template <concepts::stream::ByteFullStreamConcept Stream, typename Func,
+          CommandMapConcept<Func> Map>
+hydrolib::ReturnCode Shell<Stream, Func, Map>::Process()
 {
     auto terminal_result = terminal_.Process();
     if (terminal_result != hydrolib::ReturnCode::OK)

@@ -4,9 +4,10 @@
 
 #include <concepts>
 #include <cstring>
-#include <functional>
 #include <optional>
 #include <string_view>
+
+#include "hydrolib_func_concepts.hpp"
 
 namespace hydrolib::shell
 {
@@ -16,12 +17,12 @@ concept ReadableMapConcept = requires(T map, KeyType key) {
     { map[key] } -> std::convertible_to<ValueType>;
 };
 
-template <typename T>
+template <typename T, typename Func>
 concept CommandMapConcept =
-    ReadableMapConcept<T, std::string_view,
-                       std::optional<std::function<int(int, char *[])>>>;
+    ReadableMapConcept<T, std::string_view, std::optional<Func>> &&
+    concepts::func::FuncConcept<Func, int, int, char *[]>;
 
-template <CommandMapConcept Map>
+template <typename Func, CommandMapConcept<Func> Map>
 class Interpreter
 {
 public:
@@ -34,13 +35,14 @@ private:
     Map &handlers_;
 };
 
-template <CommandMapConcept Map>
-constexpr Interpreter<Map>::Interpreter(Map &handlers) : handlers_(handlers)
+template <typename Func, CommandMapConcept<Func> Map>
+constexpr Interpreter<Func, Map>::Interpreter(Map &handlers)
+    : handlers_(handlers)
 {
 }
 
-template <CommandMapConcept Map>
-int Interpreter<Map>::Process(CommandString command)
+template <typename Func, CommandMapConcept<Func> Map>
+int Interpreter<Func, Map>::Process(CommandString command)
 {
     int argc = 0;
     char *argv[kMaxArgsCount];
