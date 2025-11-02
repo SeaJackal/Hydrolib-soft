@@ -123,6 +123,7 @@ ReturnCode Deserializer<RxStream, Logger>::Process()
                 uint8_t *temp = current_rx_buffer_;
                 current_rx_buffer_ = next_rx_buffer_;
                 next_rx_buffer_ = temp;
+                current_header_= reinterpret_cast<MessageHeader *>(current_rx_buffer_);
                 message_ready_ = true;
                 current_processed_length_ = 0;
                 return ReturnCode::OK;
@@ -261,6 +262,8 @@ bool Deserializer<RxStream, Logger>::CheckCRC_()
 
     uint8_t current_crc =
         current_rx_buffer_[current_header_->length - kCRCLength];
+
+    //current_rx_buffer_=second_rx_buffer_;
 
     if (target_crc != current_crc)
     {

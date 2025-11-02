@@ -1,5 +1,4 @@
-#ifndef TEST_HYDROLIB_SP_SERIALIZE_ENV_H_
-#define TEST_HYDROLIB_SP_SERIALIZE_ENV_H_
+#pragma once
 
 #include "hydrolib_bus_datalink_stream.hpp"
 #include "hydrolib_logger_mock.hpp"
@@ -53,5 +52,3 @@ class TestHydrolibBusDatalinkParametrized
       public ::testing::WithParamInterface<std::tuple<uint16_t, uint16_t>>
 {
 };
-
-#endif

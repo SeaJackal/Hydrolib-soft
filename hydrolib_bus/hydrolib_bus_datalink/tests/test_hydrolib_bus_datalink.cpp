@@ -44,7 +44,7 @@ TestHydrolibBusDatalink::TestHydrolibBusDatalink()
     for (int i = 0; i < PUBLIC_MEMORY_LENGTH; i++)
     {
         // test_data[i] = (hydrolib::bus::datalink::kMagicByte + 14*i) % 0xFF;
-        //test_data[i] = i;
+        // test_data[i] = i;
         // test_data[i] = 0xFA + i - 15;
         if (i % 3 == 0)
         {
@@ -52,7 +52,7 @@ TestHydrolibBusDatalink::TestHydrolibBusDatalink()
         }
         else
         {
-            //test_data[i] = (i * i + 10 - i) % 255;
+            // test_data[i] = (i * i + 10 - i) % 255;
             test_data[i] = i;
         }
     }
@@ -98,6 +98,214 @@ TEST_F(TestHydrolibBusDatalink, ChangeOneByteTest)
                                  j % PUBLIC_MEMORY_LENGTH +
                                  hydrolib::bus::datalink::kCRCLength,
                              (hydrolib::bus::datalink::kMagicByte + j) % 0xFF);
+            lost_bytes += stream.GetQueueSize();
+        }
+
+        uint8_t buffer[PUBLIC_MEMORY_LENGTH];
+
+        unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
+
+        if (j % 10 == 1)
+        {
+            EXPECT_EQ(length, 0);
+        }
+        else
+        {
+            EXPECT_EQ(length, PUBLIC_MEMORY_LENGTH);
+
+            for (unsigned i = 0; i < length; i++)
+            {
+                EXPECT_EQ(buffer[i], test_data[i]);
+            }
+        }
+    }
+
+    EXPECT_EQ(deserializer.GetLostBytes(), lost_bytes);
+
+    uint8_t buffer[PUBLIC_MEMORY_LENGTH];
+
+    unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
+
+    EXPECT_EQ(length, 0);
+}
+
+TEST_F(TestHydrolibBusDatalink, ChangeMagicBytesTest)
+{
+
+    for (int j = 0; j < 20; j++)
+    {
+        write(tx_stream, test_data, PUBLIC_MEMORY_LENGTH);
+
+        if (j % 10 == 1)
+        {
+            stream.WriteByte(0, j % (hydrolib::bus::datalink::kMagicByte - 1));
+        }
+
+        uint8_t buffer[PUBLIC_MEMORY_LENGTH];
+
+        unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
+
+        if (j % 10 == 1)
+        {
+            EXPECT_EQ(length, 0);
+        }
+        else
+        {
+            EXPECT_EQ(length, PUBLIC_MEMORY_LENGTH);
+
+            for (unsigned i = 0; i < length; i++)
+            {
+                EXPECT_EQ(buffer[i], test_data[i]);
+            }
+        }
+    }
+
+    EXPECT_EQ(deserializer.GetLostBytes(), 0);
+
+    uint8_t buffer[PUBLIC_MEMORY_LENGTH];
+
+    unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
+
+    EXPECT_EQ(length, 0);
+}
+
+TEST_F(TestHydrolibBusDatalink, ChangeDestAddressByteTest)
+{
+
+    for (int j = 0; j < 20; j++)
+    {
+        write(tx_stream, test_data, PUBLIC_MEMORY_LENGTH);
+
+        if (j % 10 == 1)
+        {
+            uint8_t change_dest_adress = stream.ReadByte(1);
+            stream.WriteByte(1,change_dest_adress + j);
+            //lost_bytes += stream.GetQueueSize();
+        }
+
+        uint8_t buffer[PUBLIC_MEMORY_LENGTH];
+
+        unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
+
+        if (j % 10 == 1)
+        {
+            EXPECT_EQ(length, 0);
+        }
+        else
+        {
+            EXPECT_EQ(length, PUBLIC_MEMORY_LENGTH);
+
+            for (unsigned i = 0; i < length; i++)
+            {
+                EXPECT_EQ(buffer[i], test_data[i]);
+            }
+        }
+    }
+
+    EXPECT_EQ(deserializer.GetLostBytes(), 0);
+
+    uint8_t buffer[PUBLIC_MEMORY_LENGTH];
+
+    unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
+
+    EXPECT_EQ(length, 0);
+}
+
+TEST_F(TestHydrolibBusDatalink, ChangeSrcAddressByteTest)
+{
+    int lost_bytes = 0;
+
+    for (int j = 0; j < 20; j++)
+    {
+        write(tx_stream, test_data, PUBLIC_MEMORY_LENGTH);
+
+        if (j % 10 == 1)
+        {
+            uint8_t change_src_adress = stream.ReadByte(2);
+            stream.WriteByte(2,change_src_adress + j);
+            lost_bytes += stream.GetQueueSize();
+        }
+
+        uint8_t buffer[PUBLIC_MEMORY_LENGTH];
+
+        unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
+
+        if (j % 10 == 1)
+        {
+            EXPECT_EQ(length, 0);
+        }
+        else
+        {
+            EXPECT_EQ(length, PUBLIC_MEMORY_LENGTH);
+
+            for (unsigned i = 0; i < length; i++)
+            {
+                EXPECT_EQ(buffer[i], test_data[i]);
+            }
+        }
+    }
+
+    EXPECT_EQ(deserializer.GetLostBytes(), lost_bytes);
+
+    uint8_t buffer[PUBLIC_MEMORY_LENGTH];
+
+    unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
+
+    EXPECT_EQ(length, 0);
+}
+TEST_F(TestHydrolibBusDatalink, ChangeLenghtTest)
+{
+
+    for (int j = 0; j < 20; j++)
+    {
+        write(tx_stream, test_data, PUBLIC_MEMORY_LENGTH);
+
+        if (j % 10 == 1)
+        {
+            uint8_t change_lenght_adress = stream.ReadByte(3);
+            stream.WriteByte(3,change_lenght_adress + j);
+        }
+
+        uint8_t buffer[PUBLIC_MEMORY_LENGTH];
+
+        unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
+
+        if (j % 10 == 1)
+        {
+            EXPECT_EQ(length, 0);
+        }
+        else
+        {
+            EXPECT_EQ(length, PUBLIC_MEMORY_LENGTH);
+
+            for (unsigned i = 0; i < length; i++)
+            {
+                EXPECT_EQ(buffer[i], test_data[i]);
+            }
+        }
+    }
+
+    EXPECT_EQ(deserializer.GetLostBytes(), 0);
+
+    uint8_t buffer[PUBLIC_MEMORY_LENGTH];
+
+    unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
+
+    EXPECT_EQ(length, 0);
+}
+
+TEST_F(TestHydrolibBusDatalink, ChangeCobsLenghtByteTest)
+{
+    int lost_bytes = 0;
+
+    for (int j = 0; j < 20; j++)
+    {
+        write(tx_stream, test_data, PUBLIC_MEMORY_LENGTH);
+
+        if (j % 10 == 1)
+        {
+            uint8_t change_cobs_lenght = stream.ReadByte(4);
+            stream.WriteByte(4,change_cobs_lenght + j);
             lost_bytes += stream.GetQueueSize();
         }
 
