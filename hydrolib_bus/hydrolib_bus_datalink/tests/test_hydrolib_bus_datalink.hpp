@@ -1,10 +1,8 @@
-#ifndef TEST_HYDROLIB_SP_SERIALIZE_ENV_H_
-#define TEST_HYDROLIB_SP_SERIALIZE_ENV_H_
+#pragma once
 
 #include "hydrolib_bus_datalink_deserializer.hpp"
 #include "hydrolib_bus_datalink_serializer.hpp"
 #include "hydrolib_bus_datalink_stream.hpp"
-#include "hydrolib_common.h"
 #include "hydrolib_log_distributor.hpp"
 
 #include <deque>
@@ -20,16 +18,16 @@
 class TestLogStream
 {
 public:
-    hydrolib_ReturnCode Push(const void *data, unsigned length)
+    hydrolib::ReturnCode Push(const void *data, unsigned length)
     {
         for (unsigned i = 0; i < length; i++)
         {
             std::cout << (static_cast<const char *>(data))[i];
         }
-        return HYDROLIB_RETURN_OK;
+        return hydrolib::ReturnCode::OK;
     }
-    hydrolib_ReturnCode Open() { return HYDROLIB_RETURN_OK; };
-    hydrolib_ReturnCode Close() { return HYDROLIB_RETURN_OK; };
+    hydrolib::ReturnCode Open() { return hydrolib::ReturnCode::OK; };
+    hydrolib::ReturnCode Close() { return hydrolib::ReturnCode::OK; };
 };
 
 int write([[maybe_unused]] TestLogStream &stream, const void *dest,
@@ -83,5 +81,3 @@ class TestHydrolibBusDatalinkParametrized
       public ::testing::WithParamInterface<std::tuple<uint16_t, uint16_t>>
 {
 };
-
-#endif
