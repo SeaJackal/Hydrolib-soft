@@ -18,7 +18,6 @@ public:
     constexpr Shell(Stream &stream, Map &handlers);
 
 public:
-    void Init();
     hydrolib::ReturnCode Process();
 
 private:
@@ -37,13 +36,6 @@ constexpr Shell<Stream, Func, Map>::Shell(Stream &stream, Map &handlers)
       interpreter_(handlers),
       last_error_code_(0)
 {
-}
-
-template <concepts::stream::ByteFullStreamConcept Stream, typename Func,
-          CommandMapConcept<Func> Map>
-void Shell<Stream, Func, Map>::Init()
-{
-    write(stream_, kPrompt.data(), kPrompt.length());
 }
 
 template <concepts::stream::ByteFullStreamConcept Stream, typename Func,
