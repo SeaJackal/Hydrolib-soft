@@ -100,6 +100,8 @@ using ShellUnderTest =
     hydrolib::shell::Shell<FakeStream, std::function<int(int, char *[])>,
                            TestCommandMap>;
 
+const std::string kPromptString = std::string(ShellUnderTest::kPrompt);
+
 TEST(ShellProcess, ReturnsTerminalResultWhenNoData)
 {
     FakeStream stream;
@@ -149,7 +151,7 @@ TEST(ShellProcess, InvokesHandlerAndReturnsOkOnSuccess)
     EXPECT_TRUE(handler_called);
     ASSERT_EQ(1u, received_arguments.size());
     EXPECT_EQ("run", received_arguments.front());
-    EXPECT_EQ("run\n", stream.OutputAsString());
+    EXPECT_EQ(std::string("run\n") + kPromptString, stream.OutputAsString());
 }
 
 TEST(ShellProcess, ReturnsErrorWhenHandlerFails)
@@ -171,7 +173,7 @@ TEST(ShellProcess, ReturnsErrorWhenHandlerFails)
 
     EXPECT_EQ(ReturnCode::ERROR, shell.Process());
     EXPECT_TRUE(handler_called);
-    EXPECT_EQ("fail\n", stream.OutputAsString());
+    EXPECT_EQ(std::string("fail\n") + kPromptString, stream.OutputAsString());
 }
 
 TEST(ShellProcess, ReturnsErrorWhenHandlerMissing)
@@ -183,7 +185,8 @@ TEST(ShellProcess, ReturnsErrorWhenHandlerMissing)
     ShellUnderTest shell(stream, handlers);
 
     EXPECT_EQ(ReturnCode::ERROR, shell.Process());
-    EXPECT_EQ("unknown\n", stream.OutputAsString());
+    EXPECT_EQ(std::string("unknown\n") + kPromptString,
+              stream.OutputAsString());
 }
 
 TEST(ShellProcess, ProcessesMultipleCommandsWithDifferentLengths)
@@ -218,7 +221,9 @@ TEST(ShellProcess, ProcessesMultipleCommandsWithDifferentLengths)
     EXPECT_EQ(ReturnCode::NO_DATA, shell.Process());
 
     EXPECT_EQ((std::vector<std::string>{"a", "reset-now", "x"}), call_order);
-    EXPECT_EQ("a\nreset-now\nx\n", stream.OutputAsString());
+    EXPECT_EQ(std::string("a\n") + kPromptString + "reset-now\n" +
+                  kPromptString + "x\n" + kPromptString,
+              stream.OutputAsString());
 }
 
 TEST(ShellProcess, InvokesHandlerWithArguments)
@@ -248,5 +253,6 @@ TEST(ShellProcess, InvokesHandlerWithArguments)
     EXPECT_EQ(3, received_argc);
     EXPECT_EQ((std::vector<std::string>{"set", "value1", "42"}),
               received_arguments);
-    EXPECT_EQ("set value1 42\n", stream.OutputAsString());
+    EXPECT_EQ(std::string("set value1 42\n") + kPromptString,
+              stream.OutputAsString());
 }
