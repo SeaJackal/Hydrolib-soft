@@ -24,5 +24,6 @@ add_subdirectory(hydrolib_acs)
 add_subdirectory(hydrolib_imu)
 add_subdirectory(hydrolib_pressure_sensor)
 add_subdirectory(hydrolib_shell_interpreter)
+add_subdirectory(hydrolib_streambuf)
 
 enable_testing()
