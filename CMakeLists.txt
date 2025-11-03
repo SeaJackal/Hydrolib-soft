@@ -23,5 +23,6 @@ add_subdirectory(hydrolib_strings)
 add_subdirectory(hydrolib_thrust_generator)
 add_subdirectory(hydrolib_vectornav)
 add_subdirectory(hydrolib_shell_interpreter)
+add_subdirectory(hydrolib_streambuf)
 
 enable_testing()
