@@ -22,7 +22,6 @@ add_subdirectory(hydrolib_logger)
 add_subdirectory(hydrolib_math)
 add_subdirectory(hydrolib_pid)
 add_subdirectory(hydrolib_pressure_sensor)
-<<<<<<< HEAD
 add_subdirectory(hydrolib_return_codes)
 add_subdirectory(hydrolib_shell_commands)
 add_subdirectory(hydrolib_shell)
@@ -30,8 +29,7 @@ add_subdirectory(hydrolib_streams)
 add_subdirectory(hydrolib_strings)
 add_subdirectory(hydrolib_thrust_generator)
 add_subdirectory(hydrolib_vectornav)
-=======
 add_subdirectory(hydrolib_shell_interpreter)
->>>>>>> e534c95 (Hydrolib shell added)
+add_subdirectory(hydrolib_streambuf)
 
 enable_testing()
