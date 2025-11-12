@@ -10,7 +10,8 @@
             "USERNAME": "hydrolib",
             "GID": "1000",
             "UID": "1000"
-        }
+        },
+        "options": ["--platform=linux/amd64"]
     },
     "customizations": {
         "vscode": {
