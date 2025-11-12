@@ -194,8 +194,21 @@ TEST(TestHydrolibMath, FixedPointBaseCos) {
   EXPECT_NEAR(static_cast<double>(result), cos(rads), 0.002);
 }
 
-TEST(TestHydrolibMath, FixedPointBaseGetFractionBits) {
-  EXPECT_EQ(FixedPointBase::GetFractionBits(), 16);
+TEST(TestHydrolibMath, FixedPointBaseSinCosNegativeArgument)
+{
+    constexpr double rads = -3.14159265358979323846 / 4;
+    FixedPointBase a(rads);
+    FixedPointBase result_sin = sin(a);
+    EXPECT_NEAR(static_cast<double>(result_sin), sin(rads), 0.002);
+
+
+    FixedPointBase result_cos = cos(a);
+    EXPECT_NEAR(static_cast<double>(result_cos), cos(rads), 0.002);
+}
+
+TEST(TestHydrolibMath, FixedPointBaseGetFractionBits)
+{
+    EXPECT_EQ(FixedPointBase::GetFractionBits(), 16);
 }
 
 TEST(TestHydrolibMath, FixedPointBaseGetAbsIntPart) {
@@ -240,8 +253,15 @@ TEST(TestHydrolibMath, FixedPointBaseGetAbsFractionPart) {
   FixedPointBase fp4(10);
   EXPECT_EQ(fp4.GetAbsFractionPart(), 0);
 
-  FixedPointBase fp5(0);
-  EXPECT_EQ(fp5.GetAbsFractionPart(), 0);
+    FixedPointBase fp5(0);
+    EXPECT_EQ(fp5.GetAbsFractionPart(), 0);
+
+    FixedPointBase fp6(-4);
+    EXPECT_EQ(fp6.GetAbsFractionPart(), 0);
+
+    FixedPointBase fp7(-2.25);
+    EXPECT_EQ(fp7.GetAbsFractionPart(),
+              0.25 * (1 << FixedPointBase::GetFractionBits()));
 }
 
 TEST(TestHydrolibMath, FixedPointBaseGetAbsFractionPartNegative) {
@@ -294,3 +314,43 @@ TEST(TestHydrolibMath, FixedPointBaseDecimalComparisons) {
   EXPECT_TRUE(b < 4);
   EXPECT_TRUE(b <= 4);
 }
+
+TEST(TestHydrolibMath, FixedPointBaseNegativeDecimalComparisons)
+{
+    auto a = -5.5_fp;
+    auto b = -3.2_fp;
+    auto c = -5.5_fp;
+    EXPECT_TRUE(a < b);
+    EXPECT_FALSE(a > b);
+    EXPECT_FALSE(b < a);
+    EXPECT_TRUE(b > a);
+    EXPECT_TRUE(a == c);
+    EXPECT_TRUE(a >= c);
+    EXPECT_TRUE(a <= c);
+    EXPECT_TRUE(a != b);
+    EXPECT_FALSE(a != c);
+    EXPECT_TRUE(a < -5);    
+    EXPECT_TRUE(a <= -5);
+    EXPECT_FALSE(a == -5);
+    EXPECT_TRUE(a > -6);     
+    EXPECT_TRUE(a >= -6);
+    EXPECT_TRUE(b > -4);  
+    EXPECT_TRUE(b >= -4);
+    EXPECT_TRUE(b < -3); 
+    EXPECT_TRUE(b <= -3);
+}
+
+TEST(TestHydrolibMath, DivisionByZeroDeath)
+{
+    FixedPointBase a(10);
+    FixedPointBase zero(0); 
+    EXPECT_DEATH(
+        { a / zero; },
+        ".*"); 
+
+    FixedPointBase b(20);
+    EXPECT_DEATH(
+        { b /= zero; },
+        ".*");
+}
+
