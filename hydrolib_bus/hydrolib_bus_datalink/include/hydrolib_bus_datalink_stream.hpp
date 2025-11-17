@@ -144,8 +144,6 @@ int Stream<RxTxStream, Distributor, MATES_COUNT>::Write(const void *dest,
     return 0;
 }
 
-} // namespace hydrolib::bus::datalink
-
 template <hydrolib::concepts::stream::ByteFullStreamConcept RxTxStream,
           hydrolib::logger::LogDistributorConcept Distributor,
           int MATES_COUNT = 3>
@@ -177,3 +175,5 @@ int write(typename hydrolib::bus::datalink::Stream<RxTxStream, Distributor,
 {
     return stream.Write(dest, length);
 }
+
+} // namespace hydrolib::bus::datalink
