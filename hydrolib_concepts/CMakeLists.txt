@@ -7,8 +7,6 @@ add_library(HydrolibConcepts INTERFACE)
 
 target_include_directories(HydrolibConcepts INTERFACE include)
 
-target_link_libraries(HydrolibConcepts INTERFACE HydrolibCommon)
-
 include(CTest)
 
 # if(BUILD_TESTING)

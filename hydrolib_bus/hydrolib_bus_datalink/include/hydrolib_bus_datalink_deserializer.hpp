@@ -1,7 +1,6 @@
 #pragma once
 
 #include "hydrolib_bus_datalink_message.hpp"
-#include "hydrolib_common.h"
 #include "hydrolib_crc.hpp"
 #include "hydrolib_logger.hpp"
 #include "hydrolib_return_codes.hpp"

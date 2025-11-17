@@ -16,16 +16,11 @@ public:
     LogStream(LogStream &) = delete;
 
 public:
-    hydrolib_ReturnCode Push(const void *source, size_t length)
+    void Push(const void *source, size_t length)
     {
         memcpy(buffer_ + length_, source, length);
         length_ += length;
-        return HYDROLIB_RETURN_OK;
     }
-
-    hydrolib_ReturnCode Open() { return HYDROLIB_RETURN_OK; }
-
-    hydrolib_ReturnCode Close() { return HYDROLIB_RETURN_OK; }
 
     int GetLength() { return length_; }
 
@@ -38,12 +33,8 @@ private:
 
 inline int write(LogStream &stream, const void *dest, unsigned length)
 {
-    hydrolib_ReturnCode result = stream.Push(dest, length);
-    if (result == HYDROLIB_RETURN_OK)
-    {
-        return length;
-    }
-    return 0;
+    stream.Push(dest, length);
+    return length;
 }
 
 constinit char buffer1[100] = {};

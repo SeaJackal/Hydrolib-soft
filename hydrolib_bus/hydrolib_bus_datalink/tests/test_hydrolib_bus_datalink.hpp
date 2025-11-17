@@ -2,7 +2,6 @@
 #define TEST_HYDROLIB_SP_SERIALIZE_ENV_H_
 
 #include "hydrolib_bus_datalink_stream.hpp"
-#include "hydrolib_common.h"
 #include "hydrolib_log_distributor.hpp"
 
 #include <deque>
@@ -17,17 +16,6 @@
 
 class TestLogStream
 {
-public:
-    hydrolib_ReturnCode Push(const void *data, unsigned length)
-    {
-        for (unsigned i = 0; i < length; i++)
-        {
-            std::cout << (reinterpret_cast<const char *>(data))[i];
-        }
-        return HYDROLIB_RETURN_OK;
-    }
-    hydrolib_ReturnCode Open() { return HYDROLIB_RETURN_OK; };
-    hydrolib_ReturnCode Close() { return HYDROLIB_RETURN_OK; };
 };
 
 int write([[maybe_unused]] TestLogStream &stream, const void *dest,

@@ -1,8 +1,6 @@
 #ifndef HYDROLIB_STREAM_CONCEPTS_H_
 #define HYDROLIB_STREAM_CONCEPTS_H_
 
-#include "hydrolib_common.h"
-
 #include <concepts>
 #include <cstdint>
 

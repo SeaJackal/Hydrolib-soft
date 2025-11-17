@@ -12,17 +12,6 @@
 
 class TestLogStream
 {
-public:
-    hydrolib_ReturnCode Push(const void *data, unsigned length)
-    {
-        for (unsigned i = 0; i < length; i++)
-        {
-            std::cout << (reinterpret_cast<const char *>(data))[i];
-        }
-        return HYDROLIB_RETURN_OK;
-    }
-    hydrolib_ReturnCode Open() { return HYDROLIB_RETURN_OK; };
-    hydrolib_ReturnCode Close() { return HYDROLIB_RETURN_OK; };
 };
 
 int write([[maybe_unused]] TestLogStream &stream, const void *dest,

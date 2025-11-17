@@ -14,11 +14,10 @@ public:
     BytesReceiver() : current_length(0) {}
 
 public:
-    hydrolib_ReturnCode Push(const void *source, std::size_t length)
+    void Push(const void *source, std::size_t length)
     {
         memcpy(buffer + current_length, source, length);
         current_length += length;
-        return HYDROLIB_RETURN_OK;
     }
 
 public:

@@ -2353,26 +2353,19 @@ using namespace std;
 class TestLogStream
 {
 public:
-    hydrolib_ReturnCode Push(const void *data, unsigned length)
+    void Push(const void *data, unsigned length)
     {
         for (unsigned i = 0; i < length; i++)
         {
             std::cout << (reinterpret_cast<const char *>(data))[i];
         }
-        return HYDROLIB_RETURN_OK;
     }
-    hydrolib_ReturnCode Open() { return HYDROLIB_RETURN_OK; };
-    hydrolib_ReturnCode Close() { return HYDROLIB_RETURN_OK; };
 };
 
 inline int write(TestLogStream &stream, const void *dest, unsigned length)
 {
-    hydrolib_ReturnCode result = stream.Push(dest, length);
-    if (result == HYDROLIB_RETURN_OK)
-    {
-        return length;
-    }
-    return 0;
+    stream.Push(dest, length);
+    return length;
 }
 
 inline constinit TestLogStream log_stream;

@@ -5,9 +5,9 @@
 #include <cstdint>
 #include <cstring>
 
-#include "hydrolib_common.h"
 #include "hydrolib_imu.hpp"
 #include "hydrolib_logger.hpp"
+#include "hydrolib_return_codes.hpp"
 #include "hydrolib_stream_concepts.hpp"
 
 namespace hydrolib
@@ -57,13 +57,13 @@ public:
     consteval VectorNAVParser(InputStream &stream, Logger &logger);
 
 public:
-    hydrolib_ReturnCode Reset();
-    hydrolib_ReturnCode Init();
+    ReturnCode Reset();
+    ReturnCode Init();
 
-    hydrolib_ReturnCode Process();
+    ReturnCode Process();
 
-    hydrolib_ReturnCode Read(void *buffer, uint32_t address, uint32_t length);
-    hydrolib_ReturnCode Write(const void *buffer, uint32_t address,
+    ReturnCode Read(void *buffer, uint32_t address, uint32_t length);
+    ReturnCode Write(const void *buffer, uint32_t address,
                               uint32_t length);
 
     float GetYaw();
@@ -115,7 +115,7 @@ consteval VectorNAVParser<InputStream, Logger>::VectorNAVParser(
 }
 
 template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
-hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
+ReturnCode VectorNAVParser<InputStream, Logger>::Process()
 {
     // uint8_t header_buffer;
     // if (read(stream_, &header_buffer, 1) == 1)
@@ -141,7 +141,7 @@ hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
                 LOG(logger_, hydrolib::logger::LogLevel::WARNING,
                     "Rubbish bytes: {}", rubbish_bytes);
             }
-            return HYDROLIB_RETURN_NO_DATA;
+            return ReturnCode::NO_DATA;
         }
         if (header_buffer == SYNC_)
         {
@@ -166,7 +166,7 @@ hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
     if (data_read_length != required_data_length)
     {
         current_rx_length_ += data_read_length;
-        return HYDROLIB_RETURN_NO_DATA;
+        return ReturnCode::NO_DATA;
     }
 
     header_found_ = false;
@@ -181,7 +181,7 @@ hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
     {
         LOG(logger_, hydrolib::logger::LogLevel::WARNING, "Wrong crc");
         wrong_crc_counter_++;
-        return HYDROLIB_RETURN_FAIL;
+        return ReturnCode::FAIL;
     }
 
     memcpy(&current_data_, &rx_buffer_, sizeof(Message_));
@@ -200,54 +200,54 @@ hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Process()
     LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "z rate: {}",
         static_cast<int>(current_data_.z_rate * 100));
 
-    return HYDROLIB_RETURN_OK;
+    return ReturnCode::OK;
 }
 
 template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
-hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Read(void *buffer,
+ReturnCode VectorNAVParser<InputStream, Logger>::Read(void *buffer,
                                                                uint32_t address,
                                                                uint32_t length)
 {
     if (address + length > sizeof(Message_))
     {
-        return HYDROLIB_RETURN_FAIL;
+        return ReturnCode::FAIL;
     }
     memcpy(buffer, reinterpret_cast<uint8_t *>(&current_data_) + address,
            length);
-    return HYDROLIB_RETURN_OK;
+    return ReturnCode::OK;
 }
 
 template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
-hydrolib_ReturnCode
+ReturnCode
 VectorNAVParser<InputStream, Logger>::Write([[maybe_unused]] const void *buffer,
                                             [[maybe_unused]] uint32_t address,
                                             [[maybe_unused]] uint32_t length)
 {
-    return HYDROLIB_RETURN_FAIL;
+    return ReturnCode::FAIL;
 }
 
 template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
-hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Reset()
+ReturnCode VectorNAVParser<InputStream, Logger>::Reset()
 {
     if (write(stream_, reset_message_,
               static_cast<unsigned>(sizeof(reset_message_)) - 1) !=
         static_cast<unsigned>(sizeof(reset_message_)) - 1)
     {
-        return HYDROLIB_RETURN_FAIL;
+        return ReturnCode::FAIL;
     }
-    return HYDROLIB_RETURN_OK;
+    return ReturnCode::OK;
 }
 
 template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
-hydrolib_ReturnCode VectorNAVParser<InputStream, Logger>::Init()
+ReturnCode VectorNAVParser<InputStream, Logger>::Init()
 {
     if (write(stream_, init_message_,
               static_cast<unsigned>(sizeof(init_message_)) - 1) !=
         static_cast<unsigned>(sizeof(init_message_)) - 1)
     {
-        return HYDROLIB_RETURN_FAIL;
+        return ReturnCode::FAIL;
     }
-    return HYDROLIB_RETURN_OK;
+    return ReturnCode::OK;
 }
 
 template <concepts::stream::ByteFullStreamConcept InputStream, typename Logger>
