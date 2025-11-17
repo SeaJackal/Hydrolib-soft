@@ -5,6 +5,8 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <sstream>
+#include <iostream>
 #include <unistd.h>
 
 #include <gtest/gtest.h>
@@ -13,9 +15,6 @@ using hydrolib::device::DeviceManager;
 using hydrolib::device::StreamDevice;
 using hydrolib::shell::Cat;
 using hydrolib::shell::g_is_running;
-using hydrolib::shell::Ostream;
-using hydrolib::shell::StreamWrapper;
-using hydrolib::shell::cout;
 
 namespace
 {
@@ -75,10 +74,16 @@ struct FakeStream
     return static_cast<int>(length);
 }
 
-static std::string OutputAsString(const FakeStream &stream)
+// Utility to run Cat and capture std::cout output.
+struct CoutCapture
 {
-    return std::string(stream.output_.begin(), stream.output_.end());
-}
+    CoutCapture() : old_buf_(std::cout.rdbuf(oss_.rdbuf())) {}
+    ~CoutCapture() { std::cout.rdbuf(old_buf_); }
+    std::string str() const { return oss_.str(); }
+
+    std::ostringstream oss_;
+    std::streambuf *old_buf_;
+};
 
 // Reset POSIX getopt state before each test case that uses getopt
 void ResetGetopt()
@@ -92,9 +97,7 @@ void ResetGetopt()
 TEST(HydrolibCat, PrintsUsageOnHelpAndStops)
 {
     ResetGetopt();
-    FakeStream cout_stream;
-    StreamWrapper<FakeStream> cout_wrapper(cout_stream);
-    cout = Ostream(cout_wrapper);
+    CoutCapture capture;
 
     DeviceManager mgr({});
 
@@ -106,16 +109,14 @@ TEST(HydrolibCat, PrintsUsageOnHelpAndStops)
     int rc = Cat(2, argv);
 
     EXPECT_EQ(0, rc);
-    EXPECT_EQ("Usage: cat [DEVICE_NAME]", OutputAsString(cout_stream));
+    EXPECT_EQ("Usage: cat [DEVICE_NAME]", capture.str());
     EXPECT_FALSE(g_is_running);
 }
 
 TEST(HydrolibCat, InvalidOptionSetsErrorAndPrintsCode)
 {
     ResetGetopt();
-    FakeStream cout_stream;
-    StreamWrapper<FakeStream> cout_wrapper(cout_stream);
-    cout = Ostream(cout_wrapper);
+    CoutCapture capture;
 
     DeviceManager mgr({});
 
@@ -127,16 +128,14 @@ TEST(HydrolibCat, InvalidOptionSetsErrorAndPrintsCode)
     int rc = Cat(2, argv);
 
     EXPECT_EQ(-1, rc);
-    EXPECT_EQ("Invalid option: x", OutputAsString(cout_stream));
+    EXPECT_EQ("Invalid option: x", capture.str());
     EXPECT_FALSE(g_is_running);
 }
 
 TEST(HydrolibCat, DeviceNotFoundSetsError)
 {
     ResetGetopt();
-    FakeStream cout_stream;
-    StreamWrapper<FakeStream> cout_wrapper(cout_stream);
-    cout = Ostream(cout_wrapper);
+    CoutCapture capture;
 
     DeviceManager mgr({});
 
@@ -148,16 +147,14 @@ TEST(HydrolibCat, DeviceNotFoundSetsError)
     int rc = Cat(2, argv);
 
     EXPECT_EQ(-1, rc);
-    EXPECT_EQ("Device not found: no_such_device", OutputAsString(cout_stream));
+    EXPECT_EQ("Device not found: no_such_device", capture.str());
     EXPECT_FALSE(g_is_running);
 }
 
 TEST(HydrolibCat, ReturnsMinusTwoOnStreamReadError)
 {
     ResetGetopt();
-    FakeStream cout_stream;
-    StreamWrapper<FakeStream> cout_wrapper(cout_stream);
-    cout = Ostream(cout_wrapper);
+    CoutCapture capture;
 
     FakeStream stream("A");
     StreamDevice<FakeStream> dev("stream1", stream);

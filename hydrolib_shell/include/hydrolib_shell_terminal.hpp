@@ -2,6 +2,8 @@
 
 #include "hydrolib_shell_params.hpp"
 
+#include <optional>
+
 #include "hydrolib_return_codes.hpp"
 #include "hydrolib_stream_concepts.hpp"
 
@@ -17,7 +19,7 @@ public:
 public:
     hydrolib::ReturnCode Process();
 
-    CommandString GetCommand();
+    std::optional<CommandString> GetCommand();
 
 private:
     hydrolib::ReturnCode InterpretChar_(char last_char);
@@ -28,13 +30,15 @@ private:
     char command_string_[kMaxCommandLength] = {};
     int current_command_string_length_;
     int last_command_string_length_;
+    bool command_ready_;
 };
 
 template <concepts::stream::ByteFullStreamConcept Stream>
 constexpr Terminal<Stream>::Terminal(Stream &stream)
     : stream_(stream),
       current_command_string_length_(0),
-      last_command_string_length_(0)
+      last_command_string_length_(0),
+      command_ready_(false)
 {
 }
 
@@ -54,8 +58,8 @@ hydrolib::ReturnCode Terminal<Stream>::Process()
 
         if (interpret_result == hydrolib::ReturnCode::OK)
         {
-            command_string_[current_command_string_length_] = '\0';
-            last_command_string_length_ = current_command_string_length_ + 1;
+            command_ready_ = true;
+            last_command_string_length_ = current_command_string_length_;
             current_command_string_length_ = 0;
         }
 
@@ -72,8 +76,13 @@ hydrolib::ReturnCode Terminal<Stream>::Process()
 }
 
 template <concepts::stream::ByteFullStreamConcept Stream>
-CommandString Terminal<Stream>::GetCommand()
+std::optional<CommandString> Terminal<Stream>::GetCommand()
 {
+    if (!command_ready_)
+    {
+        return std::nullopt;
+    }
+    command_ready_ = false;
     return CommandString(
         command_string_,
         last_command_string_length_); // TODO: unnessessary copy
