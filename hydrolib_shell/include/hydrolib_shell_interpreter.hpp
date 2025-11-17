@@ -35,6 +35,8 @@ private:
     Map &handlers_;
 };
 
+inline bool g_is_running = false;
+
 template <typename Func, CommandMapConcept<Func> Map>
 constexpr Interpreter<Func, Map>::Interpreter(Map &handlers)
     : handlers_(handlers)
@@ -74,7 +76,11 @@ int Interpreter<Func, Map>::Process(CommandString command)
     }
     if (handlers_[static_cast<std::string_view>(argv[0])])
     {
-        return (*handlers_[static_cast<std::string_view>(argv[0])])(argc, argv);
+        g_is_running = true; //TODO: Add tests
+        auto result =
+            (*handlers_[static_cast<std::string_view>(argv[0])])(argc, argv);
+        g_is_running = false;
+        return result;
     }
     return -2;
 }
