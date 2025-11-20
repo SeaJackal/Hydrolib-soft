@@ -6,7 +6,7 @@
 #include <cstring>
 
 #include "hydrolib_imu.hpp"
-#include "hydrolib_logger.hpp"
+#include "hydrolib_log_macro.hpp"
 #include "hydrolib_return_codes.hpp"
 #include "hydrolib_stream_concepts.hpp"
 

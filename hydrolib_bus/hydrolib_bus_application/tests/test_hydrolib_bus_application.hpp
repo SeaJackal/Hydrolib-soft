@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iostream>
-
 #include <gtest/gtest.h>
 
 #include "hydrolib_bus_application_commands.hpp"
@@ -80,10 +78,14 @@ protected:
     TestPublicMemory memory;
 
     hydrolib::bus::application::Master<
-        TestStream, hydrolib::logger::LogDistributor<TestLogStream>>
+        TestStream,
+        hydrolib::logger::Logger<
+            hydrolib::logger::LogDistributor<TestLogStream>>>
         master;
     hydrolib::bus::application::Slave<
-        TestPublicMemory, hydrolib::logger::LogDistributor<TestLogStream>,
+        TestPublicMemory,
+        hydrolib::logger::Logger<
+            hydrolib::logger::LogDistributor<TestLogStream>>,
         TestStream>
         slave;
 
