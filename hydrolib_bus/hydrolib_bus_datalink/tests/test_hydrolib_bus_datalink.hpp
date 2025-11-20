@@ -5,8 +5,6 @@
 #include "hydrolib_log_distributor.hpp"
 
 #include <deque>
-#include <iostream>
-
 #include <gtest/gtest.h>
 
 #define PUBLIC_MEMORY_LENGTH 20
@@ -42,11 +40,15 @@ protected:
     TestStream stream;
 
     hydrolib::bus::datalink::StreamManager<
-        TestStream, hydrolib::logger::LogDistributor<TestLogStream>>
+        TestStream,
+        hydrolib::logger::Logger<
+            hydrolib::logger::LogDistributor<TestLogStream>>>
         sender_manager;
 
     hydrolib::bus::datalink::StreamManager<
-        TestStream, hydrolib::logger::LogDistributor<TestLogStream>>
+        TestStream,
+        hydrolib::logger::Logger<
+            hydrolib::logger::LogDistributor<TestLogStream>>>
         receiver_manager;
 
     uint8_t test_data[PUBLIC_MEMORY_LENGTH];

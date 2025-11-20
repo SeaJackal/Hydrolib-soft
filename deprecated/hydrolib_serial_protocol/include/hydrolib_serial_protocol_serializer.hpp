@@ -12,13 +12,11 @@
 
 namespace hydrolib::serial_protocol
 {
-template <concepts::stream::ByteWritableStreamConcept TxStream,
-          logger::LogDistributorConcept Distributor>
+template <concepts::stream::ByteWritableStreamConcept TxStream, typename Logger>
 class Serializer
 {
 public:
-    constexpr Serializer(uint8_t address, TxStream &tx_stream,
-                         logger::Logger<Distributor> &logger,
+    constexpr Serializer(uint8_t address, TxStream &tx_stream, Logger &logger,
                          uint8_t network = 0xA0);
 
 public:
@@ -31,7 +29,7 @@ private:
     void SerializeError_(CommandInfo info);
 
 private:
-    logger::Logger<Distributor> &logger_;
+    Logger &logger_;
 
     const uint8_t self_address_;
     const uint8_t network_;
@@ -44,11 +42,11 @@ private:
     MessageHeader *current_header_;
 };
 
-template <concepts::stream::ByteWritableStreamConcept TxStream,
-          logger::LogDistributorConcept Distributor>
-constexpr Serializer<TxStream, Distributor>::Serializer(
-    uint8_t address, TxStream &tx_stream, logger::Logger<Distributor> &logger,
-    uint8_t network)
+template <concepts::stream::ByteWritableStreamConcept TxStream, typename Logger>
+constexpr Serializer<TxStream, Logger>::Serializer(uint8_t address,
+                                                   TxStream &tx_stream,
+                                                   Logger &logger,
+                                                   uint8_t network)
     : logger_(logger),
       self_address_(MessageHeader::GetTrueAddress(address, network)),
       network_(network),
@@ -62,10 +60,9 @@ constexpr Serializer<TxStream, Distributor>::Serializer(
     }
 }
 
-template <concepts::stream::ByteWritableStreamConcept TxStream,
-          logger::LogDistributorConcept Distributor>
-hydrolib_ReturnCode Serializer<TxStream, Distributor>::Process(Command command,
-                                                               CommandInfo info)
+template <concepts::stream::ByteWritableStreamConcept TxStream, typename Logger>
+hydrolib_ReturnCode Serializer<TxStream, Logger>::Process(Command command,
+                                                          CommandInfo info)
 {
     current_header_->common.command = command;
     current_header_->common.self_address = self_address_;
@@ -96,9 +93,8 @@ hydrolib_ReturnCode Serializer<TxStream, Distributor>::Process(Command command,
     return HYDROLIB_RETURN_OK;
 }
 
-template <concepts::stream::ByteWritableStreamConcept TxStream,
-          logger::LogDistributorConcept Distributor>
-void Serializer<TxStream, Distributor>::SerializeRead_(CommandInfo info)
+template <concepts::stream::ByteWritableStreamConcept TxStream, typename Logger>
+void Serializer<TxStream, Logger>::SerializeRead_(CommandInfo info)
 {
     current_header_->memory_access.device_address =
         MessageHeader::GetTrueAddress(info.read.dest_address, network_);
@@ -110,9 +106,8 @@ void Serializer<TxStream, Distributor>::SerializeRead_(CommandInfo info)
     current_header_->memory_access.message_length = current_message_length_;
 }
 
-template <concepts::stream::ByteWritableStreamConcept TxStream,
-          logger::LogDistributorConcept Distributor>
-void Serializer<TxStream, Distributor>::SerializeWrite_(CommandInfo info)
+template <concepts::stream::ByteWritableStreamConcept TxStream, typename Logger>
+void Serializer<TxStream, Logger>::SerializeWrite_(CommandInfo info)
 {
     current_header_->memory_access.device_address =
         MessageHeader::GetTrueAddress(info.write.dest_address, network_);
@@ -127,9 +122,8 @@ void Serializer<TxStream, Distributor>::SerializeWrite_(CommandInfo info)
            info.write.data, info.write.memory_access_length);
 }
 
-template <concepts::stream::ByteWritableStreamConcept TxStream,
-          logger::LogDistributorConcept Distributor>
-void Serializer<TxStream, Distributor>::SerializeResponce_(CommandInfo info)
+template <concepts::stream::ByteWritableStreamConcept TxStream, typename Logger>
+void Serializer<TxStream, Logger>::SerializeResponce_(CommandInfo info)
 {
     current_header_->responce.device_address =
         MessageHeader::GetTrueAddress(info.responce.dest_address, network_);
@@ -141,9 +135,8 @@ void Serializer<TxStream, Distributor>::SerializeResponce_(CommandInfo info)
            info.responce.data_length);
 }
 
-template <concepts::stream::ByteWritableStreamConcept TxStream,
-          logger::LogDistributorConcept Distributor>
-void Serializer<TxStream, Distributor>::SerializeError_(CommandInfo info)
+template <concepts::stream::ByteWritableStreamConcept TxStream, typename Logger>
+void Serializer<TxStream, Logger>::SerializeError_(CommandInfo info)
 {
     current_header_->error.device_address =
         MessageHeader::GetTrueAddress(info.responce.dest_address, network_);

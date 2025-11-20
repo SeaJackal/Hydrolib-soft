@@ -2,20 +2,18 @@
 
 #include "hydrolib_bus_datalink_message.hpp"
 #include "hydrolib_crc.hpp"
-#include "hydrolib_logger.hpp"
 #include "hydrolib_return_codes.hpp"
 #include "hydrolib_stream_concepts.hpp"
 #include <cstring>
 
 namespace hydrolib::bus::datalink
 {
-template <concepts::stream::ByteWritableStreamConcept TxStream,
-          logger::LogDistributorConcept Distributor>
+template <concepts::stream::ByteWritableStreamConcept TxStream, typename Logger>
 class Serializer
 {
 public:
     constexpr Serializer(AddressType self_address, TxStream &tx_stream,
-                         logger::Logger<Distributor> &logger);
+                         Logger &logger);
 
 public:
     ReturnCode Process(AddressType dest_address, const void *data,
@@ -28,17 +26,16 @@ public:
 private:
     const AddressType address_;
     TxStream &tx_stream_;
-    logger::Logger<Distributor> &logger_;
+    Logger &logger_;
 
     uint8_t current_message_[kMaxMessageLength];
     MessageHeader *current_header_;
 };
 
-template <concepts::stream::ByteWritableStreamConcept TxStream,
-          logger::LogDistributorConcept Distributor>
-constexpr Serializer<TxStream, Distributor>::Serializer(
-    AddressType address, TxStream &tx_stream,
-    logger::Logger<Distributor> &logger)
+template <concepts::stream::ByteWritableStreamConcept TxStream, typename Logger>
+constexpr Serializer<TxStream, Logger>::Serializer(AddressType address,
+                                                   TxStream &tx_stream,
+                                                   Logger &logger)
     : address_(address),
       tx_stream_(tx_stream),
       logger_(logger),
@@ -52,11 +49,10 @@ constexpr Serializer<TxStream, Distributor>::Serializer(
     }
 }
 
-template <concepts::stream::ByteWritableStreamConcept TxStream,
-          logger::LogDistributorConcept Distributor>
-ReturnCode Serializer<TxStream, Distributor>::Process(AddressType dest_address,
-                                                      const void *data,
-                                                      unsigned data_length)
+template <concepts::stream::ByteWritableStreamConcept TxStream, typename Logger>
+ReturnCode Serializer<TxStream, Logger>::Process(AddressType dest_address,
+                                                 const void *data,
+                                                 unsigned data_length)
 {
     current_header_->dest_address = dest_address;
     current_header_->src_address = address_;
@@ -87,11 +83,10 @@ ReturnCode Serializer<TxStream, Distributor>::Process(AddressType dest_address,
     }
 }
 
-template <concepts::stream::ByteWritableStreamConcept TxStream,
-          logger::LogDistributorConcept Distributor>
-void Serializer<TxStream, Distributor>::COBSEncoding(uint8_t magic_byte,
-                                                     uint8_t *data,
-                                                     unsigned data_length)
+template <concepts::stream::ByteWritableStreamConcept TxStream, typename Logger>
+void Serializer<TxStream, Logger>::COBSEncoding(uint8_t magic_byte,
+                                                uint8_t *data,
+                                                unsigned data_length)
 {
     unsigned last_appearance = 0;
     for (unsigned i = 1; i < data_length; i++)

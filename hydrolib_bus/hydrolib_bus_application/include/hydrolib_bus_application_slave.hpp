@@ -4,7 +4,7 @@
 #include <cstring>
 
 #include "hydrolib_bus_application_commands.hpp"
-#include "hydrolib_logger.hpp"
+#include "hydrolib_log_macro.hpp"
 #include "hydrolib_return_codes.hpp"
 #include "hydrolib_stream_concepts.hpp"
 
@@ -21,13 +21,13 @@ concept PublicMemoryConcept =
         } -> std::same_as<ReturnCode>;
     };
 
-template <PublicMemoryConcept Memory, logger::LogDistributorConcept Distributor,
+template <PublicMemoryConcept Memory, typename Logger,
           concepts::stream::ByteFullStreamConcept TxRxStream>
 class Slave
 {
 public:
     constexpr Slave(TxRxStream &stream, Memory &memory,
-                    logger::Logger<Distributor> &logger);
+                    Logger &logger);
 
 public:
     void Process();
@@ -36,16 +36,17 @@ private:
     TxRxStream &stream_;
     Memory &memory_;
 
-    logger::Logger<Distributor> &logger_;
+    Logger &logger_;
 
     uint8_t rx_buffer_[kMaxMessageLength];
     uint8_t tx_buffer_[kMaxMessageLength];
 };
 
-template <PublicMemoryConcept Memory, logger::LogDistributorConcept Distributor,
+template <PublicMemoryConcept Memory, typename Logger,
           concepts::stream::ByteFullStreamConcept TxRxStream>
-constexpr Slave<Memory, Distributor, TxRxStream>::Slave(
-    TxRxStream &stream, Memory &memory, logger::Logger<Distributor> &logger)
+constexpr Slave<Memory, Logger, TxRxStream>::Slave(TxRxStream &stream,
+                                                   Memory &memory,
+                                                   Logger &logger)
     : stream_(stream), memory_(memory), logger_(logger)
 {
     for (unsigned i = 0; i < kMaxMessageLength; i++)
@@ -58,9 +59,9 @@ constexpr Slave<Memory, Distributor, TxRxStream>::Slave(
     }
 }
 
-template <PublicMemoryConcept Memory, logger::LogDistributorConcept Distributor,
+template <PublicMemoryConcept Memory, typename Logger,
           concepts::stream::ByteFullStreamConcept TxRxStream>
-void Slave<Memory, Distributor, TxRxStream>::Process()
+void Slave<Memory, Logger, TxRxStream>::Process()
 {
     int read_length = read(stream_, rx_buffer_, kMaxMessageLength);
     if (!read_length)
@@ -80,16 +81,14 @@ void Slave<Memory, Distributor, TxRxStream>::Process()
         if (res == ReturnCode::OK)
         {
             LOG(logger_, logger::LogLevel::INFO,
-                             "Transmitting {} bytes from {}", info->length,
-                             info->address);
+                "Transmitting {} bytes from {}", info->length, info->address);
             *reinterpret_cast<Command *>(tx_buffer_) = Command::RESPONSE;
             write(stream_, tx_buffer_, sizeof(Command) + info->length);
         }
         else
         {
             LOG(logger_, logger::LogLevel::WARNING,
-                             "Can't read {} bytes from {}", info->length,
-                             info->address);
+                "Can't read {} bytes from {}", info->length, info->address);
             *reinterpret_cast<Command *>(tx_buffer_) = Command::ERROR;
             write(stream_, tx_buffer_, sizeof(Command));
         }
@@ -105,15 +104,14 @@ void Slave<Memory, Distributor, TxRxStream>::Process()
         if (res != ReturnCode::OK)
         {
             LOG(logger_, logger::LogLevel::WARNING,
-                             "Can't write {} bytes to {}", info->length,
-                             info->address);
+                "Can't write {} bytes to {}", info->length, info->address);
             *reinterpret_cast<Command *>(tx_buffer_) = Command::ERROR;
             write(stream_, tx_buffer_, sizeof(Command));
         }
         else
         {
             LOG(logger_, logger::LogLevel::INFO, "Wrote {} bytes to {}",
-                             info->length, info->address);
+                info->length, info->address);
         }
     }
     break;

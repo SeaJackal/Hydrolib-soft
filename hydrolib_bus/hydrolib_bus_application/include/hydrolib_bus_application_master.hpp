@@ -5,18 +5,16 @@
 #include <unistd.h>
 
 #include "hydrolib_bus_application_commands.hpp"
-#include "hydrolib_logger.hpp"
-#include "hydrolib_return_codes.hpp"
+#include "hydrolib_log_macro.hpp"
 #include "hydrolib_stream_concepts.hpp"
 
 namespace hydrolib::bus::application
 {
-template <concepts::stream::ByteFullStreamConcept TxRxStream,
-          logger::LogDistributorConcept Distributor>
+template <concepts::stream::ByteFullStreamConcept TxRxStream, typename Logger>
 class Master
 {
 public:
-    constexpr Master(TxRxStream &stream, logger::Logger<Distributor> &logger);
+    constexpr Master(TxRxStream &stream, Logger &logger);
 
 public:
     bool Process();
@@ -25,7 +23,7 @@ public:
 
 private:
     TxRxStream &stream_;
-    logger::Logger<Distributor> &logger_;
+    Logger &logger_;
 
     void *requested_data_;
     int requested_length_;
@@ -34,10 +32,8 @@ private:
     uint8_t tx_buffer_[kMaxMessageLength];
 };
 
-template <concepts::stream::ByteFullStreamConcept TxRxStream,
-          logger::LogDistributorConcept Distributor>
-constexpr Master<TxRxStream, Distributor>::Master(
-    TxRxStream &stream, logger::Logger<Distributor> &logger)
+template <concepts::stream::ByteFullStreamConcept TxRxStream, typename Logger>
+constexpr Master<TxRxStream, Logger>::Master(TxRxStream &stream, Logger &logger)
     : stream_(stream),
       logger_(logger),
       requested_data_(nullptr),
@@ -50,9 +46,8 @@ constexpr Master<TxRxStream, Distributor>::Master(
     }
 }
 
-template <concepts::stream::ByteFullStreamConcept TxRxStream,
-          logger::LogDistributorConcept Distributor>
-bool Master<TxRxStream, Distributor>::Process()
+template <concepts::stream::ByteFullStreamConcept TxRxStream, typename Logger>
+bool Master<TxRxStream, Logger>::Process()
 {
     if (!requested_data_)
     {
@@ -87,10 +82,9 @@ bool Master<TxRxStream, Distributor>::Process()
     }
 }
 
-template <concepts::stream::ByteFullStreamConcept TxRxStream,
-          logger::LogDistributorConcept Distributor>
-void Master<TxRxStream, Distributor>::Read(void *data, unsigned address,
-                                           unsigned length)
+template <concepts::stream::ByteFullStreamConcept TxRxStream, typename Logger>
+void Master<TxRxStream, Logger>::Read(void *data, unsigned address,
+                                      unsigned length)
 {
     requested_data_ = data;
     requested_length_ = length;
@@ -104,10 +98,9 @@ void Master<TxRxStream, Distributor>::Read(void *data, unsigned address,
     write(stream_, tx_buffer_, sizeof(MemoryAccessHeader));
 }
 
-template <concepts::stream::ByteFullStreamConcept TxRxStream,
-          logger::LogDistributorConcept Distributor>
-void Master<TxRxStream, Distributor>::Write(const void *data, unsigned address,
-                                            unsigned length)
+template <concepts::stream::ByteFullStreamConcept TxRxStream, typename Logger>
+void Master<TxRxStream, Logger>::Write(const void *data, unsigned address,
+                                       unsigned length)
 {
     MemoryAccessHeader *header =
         reinterpret_cast<MemoryAccessHeader *>(tx_buffer_);
