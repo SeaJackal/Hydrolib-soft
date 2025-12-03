@@ -10,6 +10,7 @@ class CString
 {
 public:
     constexpr CString(const char *str);
+    constexpr CString(char *str, int length);
     constexpr CString() = default;
     // constexpr CString(const CString& other);
 
@@ -18,11 +19,12 @@ public:
     constexpr char *GetString();
     [[deprecated]]
     constexpr const char *GetConstString() const;
-    constexpr unsigned GetLength() const;
+    constexpr int GetLength() const;
 
     int Write(const void *data, unsigned length);
 
     constexpr operator const char *() const;
+    constexpr operator char *();
     constexpr char &operator[](int index);
 
 private:
@@ -36,6 +38,12 @@ int write(CString<CAPACITY> &str, const void *data, unsigned length);
 template <unsigned CAPACITY>
 constexpr CString<CAPACITY>::CString(const char *str)
     : length_(std::strlen(str))
+{
+    std::copy(str, str + length_, string_);
+}
+
+template <unsigned CAPACITY>
+constexpr CString<CAPACITY>::CString(char *str, int length) : length_(length)
 {
     std::copy(str, str + length_, string_);
 }
@@ -60,7 +68,7 @@ constexpr const char *CString<CAPACITY>::GetConstString() const
 }
 
 template <unsigned CAPACITY>
-constexpr unsigned CString<CAPACITY>::GetLength() const
+constexpr int CString<CAPACITY>::GetLength() const
 {
     return length_;
 }
@@ -82,6 +90,12 @@ template <unsigned CAPACITY>
 constexpr CString<CAPACITY>::operator const char *() const
 {
     return const_cast<const char *>(string_);
+}
+
+template <unsigned CAPACITY>
+constexpr CString<CAPACITY>::operator char *()
+{
+    return string_;
 }
 
 template <unsigned CAPACITY>
