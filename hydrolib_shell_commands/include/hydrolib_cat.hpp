@@ -36,7 +36,7 @@ inline CatCommand::CatCommand(int argc, char *argv[])
         case 'h':
             cout << "Usage: cat [DEVICE_NAME]";
             g_is_running = false;
-            break;
+            return;
         case 1:
             finded_device = (*device::g_device_manager)[optarg];
             if (finded_device == nullptr)
@@ -44,7 +44,7 @@ inline CatCommand::CatCommand(int argc, char *argv[])
                 cout << "Device not found: " << optarg;
                 g_is_running = false;
                 return_code_ = -1;
-                break;
+                return;
             }
             device_ = finded_device->Upcast<device::IStreamDevice>();
             if (device_ == nullptr)
@@ -52,18 +52,18 @@ inline CatCommand::CatCommand(int argc, char *argv[])
                 cout << "Device is not a stream device: " << optarg;
                 g_is_running = false;
                 return_code_ = -1;
-                break;
+                return;
             }
             break;
         default:
             cout << "Invalid option: " << static_cast<char>(optopt);
             g_is_running = false;
             return_code_ = -1;
-            break;
+            return;
         }
         opt = getopt(argc, argv, "-:h");
     }
-    if(device_ == nullptr)
+    if (device_ == nullptr)
     {
         cout << "No device specified";
         g_is_running = false;
