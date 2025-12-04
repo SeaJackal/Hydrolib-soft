@@ -27,8 +27,8 @@ int Cat(int argc, char *argv[]);
 inline CatCommand::CatCommand(int argc, char *argv[])
     : device_(nullptr), return_code_(0)
 {
-    int opt;
-    while ((opt = getopt(argc, argv, "-:h")) != -1)
+    int opt = getopt(argc, argv, "-:h");
+    while (opt != -1)
     {
         device::Device *finded_device = nullptr;
         switch (opt)
@@ -61,6 +61,13 @@ inline CatCommand::CatCommand(int argc, char *argv[])
             return_code_ = -1;
             break;
         }
+        opt = getopt(argc, argv, "-:h");
+    }
+    if(device_ == nullptr)
+    {
+        cout << "No device specified";
+        g_is_running = false;
+        return_code_ = -1;
     }
 }
 
