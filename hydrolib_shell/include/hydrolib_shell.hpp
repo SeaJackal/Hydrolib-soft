@@ -1,6 +1,7 @@
 #pragma once
 
 #include "hydrolib_shell_interpreter.hpp"
+#include "hydrolib_shell_ostream.hpp"
 #include "hydrolib_shell_terminal.hpp"
 
 #include "hydrolib_return_codes.hpp"
@@ -24,9 +25,12 @@ private:
     Stream &stream_;
     Terminal<Stream> terminal_;
     Interpreter<Func, Map> interpreter_;
+    StreamWrapper<Stream> cout_wrapper_;
 
     int last_error_code_;
 };
+
+inline Ostream cout{};
 
 template <concepts::stream::ByteFullStreamConcept Stream, typename Func,
           CommandMapConcept<Func> Map>
@@ -34,8 +38,10 @@ constexpr Shell<Stream, Func, Map>::Shell(Stream &stream, Map &handlers)
     : stream_(stream),
       terminal_(stream),
       interpreter_(handlers),
+      cout_wrapper_(stream),
       last_error_code_(0)
 {
+    cout = Ostream(cout_wrapper_);
 }
 
 template <concepts::stream::ByteFullStreamConcept Stream, typename Func,

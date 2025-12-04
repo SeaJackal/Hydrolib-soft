@@ -15,6 +15,7 @@
     "customizations": {
         "vscode": {
             "extensions": [
+                "anysphere.cpptools",
                 "ms-vscode.cpptools-extension-pack",
                 "twxs.cmake",
                 "josetr.cmake-language-support-vscode",

@@ -189,6 +189,25 @@ TEST(ShellProcess, ReturnsErrorWhenHandlerMissing)
               stream.OutputAsString());
 }
 
+TEST(ShellProcess, CoutDefaultIsNoop)
+{
+    FakeStream stream;
+
+    hydrolib::shell::cout << "ignored";
+    EXPECT_TRUE(stream.OutputAsString().empty());
+}
+
+TEST(ShellProcess, CoutBindsAfterShellInit)
+{
+    FakeStream stream;
+    TestCommandMap handlers;
+
+    ShellUnderTest shell(stream, handlers);
+
+    hydrolib::shell::cout << "ok";
+    EXPECT_EQ("ok", stream.OutputAsString());
+}
+
 TEST(ShellProcess, ProcessesMultipleCommandsWithDifferentLengths)
 {
     FakeStream stream;

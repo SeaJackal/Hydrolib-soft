@@ -2,8 +2,6 @@
 
 #include "hydrolib_shell_params.hpp"
 
-#include <optional>
-
 #include "hydrolib_return_codes.hpp"
 #include "hydrolib_stream_concepts.hpp"
 
