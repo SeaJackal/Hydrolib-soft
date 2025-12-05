@@ -1,11 +1,9 @@
 #pragma once
 
-#include <iostream>
 #include <unistd.h>
 
 #include "hydrolib_device_manager.hpp"
 #include "hydrolib_shell.hpp"
-#include "hydrolib_shell_interpreter.hpp"
 #include "hydrolib_stream_device.hpp"
 
 namespace hydrolib::shell
@@ -29,40 +27,47 @@ int Cat(int argc, char *argv[]);
 inline CatCommand::CatCommand(int argc, char *argv[])
     : device_(nullptr), return_code_(0)
 {
-    int opt;
-    while ((opt = getopt(argc, argv, "-:h")) != -1)
+    int opt = getopt(argc, argv, "-:h");
+    while (opt != -1)
     {
         device::Device *finded_device = nullptr;
         switch (opt)
         {
         case 'h':
-            std::cout << "Usage: cat [DEVICE_NAME]";
+            cout << "Usage: cat [DEVICE_NAME]";
             g_is_running = false;
-            break;
+            return;
         case 1:
             finded_device = (*device::g_device_manager)[optarg];
             if (finded_device == nullptr)
             {
-                std::cout << "Device not found: " << optarg;
+                cout << "Device not found: " << optarg;
                 g_is_running = false;
                 return_code_ = -1;
-                break;
+                return;
             }
             device_ = finded_device->Upcast<device::IStreamDevice>();
             if (device_ == nullptr)
             {
-                std::cout << "Device is not a stream device: " << optarg;
+                cout << "Device is not a stream device: " << optarg;
                 g_is_running = false;
                 return_code_ = -1;
-                break;
+                return;
             }
             break;
         default:
-            std::cout << "Invalid option: " << static_cast<char>(optopt);
+            cout << "Invalid option: " << static_cast<char>(optopt);
             g_is_running = false;
             return_code_ = -1;
-            break;
+            return;
         }
+        opt = getopt(argc, argv, "-:h");
+    }
+    if (device_ == nullptr)
+    {
+        cout << "No device specified";
+        g_is_running = false;
+        return_code_ = -1;
     }
 }
 
@@ -78,7 +83,7 @@ inline int CatCommand::Run()
         }
         else if (result == 1)
         {
-            std::cout << buffer;
+            cout << buffer;
         }
     }
     return return_code_;

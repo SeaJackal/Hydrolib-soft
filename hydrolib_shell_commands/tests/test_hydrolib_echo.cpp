@@ -1,5 +1,4 @@
-// Intentionally left blank before. Now adding tests for hydrolib_cat.hpp.
-#include "hydrolib_cat.hpp"
+#include "hydrolib_echo.hpp"
 
 #include <deque>
 #include <string>
@@ -11,7 +10,7 @@
 
 using hydrolib::device::DeviceManager;
 using hydrolib::device::StreamDevice;
-using hydrolib::shell::Cat;
+using hydrolib::shell::Echo;
 using hydrolib::shell::g_is_running;
 using hydrolib::shell::Ostream;
 using hydrolib::shell::StreamWrapper;
@@ -31,20 +30,14 @@ struct FakeStream
     }
 
     std::deque<char> input_;
-    std::vector<char> output_; // unused here, but kept for completeness
+    std::vector<char> output_;
 
-    // If set true, the next read will return -1 once and reset to false
-    bool fail_next_read_ = false;
+    // If set true, the next write will return -1 once and reset to false
+    bool fail_next_write_ = false;
 };
 
 [[maybe_unused]] int read(FakeStream &stream, void *dest, unsigned length)
 {
-    if (stream.fail_next_read_)
-    {
-        stream.fail_next_read_ = false;
-        return -1;
-    }
-
     if (length == 0)
     {
         return 0;
@@ -70,6 +63,11 @@ struct FakeStream
 
 [[maybe_unused]] int write(FakeStream &stream, const void *source, unsigned length)
 {
+    if (stream.fail_next_write_)
+    {
+        stream.fail_next_write_ = false;
+        return -1;
+    }
     const auto *char_source = static_cast<const char *>(source);
     stream.output_.insert(stream.output_.end(), char_source, char_source + length);
     return static_cast<int>(length);
@@ -89,7 +87,7 @@ void ResetGetopt()
 
 } // namespace
 
-TEST(HydrolibCat, PrintsUsageOnHelpAndStops)
+TEST(HydrolibEcho, PrintsUsageOnHelpAndStops)
 {
     ResetGetopt();
     FakeStream cout_stream;
@@ -98,19 +96,19 @@ TEST(HydrolibCat, PrintsUsageOnHelpAndStops)
 
     DeviceManager mgr({});
 
-    char arg0[] = "cat";
+    char arg0[] = "echo";
     char arg1[] = "-h";
     char *argv[] = {arg0, arg1};
 
     g_is_running = true;
-    int rc = Cat(2, argv);
+    int rc = Echo(2, argv);
 
     EXPECT_EQ(0, rc);
-    EXPECT_EQ("Usage: cat [DEVICE_NAME]", OutputAsString(cout_stream));
+    EXPECT_EQ("Usage: echo [DEVICE_NAME] [STRING]", OutputAsString(cout_stream));
     EXPECT_FALSE(g_is_running);
 }
 
-TEST(HydrolibCat, InvalidOptionSetsErrorAndPrintsCode)
+TEST(HydrolibEcho, InvalidOptionSetsErrorAndPrintsCode)
 {
     ResetGetopt();
     FakeStream cout_stream;
@@ -119,19 +117,19 @@ TEST(HydrolibCat, InvalidOptionSetsErrorAndPrintsCode)
 
     DeviceManager mgr({});
 
-    char arg0[] = "cat";
+    char arg0[] = "echo";
     char arg1[] = "-x";
     char *argv[] = {arg0, arg1};
 
     g_is_running = true;
-    int rc = Cat(2, argv);
+    int rc = Echo(2, argv);
 
     EXPECT_EQ(-1, rc);
     EXPECT_EQ("Invalid option: x", OutputAsString(cout_stream));
     EXPECT_FALSE(g_is_running);
 }
 
-TEST(HydrolibCat, DeviceNotFoundSetsError)
+TEST(HydrolibEcho, DeviceNotFoundSetsError)
 {
     ResetGetopt();
     FakeStream cout_stream;
@@ -140,36 +138,131 @@ TEST(HydrolibCat, DeviceNotFoundSetsError)
 
     DeviceManager mgr({});
 
-    char arg0[] = "cat";
+    char arg0[] = "echo";
     char arg1[] = "no_such_device";
-    char *argv[] = {arg0, arg1, nullptr};
+    char arg2[] = "hello";
+    char *argv[] = {arg0, arg1, arg2, nullptr};
 
     g_is_running = true;
-    int rc = Cat(2, argv);
+    int rc = Echo(3, argv);
 
     EXPECT_EQ(-1, rc);
     EXPECT_EQ("Device not found: no_such_device", OutputAsString(cout_stream));
     EXPECT_FALSE(g_is_running);
 }
 
-TEST(HydrolibCat, ReturnsMinusTwoOnStreamReadError)
+TEST(HydrolibEcho, NoDeviceSpecified)
 {
     ResetGetopt();
     FakeStream cout_stream;
     StreamWrapper<FakeStream> cout_wrapper(cout_stream);
     cout = Ostream(cout_wrapper);
 
-    FakeStream stream("A");
+    DeviceManager mgr({});
+
+    char arg0[] = "echo";
+    char *argv[] = {arg0, nullptr};
+
+    g_is_running = true;
+    int rc = Echo(1, argv);
+
+    EXPECT_EQ(-1, rc);
+    EXPECT_EQ("No device specified", OutputAsString(cout_stream));
+    EXPECT_FALSE(g_is_running);
+}
+
+TEST(HydrolibEcho, NoDataSpecified)
+{
+    ResetGetopt();
+    FakeStream cout_stream;
+    StreamWrapper<FakeStream> cout_wrapper(cout_stream);
+    cout = Ostream(cout_wrapper);
+
+    FakeStream stream;
     StreamDevice<FakeStream> dev("stream1", stream);
     DeviceManager mgr({&dev});
 
-    char arg0[] = "cat";
+    char arg0[] = "echo";
     char arg1[] = "stream1";
     char *argv[] = {arg0, arg1, nullptr};
 
     g_is_running = true;
-    stream.fail_next_read_ = true;
-    int rc = Cat(2, argv);
+    int rc = Echo(2, argv);
+
+    EXPECT_EQ(-1, rc);
+    EXPECT_EQ("No data specified", OutputAsString(cout_stream));
+    EXPECT_FALSE(g_is_running);
+}
+
+TEST(HydrolibEcho, TooManyArguments)
+{
+    ResetGetopt();
+    FakeStream cout_stream;
+    StreamWrapper<FakeStream> cout_wrapper(cout_stream);
+    cout = Ostream(cout_wrapper);
+
+    FakeStream stream;
+    StreamDevice<FakeStream> dev("stream1", stream);
+    DeviceManager mgr({&dev});
+
+    char arg0[] = "echo";
+    char arg1[] = "stream1";
+    char arg2[] = "hello";
+    char arg3[] = "extra";
+    char *argv[] = {arg0, arg1, arg2, arg3, nullptr};
+
+    g_is_running = true;
+    int rc = Echo(4, argv);
+
+    EXPECT_EQ(-1, rc);
+    EXPECT_EQ("Too many arguments", OutputAsString(cout_stream));
+    EXPECT_FALSE(g_is_running);
+}
+
+TEST(HydrolibEcho, WritesAllDataToDevice)
+{
+    ResetGetopt();
+    FakeStream cout_stream;
+    StreamWrapper<FakeStream> cout_wrapper(cout_stream);
+    cout = Ostream(cout_wrapper);
+
+    FakeStream stream;
+    StreamDevice<FakeStream> dev("stream1", stream);
+    DeviceManager mgr({&dev});
+
+    char arg0[] = "echo";
+    char arg1[] = "stream1";
+    char arg2[] = "hello_world";
+    char *argv[] = {arg0, arg1, arg2, nullptr};
+
+    g_is_running = true;
+    int rc = Echo(3, argv);
+
+    EXPECT_EQ(0, rc);
+    EXPECT_EQ("hello_world", OutputAsString(stream));
+}
+
+TEST(HydrolibEcho, ReturnsMinusTwoOnStreamWriteError)
+{
+    ResetGetopt();
+    FakeStream cout_stream;
+    StreamWrapper<FakeStream> cout_wrapper(cout_stream);
+    cout = Ostream(cout_wrapper);
+
+    FakeStream stream;
+    stream.fail_next_write_ = true;
+    StreamDevice<FakeStream> dev("stream1", stream);
+    DeviceManager mgr({&dev});
+
+    char arg0[] = "echo";
+    char arg1[] = "stream1";
+    char arg2[] = "data";
+    char *argv[] = {arg0, arg1, arg2, nullptr};
+
+    g_is_running = true;
+    int rc = Echo(3, argv);
 
     EXPECT_EQ(-2, rc);
 }
+
+

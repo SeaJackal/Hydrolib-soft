@@ -6,6 +6,7 @@
 #include <cstring>
 #include <optional>
 #include <string_view>
+#include <unistd.h>
 
 #include "hydrolib_func_concepts.hpp"
 
@@ -76,7 +77,9 @@ int Interpreter<Func, Map>::Process(CommandString command)
     }
     if (handlers_[static_cast<std::string_view>(argv[0])])
     {
-        g_is_running = true; //TODO: Add tests
+        g_is_running = true; // TODO: Add tests
+        optind = 1;
+        opterr = 0;
         auto result =
             (*handlers_[static_cast<std::string_view>(argv[0])])(argc, argv);
         g_is_running = false;
