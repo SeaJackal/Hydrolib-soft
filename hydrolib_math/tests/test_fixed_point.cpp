@@ -197,20 +197,68 @@ TEST(TestHydrolibMath, FixedPointBaseSqrt)
 
 TEST(TestHydrolibMath, FixedPointBaseSin)
 {
-    constexpr double rads = 3.14159265358979323846 / 4;
-    FixedPointBase a(rads);
-    FixedPointBase result = sin(a);
+    constexpr double PI = 3.14159265358979323846;
+    constexpr double rads1 = PI / 4.0;
+    constexpr double rads2 = -PI / 6.0;
+    constexpr double rads3 = -PI / 3.0;
+    FixedPointBase a(rads1);
+    FixedPointBase result1 = sin(a);
+    FixedPointBase a2(rads2);
+    FixedPointBase result2 = sin(a2);
+    FixedPointBase a3(rads3);
+    FixedPointBase result3 = sin(a3);
 
-    EXPECT_NEAR(static_cast<double>(result), sin(rads), 0.002);
+    EXPECT_NEAR(static_cast<double>(result1), sin(rads1), 0.002);
+    EXPECT_NEAR(static_cast<double>(result2), sin(rads2), 0.002);
+    EXPECT_NEAR(static_cast<double>(result3), sin(rads3), 0.002);
 }
 
 TEST(TestHydrolibMath, FixedPointBaseCos)
 {
     constexpr double rads = 3.14159265358979323846 / 4;
+    constexpr double rads2 = 3.14159265358979323846 / 6;
+    constexpr double rads3 = 3.14159265358979323846/ 3;
     FixedPointBase a(rads);
+    FixedPointBase a2(rads2);
+    FixedPointBase a3(rads3);
     FixedPointBase result = cos(a);
-
+    FixedPointBase result2 = cos(a2);
+    FixedPointBase result3 = cos(a3);
     EXPECT_NEAR(static_cast<double>(result), cos(rads), 0.002);
+    EXPECT_NEAR(static_cast<double>(result2), cos(rads2), 0.002);
+    EXPECT_NEAR(static_cast<double>(result3), cos(rads3), 0.002);
+}
+
+TEST(TestHydrolibMath, FixedPointBaseSinNegativeArgument)
+{
+    constexpr double rads = -3.14159265358979323846 / 4.0;
+    constexpr double rads2 = -3.14159265358979323846 / 6.0;
+    constexpr double rads3 = - 3.14159265358979323846/ 3.0;
+    FixedPointBase a(rads);
+    FixedPointBase result_sin = sin(a);
+    FixedPointBase a2(rads2);
+    FixedPointBase result_sin2 = sin(a2);
+    FixedPointBase a3(rads3);
+    FixedPointBase result_sin3 = sin(a3);
+    EXPECT_NEAR(static_cast<double>(result_sin), sin(rads), 0.002);
+    EXPECT_NEAR(static_cast<double>(result_sin2), sin(rads2), 0.002);
+    EXPECT_NEAR(static_cast<double>(result_sin3), sin(rads3), 0.002);
+}
+
+TEST(TestHydrolibMath, FixedPointBaseCosNegativeArgument)
+{
+    constexpr double rads = -3.14159265358979323846 / 4.0;
+    constexpr double rads2 = -3.14159265358979323846 / 6.0;
+    constexpr double rads3 = - 3.14159265358979323846/ 3.0;
+    FixedPointBase a(rads);
+    FixedPointBase result_cos = cos(a);
+    FixedPointBase a2(rads2);
+    FixedPointBase result_cos2 = cos(a2);
+    FixedPointBase a3(rads3);
+    FixedPointBase result_cos3 = cos(a3);
+    EXPECT_NEAR(static_cast<double>(result_cos), cos(rads), 0.002);
+    EXPECT_NEAR(static_cast<double>(result_cos2), cos(rads2), 0.002);
+    EXPECT_NEAR(static_cast<double>(result_cos3), cos(rads3), 0.002);
 }
 
 TEST(TestHydrolibMath, FixedPointBaseGetFractionBits)
@@ -264,6 +312,13 @@ TEST(TestHydrolibMath, FixedPointBaseGetAbsFractionPart)
 
     FixedPointBase fp5(0);
     EXPECT_EQ(fp5.GetAbsFractionPart(), 0);
+
+    FixedPointBase fp6(-4);
+    EXPECT_EQ(fp6.GetAbsFractionPart(), 0);
+
+    FixedPointBase fp7(-2.25);
+    EXPECT_EQ(fp7.GetAbsFractionPart(),
+              0.25 * (1 << FixedPointBase::GetFractionBits()));
 }
 
 TEST(TestHydrolibMath, FixedPointBaseGetAbsFractionPartNegative)
@@ -319,3 +374,64 @@ TEST(TestHydrolibMath, FixedPointBaseDecimalComparisons)
     EXPECT_TRUE(b < 4);
     EXPECT_TRUE(b <= 4);
 }
+
+TEST(TestHydrolibMath, FixedPointBaseNegativeDecimalComparisons)
+{
+    auto a = -5.5_fp;
+    auto b = -3.2_fp;
+    auto c = -5.5_fp;
+    EXPECT_TRUE(a < b);
+    EXPECT_FALSE(a > b);
+    EXPECT_FALSE(b < a);
+    EXPECT_TRUE(b > a);
+    EXPECT_TRUE(a == c);
+    EXPECT_TRUE(a >= c);
+    EXPECT_TRUE(a <= c);
+    EXPECT_TRUE(a != b);
+    EXPECT_FALSE(a != c);
+    EXPECT_TRUE(a < -5);    
+    EXPECT_TRUE(a <= -5);
+    EXPECT_FALSE(a == -5);
+    EXPECT_TRUE(a > -6);     
+    EXPECT_TRUE(a >= -6);
+    EXPECT_TRUE(b > -4);  
+    EXPECT_TRUE(b >= -4);
+    EXPECT_TRUE(b < -3); 
+    EXPECT_TRUE(b <= -3);
+}
+
+TEST(TestHydrolibMath, FixedPointBaseComplexMixedSignComparisons)
+{
+    auto a = 5.5_fp;
+    auto b = -3.2_fp;
+    auto с = -5.5_fp;
+
+    EXPECT_TRUE(a > b);
+    EXPECT_TRUE(a >= b);
+    EXPECT_FALSE(a < b);
+    EXPECT_TRUE(a != b);
+
+    EXPECT_TRUE(a > с);
+    EXPECT_TRUE(a >= с);
+    EXPECT_FALSE(a < с);
+    EXPECT_TRUE(a != с); 
+
+    EXPECT_TRUE(b > с);
+    EXPECT_TRUE(b >= с);
+    EXPECT_FALSE(b < с);
+    EXPECT_TRUE(b != с);
+
+    EXPECT_TRUE(a > -5);    
+    EXPECT_TRUE(a >= -5);
+    EXPECT_FALSE(a < -6);
+
+    EXPECT_TRUE(с < 5);     
+    EXPECT_TRUE(с <= 5);
+    EXPECT_FALSE(с > 5);
+    
+    EXPECT_TRUE(b < 1);     
+    EXPECT_TRUE(b <= 1);
+    EXPECT_FALSE(b > 1);
+}
+
+
