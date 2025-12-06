@@ -9,6 +9,6 @@ jobs:
         with:
           submodules: true
       - run: sudo apt-get install libgtest-dev
-      - run: cmake -B ./build
+      - run: cmake --preset Debug
       - run: cmake --build ./build
       - run: ctest --test-dir ./build --rerun-failed --output-on-failure
