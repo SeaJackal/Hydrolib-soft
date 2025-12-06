@@ -2,19 +2,18 @@
 
 #include "hydrolib_bus_datalink_message.hpp"
 #include "hydrolib_crc.hpp"
-#include "hydrolib_logger.hpp"
+#include "hydrolib_log_macro.hpp"
 #include "hydrolib_return_codes.hpp"
 #include "hydrolib_stream_concepts.hpp"
 
 namespace hydrolib::bus::datalink
 {
-template <concepts::stream::ByteReadableStreamConcept RxStream,
-          logger::LogDistributorConcept Distributor>
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
 class Deserializer
 {
 public:
     constexpr Deserializer(AddressType address, RxStream &rx_stream,
-                           logger::Logger<Distributor> &logger);
+                           Logger &logger);
 
 public:
     ReturnCode Process();
@@ -37,7 +36,7 @@ private:
     const AddressType self_address_;
 
     RxStream &rx_stream_;
-    logger::Logger<Distributor> &logger_;
+    Logger &logger_;
 
     unsigned current_processed_length_;
     uint8_t *current_rx_buffer_;
@@ -50,11 +49,10 @@ private:
     MessageHeader *current_header_;
 };
 
-template <concepts::stream::ByteReadableStreamConcept RxStream,
-          logger::LogDistributorConcept Distributor>
-constexpr Deserializer<RxStream, Distributor>::Deserializer(
-    AddressType address, RxStream &rx_stream,
-    logger::Logger<Distributor> &logger)
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
+constexpr Deserializer<RxStream, Logger>::Deserializer(AddressType address,
+                                                       RxStream &rx_stream,
+                                                       Logger &logger)
     : self_address_(address),
       rx_stream_(rx_stream),
       logger_(logger),
@@ -71,9 +69,8 @@ constexpr Deserializer<RxStream, Distributor>::Deserializer(
     }
 }
 
-template <concepts::stream::ByteReadableStreamConcept RxStream,
-          logger::LogDistributorConcept Distributor>
-ReturnCode Deserializer<RxStream, Distributor>::Process()
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
+ReturnCode Deserializer<RxStream, Logger>::Process()
 {
     while (1) // TODO: bad practice
     {
@@ -126,9 +123,8 @@ ReturnCode Deserializer<RxStream, Distributor>::Process()
     }
 }
 
-template <concepts::stream::ByteReadableStreamConcept RxStream,
-          logger::LogDistributorConcept Distributor>
-AddressType Deserializer<RxStream, Distributor>::GetSourceAddress() const
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
+AddressType Deserializer<RxStream, Logger>::GetSourceAddress() const
 {
     if (message_ready_)
     {
@@ -139,9 +135,8 @@ AddressType Deserializer<RxStream, Distributor>::GetSourceAddress() const
     return 0;
 }
 
-template <concepts::stream::ByteReadableStreamConcept RxStream,
-          logger::LogDistributorConcept Distributor>
-const uint8_t *Deserializer<RxStream, Distributor>::GetData()
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
+const uint8_t *Deserializer<RxStream, Logger>::GetData()
 {
     if (message_ready_)
     {
@@ -151,9 +146,8 @@ const uint8_t *Deserializer<RxStream, Distributor>::GetData()
     return nullptr;
 }
 
-template <concepts::stream::ByteReadableStreamConcept RxStream,
-          logger::LogDistributorConcept Distributor>
-unsigned Deserializer<RxStream, Distributor>::GetDataLength() const
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
+unsigned Deserializer<RxStream, Logger>::GetDataLength() const
 {
     if (message_ready_)
     {
@@ -164,11 +158,10 @@ unsigned Deserializer<RxStream, Distributor>::GetDataLength() const
     return 0;
 }
 
-template <concepts::stream::ByteReadableStreamConcept RxStream,
-          logger::LogDistributorConcept Distributor>
-void Deserializer<RxStream, Distributor>::COBSDecoding(uint8_t magic_byte,
-                                                       uint8_t *data,
-                                                       unsigned data_length)
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
+void Deserializer<RxStream, Logger>::COBSDecoding(uint8_t magic_byte,
+                                                  uint8_t *data,
+                                                  unsigned data_length)
 {
     unsigned current_appearance = data[0];
     while (data[current_appearance] != 0)
@@ -185,9 +178,8 @@ void Deserializer<RxStream, Distributor>::COBSDecoding(uint8_t magic_byte,
     return;
 }
 
-template <concepts::stream::ByteReadableStreamConcept RxStream,
-          logger::LogDistributorConcept Distributor>
-ReturnCode Deserializer<RxStream, Distributor>::FindHeader_()
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
+ReturnCode Deserializer<RxStream, Logger>::FindHeader_()
 {
     int res = read(rx_stream_, current_rx_buffer_, sizeof(kMagicByte));
     while (res != 0)
@@ -206,9 +198,8 @@ ReturnCode Deserializer<RxStream, Distributor>::FindHeader_()
     return ReturnCode::NO_DATA;
 }
 
-template <concepts::stream::ByteReadableStreamConcept RxStream,
-          logger::LogDistributorConcept Distributor>
-ReturnCode Deserializer<RxStream, Distributor>::ParseHeader_()
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
+ReturnCode Deserializer<RxStream, Logger>::ParseHeader_()
 {
     int res = read(rx_stream_, current_rx_buffer_ + current_processed_length_,
                    sizeof(MessageHeader) - current_processed_length_);
@@ -229,9 +220,8 @@ ReturnCode Deserializer<RxStream, Distributor>::ParseHeader_()
     return ReturnCode::OK;
 }
 
-template <concepts::stream::ByteReadableStreamConcept RxStream,
-          logger::LogDistributorConcept Distributor>
-bool Deserializer<RxStream, Distributor>::CheckCRC_()
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
+bool Deserializer<RxStream, Logger>::CheckCRC_()
 {
     uint8_t target_crc = crc::CountCRC8(current_rx_buffer_,
                                         current_header_->length - kCRCLength);
@@ -242,8 +232,7 @@ bool Deserializer<RxStream, Distributor>::CheckCRC_()
     if (target_crc != current_crc)
     {
         LOG(logger_, logger::LogLevel::WARNING,
-                         "Wrong CRC: expected {}, got {}", target_crc,
-                         current_crc);
+            "Wrong CRC: expected {}, got {}", target_crc, current_crc);
         return false;
     }
     return true;

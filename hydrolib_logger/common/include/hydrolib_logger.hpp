@@ -5,10 +5,6 @@
 #include "hydrolib_formatable_string.hpp"
 #include "hydrolib_log.hpp"
 
-#define LOG(logger_, level, message, ...)                                      \
-    hydrolib::logger::LoggingCase(logger_ __VA_OPT__(,) __VA_ARGS__)                        \
-        .WriteLog(level, message __VA_OPT__(,) __VA_ARGS__)
-
 namespace hydrolib::logger
 {
 template <typename T, typename... Ts>
