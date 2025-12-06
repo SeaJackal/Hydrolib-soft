@@ -1,19 +1,4 @@
 #include "test_hydrolib_bus_datalink.hpp"
-#include "hydrolib_logger.hpp"
-
-TestLogStream log_stream;
-hydrolib::logger::LogDistributor distributor("[%s] [%l] %m\n", log_stream);
-hydrolib::logger::Logger logger("Serializer", 0, distributor);
-
-int write([[maybe_unused]] TestLogStream &stream, const void *dest,
-          unsigned length)
-{
-    for (unsigned i = 0; i < length; i++)
-    {
-        std::cout << (reinterpret_cast<const char *>(dest))[i];
-    }
-    return length;
-}
 
 int read(TestStream &stream, void *dest, unsigned length)
 {
@@ -37,10 +22,12 @@ int write(TestStream &stream, const void *dest, unsigned length)
 }
 
 TestHydrolibBusDatalink::TestHydrolibBusDatalink()
-    : sender_manager(SERIALIZER_ADDRESS, stream, logger),
-      receiver_manager(DESERIALIZER_ADDRESS, stream, logger)
+    : sender_manager(SERIALIZER_ADDRESS, stream, hydrolib::logger::mock_logger),
+      receiver_manager(DESERIALIZER_ADDRESS, stream,
+                       hydrolib::logger::mock_logger)
 {
-    distributor.SetAllFilters(0, hydrolib::logger::LogLevel::DEBUG);
+    hydrolib::logger::mock_distributor.SetAllFilters(
+        0, hydrolib::logger::LogLevel::DEBUG);
     for (int i = 0; i < PUBLIC_MEMORY_LENGTH; i++)
     {
         test_data[i] = i;

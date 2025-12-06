@@ -26,6 +26,8 @@ if(LOGGER_TYPE STREQUAL "hydrolib")
             -Woverloaded-virtual -Wsuggest-override)
         target_link_libraries(${TEST_TARGET_NAME} HydrolibLogger GTest::gtest GTest::gtest_main -pthread)
         gtest_discover_tests(${TEST_TARGET_NAME})
+
+        add_subdirectory(mock)
     endif()
 
 elseif(LOGGER_TYPE STREQUAL "none")

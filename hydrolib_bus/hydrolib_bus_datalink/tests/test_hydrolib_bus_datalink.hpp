@@ -2,7 +2,7 @@
 #define TEST_HYDROLIB_SP_SERIALIZE_ENV_H_
 
 #include "hydrolib_bus_datalink_stream.hpp"
-#include "hydrolib_log_distributor.hpp"
+#include "hydrolib_logger_mock.hpp"
 
 #include <deque>
 #include <gtest/gtest.h>
@@ -11,13 +11,6 @@
 
 #define SERIALIZER_ADDRESS 3
 #define DESERIALIZER_ADDRESS 4
-
-class TestLogStream
-{
-};
-
-int write([[maybe_unused]] TestLogStream &stream, const void *dest,
-          unsigned length);
 
 class TestStream
 {
@@ -40,15 +33,11 @@ protected:
     TestStream stream;
 
     hydrolib::bus::datalink::StreamManager<
-        TestStream,
-        hydrolib::logger::Logger<
-            hydrolib::logger::LogDistributor<TestLogStream>>>
+        TestStream, decltype(hydrolib::logger::mock_logger)>
         sender_manager;
 
     hydrolib::bus::datalink::StreamManager<
-        TestStream,
-        hydrolib::logger::Logger<
-            hydrolib::logger::LogDistributor<TestLogStream>>>
+        TestStream, decltype(hydrolib::logger::mock_logger)>
         receiver_manager;
 
     uint8_t test_data[PUBLIC_MEMORY_LENGTH];
