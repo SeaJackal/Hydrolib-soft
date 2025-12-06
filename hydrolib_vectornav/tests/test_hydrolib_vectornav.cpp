@@ -1,4 +1,4 @@
-#include "hydrolib_log_distributor.hpp"
+#include "hydrolib_logger_mock.hpp"
 #include "hydrolib_vectornav.hpp"
 
 #include <cstdint>
@@ -2368,18 +2368,14 @@ inline int write(TestLogStream &stream, const void *dest, unsigned length)
     return length;
 }
 
-inline constinit TestLogStream log_stream;
-inline constinit LogDistributor distributor("[%s] [%l] %m\n", log_stream);
-inline constinit Logger logger("vectorNAV", 0, distributor);
-
 constinit TestStream stream;
-constinit hydrolib::VectorNAVParser vector_nav(stream, logger);
+constinit hydrolib::VectorNAVParser vector_nav(stream, hydrolib::logger::mock_logger);
 
 constexpr unsigned packages_count = 1000;
 
 TEST(TestVectorNAV, BasicTest)
 {
-    distributor.SetAllFilters(0, hydrolib::logger::LogLevel::DEBUG);
+    hydrolib::logger::mock_distributor.SetAllFilters(0, hydrolib::logger::LogLevel::DEBUG);
 
     for (unsigned i = 0; i < packages_count; i++)
     {

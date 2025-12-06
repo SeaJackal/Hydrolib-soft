@@ -18,10 +18,8 @@ if(BUILD_TESTING)
     )
     target_compile_features(TestIMU PUBLIC cxx_std_20)
     target_compile_options(TestIMU PRIVATE -Wall -Wextra -Wpedantic -Wc++20-compat -Wno-format-security
-        -Woverloaded-virtual -Wsuggest-override)
-    # target_compile_options(TestSerialProtocol PRIVATE -Wall -Wextra -Wpedantic -Wc++20-compat -Wno-format-security
-    #     -Woverloaded-virtual -Wsuggest-override -fsanitize=address -fsanitize=undefined)
-    # target_link_options(TestSerialProtocol PRIVATE -fsanitize=address -fsanitize=undefined)
+        -Woverloaded-virtual -Wsuggest-override -fsanitize=address -fsanitize=undefined)
+    target_link_options(TestIMU PRIVATE -fsanitize=address -fsanitize=undefined)
     target_link_libraries(TestIMU HydrolibIMU GTest::gtest GTest::gtest_main -pthread)
     gtest_discover_tests(TestIMU)
 endif()

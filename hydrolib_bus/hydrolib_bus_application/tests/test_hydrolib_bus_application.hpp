@@ -5,7 +5,7 @@
 #include "hydrolib_bus_application_commands.hpp"
 #include "hydrolib_bus_application_master.hpp"
 #include "hydrolib_bus_application_slave.hpp"
-#include "hydrolib_log_distributor.hpp"
+#include "hydrolib_logger_mock.hpp"
 #include "hydrolib_return_codes.hpp"
 
 class TestLogStream
@@ -78,15 +78,10 @@ protected:
     TestPublicMemory memory;
 
     hydrolib::bus::application::Master<
-        TestStream,
-        hydrolib::logger::Logger<
-            hydrolib::logger::LogDistributor<TestLogStream>>>
+        TestStream, decltype(hydrolib::logger::mock_logger)>
         master;
     hydrolib::bus::application::Slave<
-        TestPublicMemory,
-        hydrolib::logger::Logger<
-            hydrolib::logger::LogDistributor<TestLogStream>>,
-        TestStream>
+        TestPublicMemory, decltype(hydrolib::logger::mock_logger), TestStream>
         slave;
 
     uint8_t test_data[TestPublicMemory::kPublicMemoryLength];

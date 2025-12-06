@@ -23,6 +23,6 @@ if(BUILD_TESTS)
     target_compile_options(TestBusApplication PRIVATE -Wall -Wextra -Wpedantic -Wc++20-compat -Wno-format-security
         -Woverloaded-virtual -Wsuggest-override -fsanitize=address -fsanitize=undefined)
     target_link_options(TestBusApplication PRIVATE -fsanitize=address -fsanitize=undefined)
-    target_link_libraries(TestBusApplication HydrolibBusApplication GTest::gtest GTest::gtest_main -pthread)
+    target_link_libraries(TestBusApplication HydrolibBusApplication HydrolibLoggerMock GTest::gtest GTest::gtest_main -pthread)
     gtest_discover_tests(TestBusApplication)
 endif()

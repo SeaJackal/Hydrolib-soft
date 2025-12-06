@@ -1,9 +1,8 @@
 #include "test_hydrolib_sp_serialize_env.hpp"
-#include "hydrolib_logger.hpp"
+#include "hydrolib_logger_mock.hpp"
 
-inline TestLogStream log_stream;
-inline LogDistributor distributor("[%s] [%l] %m\n", log_stream);
-inline Logger logger("Serializer", 0, distributor);
+using hydrolib::logger::mock_distributor;
+using hydrolib::logger::mock_logger;
 
 hydrolib_ReturnCode TestStream::Read(void *buffer, uint32_t length,
                                      uint32_t shift) const
@@ -49,10 +48,10 @@ hydrolib_ReturnCode TestStream::Push(const void *data, uint32_t length)
 void TestStream::WriteByte(uint8_t data) { queue.push_back(data); }
 
 TestHydrolibSerialProtocolSerialize::TestHydrolibSerialProtocolSerialize()
-    : serializer(SERIALIZER_ADDRESS, stream, logger),
-      deserializer(DESERIALIZER_ADDRESS, stream, logger)
+    : serializer(SERIALIZER_ADDRESS, stream, mock_logger),
+      deserializer(DESERIALIZER_ADDRESS, stream, mock_logger)
 {
-    distributor.SetAllFilters(0, LogLevel::DEBUG);
+    mock_distributor.SetAllFilters(0, LogLevel::DEBUG);
     for (int i = 0; i < PUBLIC_MEMORY_LENGTH; i++)
     {
         test_data[i] = i;

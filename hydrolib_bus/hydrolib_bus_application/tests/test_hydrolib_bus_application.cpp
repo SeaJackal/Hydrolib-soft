@@ -1,10 +1,6 @@
 #include "test_hydrolib_bus_application.hpp"
 #include <gtest/gtest.h>
 
-TestLogStream log_stream;
-hydrolib::logger::LogDistributor distributor("[%s] [%l] %m\n", log_stream);
-hydrolib::logger::Logger logger("Application", 0, distributor);
-
 int write([[maybe_unused]] TestLogStream &stream, const void *dest,
           unsigned length)
 {
@@ -35,8 +31,11 @@ int write(TestStream &stream, const void *dest, unsigned length)
 }
 
 TestHydrolibBusApplication::TestHydrolibBusApplication()
-    : master(stream, logger), slave(stream, memory, logger)
+    : master(stream, hydrolib::logger::mock_logger),
+      slave(stream, memory, hydrolib::logger::mock_logger)
 {
+    hydrolib::logger::mock_distributor.SetAllFilters(
+        0, hydrolib::logger::LogLevel::DEBUG);
     for (unsigned i = 0; i < TestPublicMemory::kPublicMemoryLength; i++)
     {
         test_data[i] = i;

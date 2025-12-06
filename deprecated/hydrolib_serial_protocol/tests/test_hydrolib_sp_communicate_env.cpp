@@ -2,9 +2,7 @@
 
 using namespace hydrolib::serial_protocol;
 
-inline TestLogStream log_stream;
-inline LogDistributor distributor("[%s] [%l] %m\n", log_stream);
-inline Logger logger("Serializer", 0, distributor);
+using hydrolib::logger::mock_logger;
 
 hydrolib_ReturnCode TestTranseiver::Read(void *buffer, uint32_t length,
                                          uint32_t shift) const

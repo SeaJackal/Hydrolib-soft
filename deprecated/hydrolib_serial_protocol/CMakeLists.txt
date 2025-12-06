@@ -34,6 +34,6 @@ if(BUILD_TESTS)
     target_compile_options(TestSerialProtocol PRIVATE -Wall -Wextra -Wpedantic -Wc++20-compat -Wno-format-security
         -Woverloaded-virtual -Wsuggest-override -fsanitize=address -fsanitize=undefined)
     target_link_options(TestSerialProtocol PRIVATE -fsanitize=address -fsanitize=undefined)
-    target_link_libraries(TestSerialProtocol HydrolibSerialProtocol GTest::gtest GTest::gtest_main -pthread)
+    target_link_libraries(TestSerialProtocol HydrolibSerialProtocol HydrolibLoggerMock GTest::gtest GTest::gtest_main -pthread)
     gtest_discover_tests(TestSerialProtocol)
 endif()
