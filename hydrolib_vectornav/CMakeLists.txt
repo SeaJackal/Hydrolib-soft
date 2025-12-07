@@ -7,7 +7,7 @@ add_library(HydrolibVectorNAV INTERFACE)
 
 target_include_directories(HydrolibVectorNAV INTERFACE include)
 
-target_link_libraries(HydrolibVectorNAV INTERFACE HydrolibLogger INTERFACE HydrolibIMU INTERFACE HydrolibReturnCodes)
+target_link_libraries(HydrolibVectorNAV INTERFACE HydrolibLogger INTERFACE HydrolibIMU INTERFACE HydrolibReturnCodes INTERFACE HydrolibStreams)
 
 include(CTest)
 

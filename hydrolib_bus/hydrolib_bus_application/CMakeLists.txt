@@ -3,7 +3,7 @@ add_library(HydrolibBusApplication INTERFACE)
 target_include_directories(HydrolibBusApplication INTERFACE include)
 
 target_link_libraries(HydrolibBusApplication INTERFACE HydrolibConcepts
-    INTERFACE HydrolibLogger INTERFACE HydrolibReturnCodes)
+    INTERFACE HydrolibLogger INTERFACE HydrolibReturnCodes INTERFACE HydrolibStreams)
 
 include(CTest)
 

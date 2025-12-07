@@ -6,7 +6,7 @@ add_library(HydrolibStrings INTERFACE)
 target_include_directories(HydrolibStrings INTERFACE include)
 
 target_link_libraries(HydrolibStrings INTERFACE HydrolibReturnCodes INTERFACE HydrolibConcepts
-    INTERFACE HydrolibMath)
+    INTERFACE HydrolibMath INTERFACE HydrolibStreams)
 
 if(BUILD_TESTS)
     include(CTest)

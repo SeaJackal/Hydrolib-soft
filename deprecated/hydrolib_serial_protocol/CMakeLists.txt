@@ -3,7 +3,7 @@ add_library(HydrolibSerialProtocol INTERFACE)
 target_include_directories(HydrolibSerialProtocol INTERFACE include)
 
 target_link_libraries(HydrolibSerialProtocol INTERFACE HydrolibCommon INTERFACE HydrolibConcepts
-    INTERFACE HydrolibLogger)
+    INTERFACE HydrolibLogger INTERFACE HydrolibStreams)
 
 include(CTest)
 

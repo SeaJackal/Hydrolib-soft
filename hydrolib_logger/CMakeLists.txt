@@ -6,7 +6,7 @@ if(LOGGER_TYPE STREQUAL "hydrolib")
     add_library(${LIBRARY_NAME} INTERFACE)
     target_include_directories(${LIBRARY_NAME} INTERFACE common/include)
     target_include_directories(${LIBRARY_NAME} INTERFACE specific/hydrolib)
-    target_link_libraries(${LIBRARY_NAME} INTERFACE HydrolibReturnCodes INTERFACE HydrolibStrings)
+    target_link_libraries(${LIBRARY_NAME} INTERFACE HydrolibReturnCodes INTERFACE HydrolibStrings INTERFACE HydrolibStreams)
 
     if(BUILD_TESTS)
         include(CTest)
