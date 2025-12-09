@@ -1,81 +1,68 @@
 #include "test_hydrolib_bus_datalink.hpp"
 
-int read(TestStream &stream, void *dest, unsigned length)
-{
-    uint8_t *byte_buffer = reinterpret_cast<uint8_t *>(dest);
-    length = length > stream.queue_.size() ? stream.queue_.size() : length;
-    for (uint32_t i = 0; i < length; i++)
-    {
-        byte_buffer[i] = stream.queue_.front();
-        stream.queue_.pop_front();
-    }
-    return length;
-}
-
-int write(TestStream &stream, const void *dest, unsigned length)
-{
-    for (uint32_t i = 0; i < length; i++)
-    {
-        stream.queue_.push_back(reinterpret_cast<const uint8_t *>(dest)[i]);
-    }
-    return length;
-}
-
-void TestStream::WriteByte(unsigned byte_index, unsigned byte)
-{
-    queue_[byte_index] = byte;
-    return;
-}
-
-unsigned TestStream::ReadByte(unsigned byte_index)
-{
-    return queue_[byte_index];
-}
-
-int TestStream::GetQueueSize() { return queue_.size(); }
-
 TestHydrolibBusDatalink::TestHydrolibBusDatalink()
     : sender_manager(SERIALIZER_ADDRESS, stream, hydrolib::logger::mock_logger),
       receiver_manager(DESERIALIZER_ADDRESS, stream,
-                       hydrolib::logger::mock_logger)
+                       hydrolib::logger::mock_logger),
+      tx_stream(sender_manager, DESERIALIZER_ADDRESS),
+      rx_stream(receiver_manager, SERIALIZER_ADDRESS)
 {
     hydrolib::logger::mock_distributor.SetAllFilters(
         0, hydrolib::logger::LogLevel::DEBUG);
-    for (int i = 0; i < PUBLIC_MEMORY_LENGTH; i++)
+    for (int i = 0; i < kTestDataLength; i++)
     {
-        // test_data[i] = (hydrolib::bus::datalink::kMagicByte + 14*i) % 0xFF;
-        // test_data[i] = i;
-        // test_data[i] = 0xFA + i - 15;
         if (i % 3 == 0)
         {
             test_data[i] = hydrolib::bus::datalink::kMagicByte;
         }
         else
         {
-            // test_data[i] = (i * i + 10 - i) % 255;
             test_data[i] = i;
         }
     }
 }
 
+INSTANTIATE_TEST_CASE_P(
+    Test, TestHydrolibBusDatalinkParametrized,
+    ::testing::Values(0, sizeof(hydrolib::bus::datalink::MessageHeader),
+                      sizeof(hydrolib::bus::datalink::MessageHeader) + 2,
+                      sizeof(hydrolib::bus::datalink::MessageHeader) + 5,
+                      sizeof(hydrolib::bus::datalink::MessageHeader) +
+                          TestHydrolibBusDatalink::kTestDataLength - 1),
+    [](const testing::TestParamInfo<
+        TestHydrolibBusDatalinkParametrized::ParamType> &info)
+    {
+        if (info.param == 0)
+        {
+            return std::string("MagicByte");
+        }
+        else if (static_cast<unsigned>(info.param) >
+                 sizeof(hydrolib::bus::datalink::MessageHeader))
+        {
+            return "Data_" +
+                   std::to_string(
+                       info.param -
+                       sizeof(hydrolib::bus::datalink::MessageHeader));
+        }
+        else
+        {
+            return std::string("MessageHeader");
+        }
+    });
+
 TEST_F(TestHydrolibBusDatalink, ExchangeTest)
 {
-    hydrolib::bus::datalink::Stream tx_stream(sender_manager,
-                                              DESERIALIZER_ADDRESS);
-    hydrolib::bus::datalink::Stream rx_stream(receiver_manager,
-                                              SERIALIZER_ADDRESS);
-
     for (unsigned j = 0; j < 500; j++)
     {
-        int written_bytes = tx_stream.Write(test_data, PUBLIC_MEMORY_LENGTH);
-        EXPECT_EQ(written_bytes, PUBLIC_MEMORY_LENGTH);
+        int written_bytes = write(tx_stream, test_data, kTestDataLength);
+        EXPECT_EQ(written_bytes, kTestDataLength);
 
         receiver_manager.Process();
 
-        uint8_t buffer[PUBLIC_MEMORY_LENGTH];
-        unsigned length = rx_stream.Read(buffer, PUBLIC_MEMORY_LENGTH);
+        uint8_t buffer[kTestDataLength];
+        unsigned length = rx_stream.Read(buffer, kTestDataLength);
 
-        EXPECT_EQ(length, PUBLIC_MEMORY_LENGTH);
+        EXPECT_EQ(length, kTestDataLength);
 
         for (unsigned i = 0; i < length; i++)
         {
@@ -84,262 +71,37 @@ TEST_F(TestHydrolibBusDatalink, ExchangeTest)
     }
 }
 
-TEST_F(TestHydrolibBusDatalink, ChangeOneByteTest)
+TEST_P(TestHydrolibBusDatalinkParametrized, ChangeOneByteTest)
 {
-    int lost_bytes = 0;
+    int corrupted_byte_index = GetParam();
 
-    for (int j = 0; j < 20; j++)
+    write(tx_stream, test_data, kTestDataLength);
+
+    stream[corrupted_byte_index]++;
+    int lost_bytes = static_cast<int>(stream.GetSize());
+
+    receiver_manager.Process();
+
+    uint8_t buffer[kTestDataLength];
+
+    unsigned corrupted_length = read(rx_stream, buffer, kTestDataLength);
+    unsigned lost_bytes_after_corrupted_message =
+        receiver_manager.GetLostBytes();
+
+    EXPECT_EQ(corrupted_length, 0);
+    EXPECT_EQ(lost_bytes_after_corrupted_message, lost_bytes);
+
+    write(tx_stream, test_data, kTestDataLength);
+    receiver_manager.Process();
+
+    unsigned valid_length = read(rx_stream, buffer, kTestDataLength);
+    unsigned lost_bytes_after_valid_message =
+        receiver_manager.GetLostBytes() - lost_bytes_after_corrupted_message;
+
+    EXPECT_EQ(valid_length, kTestDataLength);
+    for (unsigned i = 0; i < valid_length; i++)
     {
-        write(tx_stream, test_data, PUBLIC_MEMORY_LENGTH);
-
-        if (j % 10 == 1)
-        {
-            stream.WriteByte(sizeof(hydrolib::bus::datalink::MessageHeader) +
-                                 j % PUBLIC_MEMORY_LENGTH +
-                                 hydrolib::bus::datalink::kCRCLength,
-                             (hydrolib::bus::datalink::kMagicByte + j) % 0xFF);
-            lost_bytes += stream.GetQueueSize();
-        }
-
-        uint8_t buffer[PUBLIC_MEMORY_LENGTH];
-
-        unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
-
-        if (j % 10 == 1)
-        {
-            EXPECT_EQ(length, 0);
-        }
-        else
-        {
-            EXPECT_EQ(length, PUBLIC_MEMORY_LENGTH);
-
-            for (unsigned i = 0; i < length; i++)
-            {
-                EXPECT_EQ(buffer[i], test_data[i]);
-            }
-        }
+        EXPECT_EQ(buffer[i], test_data[i]);
     }
-
-    EXPECT_EQ(deserializer.GetLostBytes(), lost_bytes);
-
-    uint8_t buffer[PUBLIC_MEMORY_LENGTH];
-
-    unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
-
-    EXPECT_EQ(length, 0);
+    EXPECT_EQ(lost_bytes_after_valid_message, 0);
 }
-
-TEST_F(TestHydrolibBusDatalink, ChangeMagicBytesTest)
-{
-
-    for (int j = 0; j < 20; j++)
-    {
-        write(tx_stream, test_data, PUBLIC_MEMORY_LENGTH);
-
-        if (j % 10 == 1)
-        {
-            stream.WriteByte(0, j % (hydrolib::bus::datalink::kMagicByte - 1));
-        }
-
-        uint8_t buffer[PUBLIC_MEMORY_LENGTH];
-
-        unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
-
-        if (j % 10 == 1)
-        {
-            EXPECT_EQ(length, 0);
-        }
-        else
-        {
-            EXPECT_EQ(length, PUBLIC_MEMORY_LENGTH);
-
-            for (unsigned i = 0; i < length; i++)
-            {
-                EXPECT_EQ(buffer[i], test_data[i]);
-            }
-        }
-    }
-
-    EXPECT_EQ(deserializer.GetLostBytes(), 0);
-
-    uint8_t buffer[PUBLIC_MEMORY_LENGTH];
-
-    unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
-
-    EXPECT_EQ(length, 0);
-}
-
-TEST_F(TestHydrolibBusDatalink, ChangeDestAddressByteTest)
-{
-
-    for (int j = 0; j < 20; j++)
-    {
-        write(tx_stream, test_data, PUBLIC_MEMORY_LENGTH);
-
-        if (j % 10 == 1)
-        {
-            uint8_t change_dest_adress = stream.ReadByte(1);
-            stream.WriteByte(1,change_dest_adress + j);
-            //lost_bytes += stream.GetQueueSize();
-        }
-
-        uint8_t buffer[PUBLIC_MEMORY_LENGTH];
-
-        unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
-
-        if (j % 10 == 1)
-        {
-            EXPECT_EQ(length, 0);
-        }
-        else
-        {
-            EXPECT_EQ(length, PUBLIC_MEMORY_LENGTH);
-
-            for (unsigned i = 0; i < length; i++)
-            {
-                EXPECT_EQ(buffer[i], test_data[i]);
-            }
-        }
-    }
-
-    EXPECT_EQ(deserializer.GetLostBytes(), 0);
-
-    uint8_t buffer[PUBLIC_MEMORY_LENGTH];
-
-    unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
-
-    EXPECT_EQ(length, 0);
-}
-
-TEST_F(TestHydrolibBusDatalink, ChangeSrcAddressByteTest)
-{
-    int lost_bytes = 0;
-
-    for (int j = 0; j < 20; j++)
-    {
-        write(tx_stream, test_data, PUBLIC_MEMORY_LENGTH);
-
-        if (j % 10 == 1)
-        {
-            uint8_t change_src_adress = stream.ReadByte(2);
-            stream.WriteByte(2,change_src_adress + j);
-            lost_bytes += stream.GetQueueSize();
-        }
-
-        uint8_t buffer[PUBLIC_MEMORY_LENGTH];
-
-        unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
-
-        if (j % 10 == 1)
-        {
-            EXPECT_EQ(length, 0);
-        }
-        else
-        {
-            EXPECT_EQ(length, PUBLIC_MEMORY_LENGTH);
-
-            for (unsigned i = 0; i < length; i++)
-            {
-                EXPECT_EQ(buffer[i], test_data[i]);
-            }
-        }
-    }
-
-    EXPECT_EQ(deserializer.GetLostBytes(), lost_bytes);
-
-    uint8_t buffer[PUBLIC_MEMORY_LENGTH];
-
-    unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
-
-    EXPECT_EQ(length, 0);
-}
-TEST_F(TestHydrolibBusDatalink, ChangeLenghtTest)
-{
-
-    for (int j = 0; j < 20; j++)
-    {
-        write(tx_stream, test_data, PUBLIC_MEMORY_LENGTH);
-
-        if (j % 10 == 1)
-        {
-            uint8_t change_lenght_adress = stream.ReadByte(3);
-            stream.WriteByte(3,change_lenght_adress + j);
-        }
-
-        uint8_t buffer[PUBLIC_MEMORY_LENGTH];
-
-        unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
-
-        if (j % 10 == 1)
-        {
-            EXPECT_EQ(length, 0);
-        }
-        else
-        {
-            EXPECT_EQ(length, PUBLIC_MEMORY_LENGTH);
-
-            for (unsigned i = 0; i < length; i++)
-            {
-                EXPECT_EQ(buffer[i], test_data[i]);
-            }
-        }
-    }
-
-    EXPECT_EQ(deserializer.GetLostBytes(), 0);
-
-    uint8_t buffer[PUBLIC_MEMORY_LENGTH];
-
-    unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
-
-    EXPECT_EQ(length, 0);
-}
-
-TEST_F(TestHydrolibBusDatalink, ChangeCobsLenghtByteTest)
-{
-    int lost_bytes = 0;
-
-    for (int j = 0; j < 20; j++)
-    {
-        write(tx_stream, test_data, PUBLIC_MEMORY_LENGTH);
-
-        if (j % 10 == 1)
-        {
-            uint8_t change_cobs_lenght = stream.ReadByte(4);
-            stream.WriteByte(4,change_cobs_lenght + j);
-            lost_bytes += stream.GetQueueSize();
-        }
-
-        uint8_t buffer[PUBLIC_MEMORY_LENGTH];
-
-        unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
-
-        if (j % 10 == 1)
-        {
-            EXPECT_EQ(length, 0);
-        }
-        else
-        {
-            EXPECT_EQ(length, PUBLIC_MEMORY_LENGTH);
-
-            for (unsigned i = 0; i < length; i++)
-            {
-                EXPECT_EQ(buffer[i], test_data[i]);
-            }
-        }
-    }
-
-    EXPECT_EQ(deserializer.GetLostBytes(), lost_bytes);
-
-    uint8_t buffer[PUBLIC_MEMORY_LENGTH];
-
-    unsigned length = read(rx_stream, buffer, PUBLIC_MEMORY_LENGTH);
-
-    EXPECT_EQ(length, 0);
-}
-
-// INSTANTIATE_TEST_CASE_P(
-//     Test, TestHydrolibSerialProtocolSerializeParametrized,
-//     ::testing::Combine(::testing::Range<uint16_t>(0, PUBLIC_MEMORY_LENGTH),
-//                        ::testing::Range<uint16_t>(1,
-//                                                   PUBLIC_MEMORY_LENGTH +
-//                                                   1)));
