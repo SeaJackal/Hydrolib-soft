@@ -13,7 +13,7 @@
 class TestHydrolibBusDatalink : public ::testing::Test
 {
 public:
-    static constexpr int kTestDataLength = 10;
+    static constexpr int kTestDataLength = 20;
 
 protected:
     TestHydrolibBusDatalink();

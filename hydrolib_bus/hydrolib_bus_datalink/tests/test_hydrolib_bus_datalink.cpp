@@ -52,21 +52,32 @@ INSTANTIATE_TEST_CASE_P(
 
 TEST_F(TestHydrolibBusDatalink, ExchangeTest)
 {
-    for (unsigned j = 0; j < 500; j++)
+    struct TestCase
     {
-        int written_bytes = write(tx_stream, test_data, kTestDataLength);
-        EXPECT_EQ(written_bytes, kTestDataLength);
+        int length;
+        int offset;
+    };
+    TestCase test_cases[] = {{5, 0},  {10, 1}, {2, 7},  {20, 0},
+                             {3, 2},  {4, 3},  {5, 4},  {17, 1},
+                             {15, 2}, {14, 1}, {13, 0}, {1, 3}};
+    for (unsigned j = 0; j < sizeof(test_cases) / sizeof(test_cases[0]); j++)
+    {
+        ASSERT_LE(test_cases[j].length + test_cases[j].offset, kTestDataLength);
+
+        int written_bytes = write(tx_stream, test_data + test_cases[j].offset,
+                                  test_cases[j].length);
+        EXPECT_EQ(written_bytes, test_cases[j].length);
 
         receiver_manager.Process();
 
         uint8_t buffer[kTestDataLength];
-        unsigned length = rx_stream.Read(buffer, kTestDataLength);
+        unsigned length = rx_stream.Read(buffer, test_cases[j].length);
 
-        EXPECT_EQ(length, kTestDataLength);
+        EXPECT_EQ(length, test_cases[j].length);
 
         for (unsigned i = 0; i < length; i++)
         {
-            EXPECT_EQ(buffer[i], test_data[i]);
+            EXPECT_EQ(buffer[i], test_data[i + test_cases[j].offset]);
         }
     }
 }
