@@ -5,19 +5,28 @@ namespace hydrolib::streams::mock
 
 MockByteStream::MockByteStream() = default;
 
-std::size_t MockByteStream::GetSize() const noexcept
-{
-    return buffer_.size();
-}
+std::size_t MockByteStream::GetSize() const noexcept { return buffer_.size(); }
 
-bool MockByteStream::IsEmpty() const noexcept
-{
-    return buffer_.empty();
-}
+bool MockByteStream::IsEmpty() const noexcept { return buffer_.empty(); }
 
 void MockByteStream::Clear() noexcept
 {
     buffer_.clear();
+    available_bytes_ = 0;
+}
+
+void MockByteStream::AddAvailableBytes(int available_bytes)
+{
+    available_bytes_ += available_bytes;
+    if (available_bytes_ > static_cast<int>(buffer_.size()))
+    {
+        available_bytes_ = static_cast<int>(buffer_.size());
+    }
+}
+
+void MockByteStream::MakeAllbytesAvailable()
+{
+    available_bytes_ = static_cast<int>(buffer_.size());
 }
 
 uint8_t &MockByteStream::operator[](std::size_t index)
@@ -53,17 +62,17 @@ int read(MockByteStream &stream, void *dest, unsigned length)
         return -1;
 
     auto *bytes = static_cast<uint8_t *>(dest);
-    const unsigned available = static_cast<unsigned>(stream.buffer_.size());
-    const unsigned to_read = (length < available) ? length : available;
+    const int to_read = (static_cast<int>(length) < stream.available_bytes_)
+                            ? length
+                            : stream.available_bytes_;
 
-    for (unsigned i = 0; i < to_read; ++i)
+    for (int i = 0; i < to_read; ++i)
     {
         bytes[i] = stream.buffer_.front();
         stream.buffer_.pop_front();
+        stream.available_bytes_--;
     }
-    return static_cast<int>(to_read);
+    return to_read;
 }
 
 } // namespace hydrolib::streams::mock
-
-

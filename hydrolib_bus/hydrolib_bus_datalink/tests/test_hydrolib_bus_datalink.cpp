@@ -50,6 +50,17 @@ INSTANTIATE_TEST_CASE_P(
         }
     });
 
+TEST_F(TestHydrolibBusDatalink, MessageLengthTest)
+{
+
+    int written_bytes = write(tx_stream, test_data, kTestDataLength);
+
+    EXPECT_EQ(written_bytes, kTestDataLength);
+    EXPECT_EQ(stream.GetSize(),
+              kTestDataLength + sizeof(hydrolib::bus::datalink::MessageHeader) +
+                  hydrolib::bus::datalink::kCRCLength);
+}
+
 TEST_F(TestHydrolibBusDatalink, ExchangeTest)
 {
     struct TestCase
@@ -66,12 +77,13 @@ TEST_F(TestHydrolibBusDatalink, ExchangeTest)
 
         int written_bytes = write(tx_stream, test_data + test_cases[j].offset,
                                   test_cases[j].length);
+        stream.MakeAllbytesAvailable();
         EXPECT_EQ(written_bytes, test_cases[j].length);
 
         receiver_manager.Process();
 
         uint8_t buffer[kTestDataLength];
-        unsigned length = rx_stream.Read(buffer, test_cases[j].length);
+        unsigned length = read(rx_stream, buffer, test_cases[j].length);
 
         EXPECT_EQ(length, test_cases[j].length);
 
@@ -87,6 +99,7 @@ TEST_P(TestHydrolibBusDatalinkParametrized, ChangeOneByteTest)
     int corrupted_byte_index = GetParam();
 
     write(tx_stream, test_data, kTestDataLength);
+    stream.MakeAllbytesAvailable();
 
     stream[corrupted_byte_index]++;
     int lost_bytes = static_cast<int>(stream.GetSize());
@@ -103,6 +116,7 @@ TEST_P(TestHydrolibBusDatalinkParametrized, ChangeOneByteTest)
     EXPECT_EQ(lost_bytes_after_corrupted_message, lost_bytes);
 
     write(tx_stream, test_data, kTestDataLength);
+    stream.MakeAllbytesAvailable();
     receiver_manager.Process();
 
     unsigned valid_length = read(rx_stream, buffer, kTestDataLength);
@@ -115,4 +129,29 @@ TEST_P(TestHydrolibBusDatalinkParametrized, ChangeOneByteTest)
         EXPECT_EQ(buffer[i], test_data[i]);
     }
     EXPECT_EQ(lost_bytes_after_valid_message, 0);
+}
+
+TEST_F(TestHydrolibBusDatalink, ProgressiveTransmissionTest)
+{
+    int written_bytes = write(tx_stream, test_data, kTestDataLength);
+    EXPECT_EQ(written_bytes, kTestDataLength);
+
+    uint8_t buffer[kTestDataLength];
+    int bytes_to_read = static_cast<int>(stream.GetSize());
+    for (int i = 0; i < bytes_to_read; i++)
+    {
+        receiver_manager.Process();
+        unsigned length = read(rx_stream, buffer, kTestDataLength);
+        EXPECT_EQ(length, 0);
+        stream.AddAvailableBytes(1);
+    }
+
+    receiver_manager.Process();
+    unsigned length = read(rx_stream, buffer, kTestDataLength);
+    EXPECT_EQ(length, kTestDataLength);
+
+    for (unsigned i = 0; i < length; i++)
+    {
+        EXPECT_EQ(buffer[i], test_data[i]);
+    }
 }

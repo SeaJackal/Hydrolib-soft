@@ -25,8 +25,13 @@ public:
     uint8_t &operator[](std::size_t index);
     const uint8_t &operator[](std::size_t index) const;
 
+    void AddAvailableBytes(int available_bytes);
+    void MakeAllbytesAvailable();
+
 private:
     std::deque<uint8_t> buffer_;
+
+    int available_bytes_ = 0;
 };
 
 int write(MockByteStream &stream, const void *source, unsigned length);
