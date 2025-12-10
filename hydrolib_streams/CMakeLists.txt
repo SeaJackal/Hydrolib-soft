@@ -7,4 +7,8 @@ add_library(HydrolibStreams INTERFACE)
 
 target_include_directories(HydrolibStreams INTERFACE include)
 
+if(BUILD_TESTS)
+    add_subdirectory(mock)
+endif()
+
 include(CTest)

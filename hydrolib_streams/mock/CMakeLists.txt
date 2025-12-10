@@ -1,6 +1,6 @@
 set(TARGET_NAME HydrolibStreamMock)
 
-add_library(${TARGET_NAME} STATIC src/hydrolib_stream_mock.cpp)
+add_library(${TARGET_NAME} STATIC src/mock_stream.cpp)
 
 target_include_directories(${TARGET_NAME} PUBLIC include)
 
