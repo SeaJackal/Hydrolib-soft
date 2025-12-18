@@ -11,6 +11,7 @@ function(hydrolib_add_tests_for_target TESTED_TARGET)
         set(HYDROLIB_TEST_TARGET ${TEST_EXECUTABLE_NAME} PARENT_SCOPE)
 
         add_executable(${TEST_EXECUTABLE_NAME} ${TESTS})
+        set_property(GLOBAL APPEND PROPERTY HYDROLIB_ALL_TEST_TARGETS ${TEST_EXECUTABLE_NAME})
         set_target_properties(${TEST_EXECUTABLE_NAME}
             PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Testing"
