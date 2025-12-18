@@ -9,7 +9,7 @@ TestHydrolibBusDatalink::TestHydrolibBusDatalink()
 {
     hydrolib::logger::mock_distributor.SetAllFilters(
         0, hydrolib::logger::LogLevel::DEBUG);
-    for (int i = 0; i < kTestDataLength; i++)
+    for (uint8_t i = 0; i < kTestDataLength; i++)
     {
         if (i % 3 == 0)
         {
@@ -53,9 +53,9 @@ INSTANTIATE_TEST_CASE_P(
 TEST_F(TestHydrolibBusDatalink, MessageLengthTest)
 {
 
-    int written_bytes = write(tx_stream, test_data, kTestDataLength);
+    int written_bytes = write(tx_stream, test_data, kTestMessageLength);
 
-    EXPECT_EQ(written_bytes, kTestDataLength);
+    EXPECT_EQ(written_bytes, kTestMessageLength);
     EXPECT_EQ(stream.GetSize(),
               kTestDataLength + sizeof(hydrolib::bus::datalink::MessageHeader) +
                   hydrolib::bus::datalink::kCRCLength);
@@ -98,7 +98,7 @@ TEST_P(TestHydrolibBusDatalinkParametrized, ChangeOneByteTest)
 {
     int corrupted_byte_index = GetParam();
 
-    write(tx_stream, test_data, kTestDataLength);
+    write(tx_stream, test_data, kTestMessageLength);
     stream.MakeAllbytesAvailable();
 
     stream[corrupted_byte_index]++;
@@ -108,22 +108,22 @@ TEST_P(TestHydrolibBusDatalinkParametrized, ChangeOneByteTest)
 
     uint8_t buffer[kTestDataLength];
 
-    unsigned corrupted_length = read(rx_stream, buffer, kTestDataLength);
+    unsigned corrupted_length = read(rx_stream, buffer, kTestMessageLength);
     unsigned lost_bytes_after_corrupted_message =
         receiver_manager.GetLostBytes();
 
     EXPECT_EQ(corrupted_length, 0);
     EXPECT_EQ(lost_bytes_after_corrupted_message, lost_bytes);
 
-    write(tx_stream, test_data, kTestDataLength);
+    write(tx_stream, test_data, kTestMessageLength);
     stream.MakeAllbytesAvailable();
     receiver_manager.Process();
 
-    unsigned valid_length = read(rx_stream, buffer, kTestDataLength);
+    unsigned valid_length = read(rx_stream, buffer, kTestMessageLength);
     unsigned lost_bytes_after_valid_message =
         receiver_manager.GetLostBytes() - lost_bytes_after_corrupted_message;
 
-    EXPECT_EQ(valid_length, kTestDataLength);
+    EXPECT_EQ(valid_length, kTestMessageLength);
     for (unsigned i = 0; i < valid_length; i++)
     {
         EXPECT_EQ(buffer[i], test_data[i]);
@@ -133,22 +133,22 @@ TEST_P(TestHydrolibBusDatalinkParametrized, ChangeOneByteTest)
 
 TEST_F(TestHydrolibBusDatalink, ProgressiveTransmissionTest)
 {
-    int written_bytes = write(tx_stream, test_data, kTestDataLength);
-    EXPECT_EQ(written_bytes, kTestDataLength);
+    int written_bytes = write(tx_stream, test_data, kTestMessageLength);
+    EXPECT_EQ(written_bytes, kTestMessageLength);
 
-    uint8_t buffer[kTestDataLength];
+    uint8_t buffer[kTestMessageLength];
     int bytes_to_read = static_cast<int>(stream.GetSize());
     for (int i = 0; i < bytes_to_read; i++)
     {
         receiver_manager.Process();
-        unsigned length = read(rx_stream, buffer, kTestDataLength);
+        unsigned length = read(rx_stream, buffer, kTestMessageLength);
         EXPECT_EQ(length, 0);
         stream.AddAvailableBytes(1);
     }
 
     receiver_manager.Process();
-    unsigned length = read(rx_stream, buffer, kTestDataLength);
-    EXPECT_EQ(length, kTestDataLength);
+    unsigned length = read(rx_stream, buffer, kTestMessageLength);
+    EXPECT_EQ(length, kTestMessageLength);
 
     for (unsigned i = 0; i < length; i++)
     {
