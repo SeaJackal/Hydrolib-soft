@@ -8,23 +8,6 @@ target_include_directories(HydrolibStrings INTERFACE include)
 target_link_libraries(HydrolibStrings INTERFACE HydrolibReturnCodes INTERFACE HydrolibConcepts
     INTERFACE HydrolibMath INTERFACE HydrolibStreams)
 
-if(BUILD_TESTS)
-    include(CTest)
-
-    find_package(GTest REQUIRED)
-    include(GoogleTest)
-
-    file(GLOB TESTS tests/*.cpp)
-    add_executable(TestStrings ${TESTS})
-    set_target_properties(TestStrings
-        PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Testing"
-    )
-    target_compile_features(TestStrings PUBLIC cxx_std_20)
-    target_compile_options(TestStrings PRIVATE -save-temps=obj)
-    target_compile_options(TestStrings PRIVATE -Wall -Wextra -Wpedantic -Wc++20-compat -Wno-format-security
-        -Woverloaded-virtual -Wsuggest-override -fno-exceptions -fno-rtti -fsanitize=address -fsanitize=undefined)
-    target_link_options(TestStrings PRIVATE -fsanitize=address -fsanitize=undefined)
-    target_link_libraries(TestStrings HydrolibStrings GTest::gtest GTest::gtest_main -pthread)
-    gtest_discover_tests(TestStrings)
-endif()
+include(${CMAKE_SOURCE_DIR}/cmake/HydrolibGTest.cmake)
+hydrolib_add_tests_for_target(HydrolibStrings)
+target_compile_options(${HYDROLIB_TEST_TARGET} PRIVATE -save-temps=obj )

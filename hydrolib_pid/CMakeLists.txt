@@ -9,22 +9,5 @@ add_library(HydrolibPID INTERFACE)
 
 target_include_directories(HydrolibPID INTERFACE include)
 
-include(CTest)
-
-if(BUILD_TESTING)
-    find_package(GTest REQUIRED)
-    include(GoogleTest)
-
-    file(GLOB TESTS tests/*.cpp)
-    add_executable(TestPID ${TESTS})
-    set_target_properties(TestPID
-        PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Testing"
-    )
-    target_compile_features(TestPID PUBLIC cxx_std_20)
-    target_compile_options(TestPID PRIVATE -Wall -Wextra -Wpedantic -Wc++20-compat -Wno-format-security
-        -Woverloaded-virtual -Wsuggest-override -fsanitize=address -fsanitize=undefined)
-    target_link_options(TestPID PRIVATE -fsanitize=address -fsanitize=undefined)
-    target_link_libraries(TestPID HydrolibPID GTest::gtest GTest::gtest_main -pthread)
-    gtest_discover_tests(TestPID)
-endif()
+include(${CMAKE_SOURCE_DIR}/cmake/HydrolibGTest.cmake)
+hydrolib_add_tests_for_target(HydrolibPID)
