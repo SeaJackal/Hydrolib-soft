@@ -20,6 +20,7 @@ RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add - \
     doxygen \
     clang-format-19 \
     clangd-19 \
+    lcov \
     && apt clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-19 100 \
