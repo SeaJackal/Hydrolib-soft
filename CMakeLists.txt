@@ -34,7 +34,7 @@ add_subdirectory(hydrolib_strings)
 add_subdirectory(hydrolib_thrust_generator)
 add_subdirectory(hydrolib_vectornav)
 
-if(BUILD_TESTS)
+if(BUILD_TESTS AND COVERAGE)
 	find_program(LCOV_EXECUTABLE lcov REQUIRED)
 	find_program(GENHTML_EXECUTABLE genhtml REQUIRED)
 

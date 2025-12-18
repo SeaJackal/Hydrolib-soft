@@ -10,6 +10,6 @@ jobs:
           submodules: true
       - run: sudo apt-get install libgtest-dev
       - run: sudo apt-get install lcov
-      - run: cmake --preset Debug
+      - run: cmake --preset DebugWithoutCoverage
       - run: cmake --build ./build
       - run: ctest --test-dir ./build --rerun-failed --output-on-failure
