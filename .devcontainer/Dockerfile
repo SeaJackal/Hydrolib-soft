@@ -20,11 +20,13 @@ RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add - \
     doxygen \
     clang-format-19 \
     clangd-19 \
+    clang-tidy-19 \
     lcov \
     && apt clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-19 100 \
     && update-alternatives --install /usr/bin/clangd clangd /usr/bin/clangd-19 100 \
+    && update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-19 100 \
     && wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-${CMAKE_ARCH}.tar.gz \
     && tar -xzf cmake-${CMAKE_VERSION}-${CMAKE_ARCH}.tar.gz \
     && cp -r cmake-${CMAKE_VERSION}-${CMAKE_ARCH}/bin /usr/local/ \
