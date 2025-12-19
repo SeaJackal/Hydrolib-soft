@@ -5,6 +5,9 @@
 
 #include "hydrolib_echo.hpp"
 #include "hydrolib_cat.hpp"
+#include "hydrolib_setSpeed.hpp"
+#include "hydrolib_getSpeed.hpp"
+
 
 namespace hydrolib::shell
 {
@@ -23,6 +26,14 @@ public:
         else if (command == "cat")
         {
             return hydrolib::shell::Cat;
+        }
+        else if (command == "setspeed")
+        {
+            return hydrolib::shell::SetSpeed;
+        }
+        else if (command == "getspeed")
+        {
+            return hydrolib::shell::GetSpeed;
         }
         return std::nullopt;
     }
