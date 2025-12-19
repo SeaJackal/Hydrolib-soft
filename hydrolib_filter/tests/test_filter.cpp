@@ -1,19 +1,17 @@
+#include <gtest/gtest.h>
+
 #include "hydrolib_fixed_point.hpp"
 #include "hydrolib_iir.hpp"
 
-#include <gtest/gtest.h>
-
-TEST(TestFilter, IIRTest)
-{
-    hydrolib::filter::IIR<double, 1.0, 100.0> filter;
-    for (int i = 0; i < 10000; i++)
-    {
-        double x_true = sin(i * 2 * 3.14 / 10000);
-        double x_noized = x_true + sin(i * 2 * 3.14 / 10);
-        double result = filter.Process(x_noized);
-        // std::cout << x_noized << " " << result << " " << x_true << std::endl;
-        EXPECT_NEAR(result, x_true, 0.1);
-    }
+TEST(TestFilter, IIRTest) {
+  hydrolib::filter::IIR<double, 1.0, 100.0> filter;
+  for (int i = 0; i < 10000; i++) {
+    double x_true = sin(i * 2 * 3.14 / 10000);
+    double x_noized = x_true + sin(i * 2 * 3.14 / 10);
+    double result = filter.Process(x_noized);
+    // std::cout << x_noized << " " << result << " " << x_true << std::endl;
+    EXPECT_NEAR(result, x_true, 0.1);
+  }
 }
 
 // TEST(TestFilter, IIRTestRealData)
@@ -125,10 +123,11 @@ TEST(TestFilter, IIRTest)
 //         0.31,  0.31,  0.31,  0.31,  0.31,   0.31,   0.31,   0.31,   0.31,
 //         0.31,  0.31,  0.31,  0.31,  0.31,   0.31,   0.31,   0.31,   0.31,
 //         0.31,  0.31,  0.31,  0.31,  0.31,   0.31,   0.31,   0.31,   0.31};
-//     hydrolib::filter::IIR<hydrolib::math::FixedPointBase, 10.0, 200.0> filter;
-//     for (hydrolib::math::FixedPointBase i:data)
+//     hydrolib::filter::IIR<hydrolib::math::FixedPointBase, 10.0, 200.0>
+//     filter; for (hydrolib::math::FixedPointBase i:data)
 //     {
 //         hydrolib::math::FixedPointBase result = filter.Process(i);
-//         std::cout << static_cast<double>(i) << " " << static_cast<double>(result) << " " << std::endl;
+//         std::cout << static_cast<double>(i) << " " <<
+//         static_cast<double>(result) << " " << std::endl;
 //     }
 // }
