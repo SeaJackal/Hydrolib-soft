@@ -8,7 +8,7 @@ if(LOGGER_TYPE STREQUAL "hydrolib")
     target_include_directories(${LIBRARY_NAME} INTERFACE specific/hydrolib)
     target_link_libraries(${LIBRARY_NAME} INTERFACE HydrolibReturnCodes INTERFACE HydrolibStrings INTERFACE HydrolibStreams)
 
-    include(${CMAKE_SOURCE_DIR}/cmake/HydrolibGTest.cmake)
+    include(${HYDROLIB_ROOT_DIR}/cmake/HydrolibGTest.cmake)
     hydrolib_add_tests_for_target(${LIBRARY_NAME})
     if(BUILD_TESTS)
         add_subdirectory(mock)

@@ -9,6 +9,8 @@ target_include_directories(HydrolibVectorNAV INTERFACE include)
 
 target_link_libraries(HydrolibVectorNAV INTERFACE HydrolibLogger INTERFACE HydrolibIMU INTERFACE HydrolibReturnCodes INTERFACE HydrolibStreams)
 
-include(${CMAKE_SOURCE_DIR}/cmake/HydrolibGTest.cmake)
+include(${HYDROLIB_ROOT_DIR}/cmake/HydrolibGTest.cmake)
 hydrolib_add_tests_for_target(HydrolibVectorNAV)
-target_link_libraries(${HYDROLIB_TEST_TARGET} HydrolibLogger HydrolibLoggerMock)
+if(BUILD_TESTS)
+    target_link_libraries(${HYDROLIB_TEST_TARGET} HydrolibLogger HydrolibLoggerMock)
+endif()

@@ -2,5 +2,5 @@ add_library(HydrolibThrustGenerator INTERFACE)
 
 target_include_directories(HydrolibThrustGenerator INTERFACE include)
 
-include(${CMAKE_SOURCE_DIR}/cmake/HydrolibGTest.cmake)
+include(${HYDROLIB_ROOT_DIR}/cmake/HydrolibGTest.cmake)
 hydrolib_add_tests_for_target(HydrolibThrustGenerator)
