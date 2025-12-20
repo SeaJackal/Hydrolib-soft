@@ -1,5 +1,9 @@
 #include "test_hydrolib_bus_datalink.hpp"
 
+#include <cstddef>
+
+#include "hydrolib_bus_datalink_message.hpp"
+
 TestHydrolibBusDatalink::TestHydrolibBusDatalink()
     : sender_manager(SERIALIZER_ADDRESS, stream, hydrolib::logger::mock_logger),
       receiver_manager(DESERIALIZER_ADDRESS, stream,
@@ -107,6 +111,54 @@ TEST_P(TestHydrolibBusDatalinkParametrized, ChangeOneByteTest) {
     EXPECT_EQ(buffer[i], test_data[i]);
   }
   EXPECT_EQ(lost_bytes_after_valid_message, 0);
+}
+
+TEST_F(TestHydrolibBusDatalink, ChangeLengthTest) {
+  constexpr uint8_t kTestByte = 0xAA;
+
+  write(tx_stream, &kTestByte, sizeof(kTestByte));
+  stream.MakeAllbytesAvailable();
+
+  stream[offsetof(hydrolib::bus::datalink::MessageHeader, length)] =
+      hydrolib::bus::datalink::kMaxMessageLength;
+  int small_message_length = static_cast<int>(stream.GetSize());
+  int lost_bytes = small_message_length;
+
+  receiver_manager.Process();
+
+  uint8_t buffer[kTestDataLength];
+
+  unsigned corrupted_length = read(rx_stream, buffer, kTestMessageLength);
+
+  EXPECT_EQ(corrupted_length, 0);
+
+  int remaining_bytes = hydrolib::bus::datalink::kMaxMessageLength -
+                        sizeof(kTestByte) - hydrolib::bus::datalink::kCRCLength;
+
+  while (remaining_bytes - small_message_length > 0) {
+    write(tx_stream, &kTestByte, sizeof(kTestByte));
+    stream.MakeAllbytesAvailable();
+
+    lost_bytes += small_message_length;
+    remaining_bytes -= small_message_length;
+
+    receiver_manager.Process();
+    corrupted_length = read(rx_stream, buffer, kTestMessageLength);
+    EXPECT_EQ(corrupted_length, 0);
+  }
+
+  write(tx_stream, test_data, kTestMessageLength);
+  stream.MakeAllbytesAvailable();
+  receiver_manager.Process();
+
+  unsigned valid_length = read(rx_stream, buffer, kTestMessageLength);
+  unsigned real_lost_bytes = receiver_manager.GetLostBytes();
+
+  EXPECT_EQ(valid_length, kTestMessageLength);
+  for (unsigned i = 0; i < valid_length; i++) {
+    EXPECT_EQ(buffer[i], test_data[i]);
+  }
+  EXPECT_EQ(real_lost_bytes, lost_bytes);
 }
 
 TEST_F(TestHydrolibBusDatalink, ProgressiveTransmissionTest) {
