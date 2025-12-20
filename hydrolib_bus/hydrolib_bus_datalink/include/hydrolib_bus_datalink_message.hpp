@@ -20,4 +20,9 @@ constexpr unsigned kMaxMessageLength = UINT8_MAX;
 constexpr unsigned kMaxDataLength =
     kMaxMessageLength - sizeof(MessageHeader) - kCRCLength;
 
+struct MessageBuffer {
+  MessageHeader header;
+  uint8_t data_and_crc[kMaxDataLength + kCRCLength]; //NOLINT
+} __attribute__((__packed__));
+
 }  // namespace hydrolib::bus::datalink
