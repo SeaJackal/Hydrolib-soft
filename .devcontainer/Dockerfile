@@ -32,3 +32,5 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cm
     && cp -r cmake-${CMAKE_VERSION}-${CMAKE_ARCH}/bin /usr/local/ \
     && cp -r cmake-${CMAKE_VERSION}-${CMAKE_ARCH}/share /usr/local/ \
     && rm -rf cmake-${CMAKE_VERSION}-${CMAKE_ARCH} cmake-${CMAKE_VERSION}-${CMAKE_ARCH}.tar.gz
+
+    

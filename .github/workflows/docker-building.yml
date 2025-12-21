@@ -1,0 +1,16 @@
+name: Building devcontainer image
+run-name: Building devcontainer image
+on:
+  push:
+    paths:
+      - '.devcontainer/Dockerfile'
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Build devcontainer image
+      - run: docker build -f .devcontainer/Dockerfile -t seajackal/hydrolib .
+      - run: docker push seajackal/hydrolib
