@@ -4,17 +4,13 @@ on: [push]
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
+    container:
+      image: seajackal/hydrolib:latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Build devcontainer image
-        run: docker build -f .devcontainer/Dockerfile -t hydrolib-ci:latest .
-      - name: Build and test inside container
+      - name: Configure and build
         run: |
-          docker run --rm \
-            -v "${{ github.workspace }}:/workspace" \
-            -w /workspace \
-            --user "$(id -u):$(id -g)" \
-            hydrolib-ci:latest \
-            bash -lc "cmake --preset Debug && cmake --build ./build"
+          cmake --preset Debug
+          cmake --build ./build
