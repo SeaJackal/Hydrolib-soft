@@ -3,7 +3,7 @@
 {
     "name": "Hydrolib",
     // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-    "image": "hub.docker.com/repository/docker/seajackal/hydrolib/general",
+    "image": "seajackal/hydrolib:latest",
     // "build": {
     //     "dockerfile": "Dockerfile",
     //     "args": {
