@@ -6,12 +6,12 @@ on:
       - master
     paths:
       - '.devcontainer/Dockerfile'
-  pull_request:
-    types: [closed]
-    branches:
-      - master
-    paths:
-      - '.devcontainer/Dockerfile'
+  # pull_request:
+  #   types: [closed]
+  #   branches:
+  #     - master
+  #   paths:
+  #     - '.devcontainer/Dockerfile'
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
