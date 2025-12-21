@@ -5,11 +5,16 @@ jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
-      - run: sudo apt-get install libgtest-dev
-      - run: sudo apt-get install lcov
-      - run: cmake --preset DebugWithoutCoverage
-      - run: cmake --build ./build
-      - run: ctest --test-dir ./build --rerun-failed --output-on-failure
+      - name: Build devcontainer image
+        run: docker build -f .devcontainer/Dockerfile -t hydrolib-ci:latest .
+      - name: Build and test inside container
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            --user "$(id -u):$(id -g)" \
+            hydrolib-ci:latest \
+            bash -lc "cmake --preset DebugWithoutCoverage && cmake --build ./build && ctest --test-dir ./build --rerun-failed --output-on-failure"
