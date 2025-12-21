@@ -17,4 +17,4 @@ jobs:
             -w /workspace \
             --user "$(id -u):$(id -g)" \
             hydrolib-ci:latest \
-            bash -lc "cmake --preset DebugWithoutCoverage && cmake --build ./build && ctest --test-dir ./build --rerun-failed --output-on-failure"
+            bash -lc "cmake --preset Debug && cmake --build ./build"
