@@ -11,6 +11,5 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Build devcontainer image
       - run: docker build -f .devcontainer/Dockerfile -t seajackal/hydrolib .
       - run: docker push seajackal/hydrolib
