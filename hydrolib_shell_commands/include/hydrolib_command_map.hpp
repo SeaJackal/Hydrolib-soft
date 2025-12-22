@@ -3,11 +3,9 @@
 #include <optional>
 #include <string_view>
 
-#include "hydrolib_echo.hpp"
 #include "hydrolib_cat.hpp"
-#include "hydrolib_setSpeed.hpp"
-#include "hydrolib_getSpeed.hpp"
-
+#include "hydrolib_echo.hpp"
+#include "hydrolib_thruster_commands.hpp"
 
 namespace hydrolib::shell
 {
@@ -27,13 +25,9 @@ public:
         {
             return hydrolib::shell::Cat;
         }
-        else if (command == "setspeed")
+        else if (command == "thruster")
         {
-            return hydrolib::shell::SetSpeed;
-        }
-        else if (command == "getspeed")
-        {
-            return hydrolib::shell::GetSpeed;
+            return hydrolib::shell::ThrusterCommands;
         }
         return std::nullopt;
     }

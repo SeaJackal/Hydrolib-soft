@@ -4,31 +4,32 @@
 #include <cstring>
 #include <unistd.h>
 
+#include "hydrolib_device.hpp"
 #include "hydrolib_device_manager.hpp"
 #include "hydrolib_shell.hpp"
-#include "hydrolib_stream_device.hpp"
-#include "hydrv_thruster.hpp"
+#include "hydrolib_thruster_device.hpp"
 
 namespace hydrolib::shell
 {
-class SetSpeedCommand
+class ThrusterShell
 {
 public:
-    SetSpeedCommand(int argc, char *argv[]);
+    ThrusterShell(int argc, char *argv[]);
 
 public:
     int Run();
 
 private:
-    hydrv::thruster::Thruster *thruster_device;
+    device::IThruster *thruster_device;
     int target_speed;
     bool speed_received_;
+    bool setspeed_flag;
     int return_code_;
 };
 
-int SetSpeed(int argc, char *argv[]);
+int ThrusterCommands(int argc, char *argv[]);
 
-inline SetSpeedCommand::SetSpeedCommand(int argc, char *argv[])
+inline ThrusterShell::ThrusterShell(int argc, char *argv[])
     : thruster_device(nullptr),
       target_speed(0),
       speed_received_(false),
@@ -43,7 +44,8 @@ inline SetSpeedCommand::SetSpeedCommand(int argc, char *argv[])
         switch (opt)
         {
         case 'h':
-            cout << "Usage: setspeed [DEVICE_NAME] [SPEED]";
+            cout << "Usage: thruster setspeed [DEVICE_NAME] [SPEED] / thruster "
+                    "getspeed [DEVICE_NAME]";
             g_is_running = false;
             return;
         case 1:
@@ -60,7 +62,7 @@ inline SetSpeedCommand::SetSpeedCommand(int argc, char *argv[])
                         return;
                     }
                     thruster_device =
-                        finded_device->Upcast<hydrv::thruster::Thruster>();
+                        finded_device->Upcast<device::IThruster>();
                     if (thruster_device == nullptr)
                     {
                         cout << "Device is not a thruster: " << optarg;
@@ -73,9 +75,17 @@ inline SetSpeedCommand::SetSpeedCommand(int argc, char *argv[])
             }
             else if (arg_counter == 1)
             {
-                target_speed = std::atoi(optarg);
+                if (strcmp(optarg, "setspeed") == 0)
+                {
+                    setspeed_flag = true;
+                }
                 arg_counter++;
+            }
+            else if (arg_counter == 2 && setspeed_flag)
+            {
+                target_speed = std::atoi(optarg);
                 speed_received_ = true;
+                arg_counter++;
             }
             break;
         default:
@@ -92,7 +102,7 @@ inline SetSpeedCommand::SetSpeedCommand(int argc, char *argv[])
         g_is_running = false;
         return_code_ = -1;
     }
-    else if (!speed_received_)
+    else if (!speed_received_ && setspeed_flag)
     {
         cout << "No speed value specified";
         g_is_running = false;
@@ -100,19 +110,27 @@ inline SetSpeedCommand::SetSpeedCommand(int argc, char *argv[])
     }
 }
 
-inline int SetSpeedCommand::Run()
+inline int ThrusterShell::Run()
 {
     if (!g_is_running)
     {
         return return_code_;
     }
-    thruster_device->SetSpeed(target_speed);
+    if (setspeed_flag)
+    {
+        thruster_device->SetSpeed(target_speed);
+    }
+    else
+    {
+        int speed_value = thruster_device->GetSpeed();
+        cout << "Thruster speed: " << speed_value;
+    }
     return return_code_;
 }
 
-inline int SetSpeed(int argc, char *argv[])
+inline int ThrusterCommands(int argc, char *argv[])
 {
-    SetSpeedCommand handler(argc, argv);
+    ThrusterShell handler(argc, argv);
     return handler.Run();
 }
 } // namespace hydrolib::shell

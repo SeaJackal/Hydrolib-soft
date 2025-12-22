@@ -7,7 +7,8 @@ namespace hydrolib::device
 
 enum class DeviceType
 {
-    STREAM
+    STREAM,
+    THRUSTER
 };
 
 class Device
