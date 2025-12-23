@@ -112,7 +112,7 @@ ReturnCode Deserializer<RxStream, Logger>::Process() {
 
     } else {
       lost_bytes_ += current_processed_length_;
-      LOG(logger_, logger::LogLevel::WARNING, "COBS error, lost {} bytes",
+      LOG_WARNING(logger_, "COBS error, lost {} bytes",
           current_processed_length_);
       current_processed_length_ = 0;
     }
@@ -182,7 +182,7 @@ ReturnCode Deserializer<RxStream, Logger>::FindHeader_() {
       return ReturnCode::OK;
     }
     lost_bytes_ += sizeof(kMagicByte);
-    LOG(logger_, logger::LogLevel::WARNING, "Rubbish byte");
+    LOG_WARNING(logger_, "Rubbish byte");
 
     res = read(rx_stream_, current_rx_buffer_, sizeof(kMagicByte));
   }
@@ -221,7 +221,7 @@ bool Deserializer<RxStream, Logger>::CheckCRC_() {
                                        sizeof(MessageHeader) - kCRCLength];
 
   if (target_crc != current_crc) {
-    LOG(logger_, logger::LogLevel::WARNING, "Wrong CRC: expected {}, got {}",
+    LOG_WARNING(logger_, "Wrong CRC: expected {}, got {}",
         target_crc, current_crc);
     return false;
   }

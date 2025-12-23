@@ -112,13 +112,13 @@ ReturnCode VectorNAVParser<InputStream, Logger>::Process() {
   // uint8_t header_buffer;
   // if (read(stream_, &header_buffer, 1) == 1)
   // {
-  //     LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "{} ",
+  //     LOG_DEBUG(logger_, "{} ",
   //                      header_buffer);
   //     current_rx_length_++;
   //     if (current_rx_length_ == sizeof(SYNC_) + sizeof(Message_))
   //     {
   //         current_rx_length_ = 0;
-  //         LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "\n\r");
+  //         LOG_DEBUG(logger_, "\n\r");
   //     }
   // }
 
@@ -127,7 +127,7 @@ ReturnCode VectorNAVParser<InputStream, Logger>::Process() {
     uint8_t header_buffer;
     if (read(stream_, &header_buffer, 1) != 1) {
       if (rubbish_bytes != 0) {
-        LOG(logger_, hydrolib::logger::LogLevel::WARNING, "Rubbish bytes: {}",
+        LOG_WARNING(logger_, "Rubbish bytes: {}",
             rubbish_bytes);
       }
       return ReturnCode::NO_DATA;
@@ -135,7 +135,7 @@ ReturnCode VectorNAVParser<InputStream, Logger>::Process() {
     if (header_buffer == SYNC_) {
       header_found_ = true;
       if (rubbish_bytes != 0) {
-        LOG(logger_, hydrolib::logger::LogLevel::WARNING, "Rubbish bytes: {}",
+        LOG_WARNING(logger_, "Rubbish bytes: {}",
             rubbish_bytes);
       }
     } else {
@@ -162,25 +162,25 @@ ReturnCode VectorNAVParser<InputStream, Logger>::Process() {
       CalculateCRC_(reinterpret_cast<uint8_t *>(&rx_buffer_), sizeof(Message_));
 
   if (supposed_crc) {
-    LOG(logger_, hydrolib::logger::LogLevel::WARNING, "Wrong crc");
+    LOG_WARNING(logger_, "Wrong crc");
     wrong_crc_counter_++;
     return ReturnCode::FAIL;
   }
 
   memcpy(&current_data_, &rx_buffer_, sizeof(Message_));
 
-  LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "Received message");
-  LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "yaw: {}",
+  LOG_DEBUG(logger_, "Received message");
+  LOG_DEBUG(logger_, "yaw: {}",
       static_cast<int>(current_data_.yaw * 100));
-  LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "pitch: {}",
+  LOG_DEBUG(logger_, "pitch: {}",
       static_cast<int>(current_data_.pitch * 100));
-  LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "roll: {}",
+  LOG_DEBUG(logger_, "roll: {}",
       static_cast<int>(current_data_.roll * 100));
-  LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "x rate: {}",
+  LOG_DEBUG(logger_, "x rate: {}",
       static_cast<int>(current_data_.x_rate * 100));
-  LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "y rate: {}",
+  LOG_DEBUG(logger_, "y rate: {}",
       static_cast<int>(current_data_.y_rate * 100));
-  LOG(logger_, hydrolib::logger::LogLevel::DEBUG, "z rate: {}",
+  LOG_DEBUG(logger_, "z rate: {}",
       static_cast<int>(current_data_.z_rate * 100));
 
   return ReturnCode::OK;

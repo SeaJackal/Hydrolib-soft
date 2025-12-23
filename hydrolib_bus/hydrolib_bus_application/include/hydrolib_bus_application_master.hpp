@@ -68,7 +68,7 @@ bool Master<TxRxStream, Logger>::Process() {
     case Command::READ:
     case Command::WRITE:
     default:
-      LOG(logger_, logger::LogLevel::WARNING, "Wrong command");
+      LOG_WARNING(logger_, "Wrong command");
       return false;
   }
 }

@@ -48,7 +48,7 @@ Logger logger2("Logger2", 1, manager);
 TEST(TestHydrolibLogger, TranslatorTest) {
   manager.SetAllFilters(0, LogLevel::DEBUG);
   manager.SetAllFilters(1, LogLevel::DEBUG);
-  LOG(logger1, LogLevel::INFO, "First message: {}", 1);
+  LOG_INFO(logger1, "First message: {}", 1);
   int length = stream1.GetLength();
   buffer1[length] = '\0';
   buffer2[length] = '\0';
@@ -58,7 +58,7 @@ TEST(TestHydrolibLogger, TranslatorTest) {
 
   stream1.Reset();
   stream2.Reset();
-  LOG(logger2, LogLevel::DEBUG, "Message two: {}", 2);
+  LOG_DEBUG(logger2, "Message two: {}", 2);
   length = stream1.GetLength();
   buffer1[length] = '\0';
   buffer2[length] = '\0';
@@ -68,7 +68,7 @@ TEST(TestHydrolibLogger, TranslatorTest) {
 
   stream1.Reset();
   stream2.Reset();
-  LOG(logger1, LogLevel::CRITICAL, "Third: {}", 3);
+  LOG_CRITICAL(logger1, "Third: {}", 3);
   length = stream1.GetLength();
   buffer1[length] = '\0';
   buffer2[length] = '\0';
@@ -85,7 +85,7 @@ TEST(TestHydrolibLogger, FilterTest) {
 
   stream1.Reset();
   stream2.Reset();
-  LOG(logger1, LogLevel::INFO, "First message: {}", 1);
+  LOG_INFO(logger1, "First message: {}", 1);
   int length1 = stream1.GetLength();
   int length2 = stream2.GetLength();
   EXPECT_EQ(length1, sizeof("[Logger1] [INFO] First message: 1\n") - 1);
@@ -93,7 +93,7 @@ TEST(TestHydrolibLogger, FilterTest) {
 
   stream1.Reset();
   stream2.Reset();
-  LOG(logger1, LogLevel::DEBUG, "Message two: {}", 2);
+  LOG_DEBUG(logger1, "Message two: {}", 2);
   length1 = stream1.GetLength();
   length2 = stream2.GetLength();
   EXPECT_EQ(length1, 0);
@@ -101,7 +101,7 @@ TEST(TestHydrolibLogger, FilterTest) {
 
   stream1.Reset();
   stream2.Reset();
-  LOG(logger2, LogLevel::DEBUG, "Message two: {}", 2);
+  LOG_DEBUG(logger2, "Message two: {}", 2);
   length1 = stream1.GetLength();
   length2 = stream2.GetLength();
   EXPECT_EQ(length2, 0);

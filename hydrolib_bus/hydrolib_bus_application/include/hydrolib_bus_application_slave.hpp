@@ -67,12 +67,12 @@ void Slave<Memory, Logger, TxRxStream>::Process() {
       ReturnCode res = memory_.Read(tx_buffer_ + sizeof(Command), info->address,
                                     info->length);
       if (res == ReturnCode::OK) {
-        LOG(logger_, logger::LogLevel::INFO, "Transmitting {} bytes from {}",
+        LOG_INFO(logger_, "Transmitting {} bytes from {}",
             info->length, info->address);
         *reinterpret_cast<Command *>(tx_buffer_) = Command::RESPONSE;
         write(stream_, tx_buffer_, sizeof(Command) + info->length);
       } else {
-        LOG(logger_, logger::LogLevel::WARNING, "Can't read {} bytes from {}",
+        LOG_WARNING(logger_, "Can't read {} bytes from {}",
             info->length, info->address);
         *reinterpret_cast<Command *>(tx_buffer_) = Command::ERROR;
         write(stream_, tx_buffer_, sizeof(Command));
@@ -85,19 +85,19 @@ void Slave<Memory, Logger, TxRxStream>::Process() {
           memory_.Write(rx_buffer_ + sizeof(Command) + sizeof(MemoryAccessInfo),
                         info->address, info->length);
       if (res != ReturnCode::OK) {
-        LOG(logger_, logger::LogLevel::WARNING, "Can't write {} bytes to {}",
+        LOG_WARNING(logger_, "Can't write {} bytes to {}",
             info->length, info->address);
         *reinterpret_cast<Command *>(tx_buffer_) = Command::ERROR;
         write(stream_, tx_buffer_, sizeof(Command));
       } else {
-        LOG(logger_, logger::LogLevel::INFO, "Wrote {} bytes to {}",
+        LOG_INFO(logger_, "Wrote {} bytes to {}",
             info->length, info->address);
       }
     } break;
     case Command::ERROR:
     case Command::RESPONSE:
     default:
-      LOG(logger_, logger::LogLevel::WARNING, "Wrong command");
+      LOG_WARNING(logger_, "Wrong command");
       *reinterpret_cast<Command *>(tx_buffer_) = Command::ERROR;
       write(stream_, tx_buffer_, sizeof(Command));
       break;
