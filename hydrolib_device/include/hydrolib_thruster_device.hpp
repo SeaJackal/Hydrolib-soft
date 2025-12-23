@@ -30,7 +30,6 @@ public:
 
 private:
     Thruster &thruster_;
-    int current_speed_;
 };
 
 template <typename Thruster>
@@ -38,5 +37,17 @@ ThrusterDevice<Thruster>::ThrusterDevice(std::string_view name,
                                          Thruster &thruster)
     : IThruster(name), thruster_(thruster)
 {
+}
+
+template <typename Thruster>
+hydrolib::ReturnCode ThrusterDevice<Thruster>::SetSpeed(int speed)
+{
+    return thruster_.SetSpeed(speed);
+}
+
+template <typename Thruster>
+int ThrusterDevice<Thruster>::GetSpeed()
+{
+    return thruster_.GetSpeed();
 }
 } // namespace hydrolib::device
