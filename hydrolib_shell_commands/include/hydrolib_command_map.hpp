@@ -25,7 +25,7 @@ public:
         {
             return hydrolib::shell::Cat;
         }
-        else if (command == "thruster")
+        else if (command == "thr")
         {
             return hydrolib::shell::ThrusterCommands;
         }
