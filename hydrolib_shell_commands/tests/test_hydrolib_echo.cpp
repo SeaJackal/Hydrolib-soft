@@ -12,7 +12,7 @@ using hydrolib::device::DeviceManager;
 using hydrolib::device::StreamDevice;
 using hydrolib::shell::cout;
 using hydrolib::shell::Echo;
-using hydrolib::shell::g_is_running;
+using hydrolib::shell::IsRunning();
 using hydrolib::shell::Ostream;
 using hydrolib::shell::StreamWrapper;
 
@@ -91,12 +91,12 @@ TEST(HydrolibEcho, PrintsUsageOnHelpAndStops) {
   char arg1[] = "-h";
   char *argv[] = {arg0, arg1};
 
-  g_is_running = true;
+  SetRunningTrue();
   int rc = Echo(2, argv);
 
   EXPECT_EQ(0, rc);
   EXPECT_EQ("Usage: echo [DEVICE_NAME] [STRING]", OutputAsString(cout_stream));
-  EXPECT_FALSE(g_is_running);
+  EXPECT_FALSE(IsRunning());
 }
 
 TEST(HydrolibEcho, InvalidOptionSetsErrorAndPrintsCode) {
@@ -111,12 +111,12 @@ TEST(HydrolibEcho, InvalidOptionSetsErrorAndPrintsCode) {
   char arg1[] = "-x";
   char *argv[] = {arg0, arg1};
 
-  g_is_running = true;
+  SetRunningTrue();
   int rc = Echo(2, argv);
 
   EXPECT_EQ(-1, rc);
   EXPECT_EQ("Invalid option: x", OutputAsString(cout_stream));
-  EXPECT_FALSE(g_is_running);
+  EXPECT_FALSE(IsRunning());
 }
 
 TEST(HydrolibEcho, DeviceNotFoundSetsError) {
@@ -132,12 +132,12 @@ TEST(HydrolibEcho, DeviceNotFoundSetsError) {
   char arg2[] = "hello";
   char *argv[] = {arg0, arg1, arg2, nullptr};
 
-  g_is_running = true;
+  SetRunningTrue();
   int rc = Echo(3, argv);
 
   EXPECT_EQ(-1, rc);
   EXPECT_EQ("Device not found: no_such_device", OutputAsString(cout_stream));
-  EXPECT_FALSE(g_is_running);
+  EXPECT_FALSE(IsRunning());
 }
 
 TEST(HydrolibEcho, NoDeviceSpecified) {
@@ -151,12 +151,12 @@ TEST(HydrolibEcho, NoDeviceSpecified) {
   char arg0[] = "echo";
   char *argv[] = {arg0, nullptr};
 
-  g_is_running = true;
+  SetRunningTrue();
   int rc = Echo(1, argv);
 
   EXPECT_EQ(-1, rc);
   EXPECT_EQ("No device specified", OutputAsString(cout_stream));
-  EXPECT_FALSE(g_is_running);
+  EXPECT_FALSE(IsRunning());
 }
 
 TEST(HydrolibEcho, NoDataSpecified) {
@@ -173,12 +173,12 @@ TEST(HydrolibEcho, NoDataSpecified) {
   char arg1[] = "stream1";
   char *argv[] = {arg0, arg1, nullptr};
 
-  g_is_running = true;
+  SetRunningTrue();
   int rc = Echo(2, argv);
 
   EXPECT_EQ(-1, rc);
   EXPECT_EQ("No data specified", OutputAsString(cout_stream));
-  EXPECT_FALSE(g_is_running);
+  EXPECT_FALSE(IsRunning());
 }
 
 TEST(HydrolibEcho, TooManyArguments) {
@@ -197,12 +197,12 @@ TEST(HydrolibEcho, TooManyArguments) {
   char arg3[] = "extra";
   char *argv[] = {arg0, arg1, arg2, arg3, nullptr};
 
-  g_is_running = true;
+  SetRunningTrue();
   int rc = Echo(4, argv);
 
   EXPECT_EQ(-1, rc);
   EXPECT_EQ("Too many arguments", OutputAsString(cout_stream));
-  EXPECT_FALSE(g_is_running);
+  EXPECT_FALSE(IsRunning());
 }
 
 TEST(HydrolibEcho, WritesAllDataToDevice) {
@@ -220,7 +220,7 @@ TEST(HydrolibEcho, WritesAllDataToDevice) {
   char arg2[] = "hello_world";
   char *argv[] = {arg0, arg1, arg2, nullptr};
 
-  g_is_running = true;
+  SetRunningTrue();
   int rc = Echo(3, argv);
 
   EXPECT_EQ(0, rc);
@@ -243,7 +243,7 @@ TEST(HydrolibEcho, ReturnsMinusTwoOnStreamWriteError) {
   char arg2[] = "data";
   char *argv[] = {arg0, arg1, arg2, nullptr};
 
-  g_is_running = true;
+  SetRunningTrue();
   int rc = Echo(3, argv);
 
   EXPECT_EQ(-2, rc);

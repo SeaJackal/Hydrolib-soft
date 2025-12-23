@@ -22,8 +22,21 @@ concept CommandMapConcept =
     ReadableMapConcept<T, std::string_view, std::optional<Func>> &&
     concepts::func::FuncConcept<Func, int, int, char *[]>;
 
+class ExecutionManager {
+ public:
+  static void SetRunningFalse();
+  static bool IsRunning();
+
+ private:
+  static void SetRunningTrue();
+
+  static inline bool g_is_running = false;
+};
+
 template <typename Func, CommandMapConcept<Func> Map>
 class Interpreter {
+  friend ExecutionManager;
+
  public:
   constexpr Interpreter(Map &handlers);
 
@@ -33,8 +46,6 @@ class Interpreter {
  private:
   Map &handlers_;
 };
-
-inline bool g_is_running = false;
 
 template <typename Func, CommandMapConcept<Func> Map>
 constexpr Interpreter<Func, Map>::Interpreter(Map &handlers)
@@ -75,4 +86,8 @@ int Interpreter<Func, Map>::Process(CommandString command) {
   }
   return -2;
 }
+
+void ExecutionManager::SetRunningFalse() { g_is_running = false; }
+bool ExecutionManager::IsRunning() { return g_is_running; }
+void ExecutionManager::SetRunningTrue() { g_is_running = true; }
 }  // namespace hydrolib::shell

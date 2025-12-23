@@ -13,7 +13,7 @@ using hydrolib::device::DeviceManager;
 using hydrolib::device::StreamDevice;
 using hydrolib::shell::Cat;
 using hydrolib::shell::cout;
-using hydrolib::shell::g_is_running;
+using hydrolib::shell::IsRunning(); //g_is_running
 using hydrolib::shell::Ostream;
 using hydrolib::shell::StreamWrapper;
 
@@ -93,12 +93,12 @@ TEST(HydrolibCat, PrintsUsageOnHelpAndStops) {
   char arg1[] = "-h";
   char *argv[] = {arg0, arg1};
 
-  g_is_running = true;
+  SetRunningTrue();
   int rc = Cat(2, argv);
 
   EXPECT_EQ(0, rc);
   EXPECT_EQ("Usage: cat [DEVICE_NAME]", OutputAsString(cout_stream));
-  EXPECT_FALSE(g_is_running);
+  EXPECT_FALSE(IsRunning());
 }
 
 TEST(HydrolibCat, InvalidOptionSetsErrorAndPrintsCode) {
@@ -113,12 +113,12 @@ TEST(HydrolibCat, InvalidOptionSetsErrorAndPrintsCode) {
   char arg1[] = "-x";
   char *argv[] = {arg0, arg1};
 
-  g_is_running = true;
+  SetRunningTrue();
   int rc = Cat(2, argv);
 
   EXPECT_EQ(-1, rc);
   EXPECT_EQ("Invalid option: x", OutputAsString(cout_stream));
-  EXPECT_FALSE(g_is_running);
+  EXPECT_FALSE(IsRunning());
 }
 
 TEST(HydrolibCat, DeviceNotFoundSetsError) {
@@ -133,12 +133,12 @@ TEST(HydrolibCat, DeviceNotFoundSetsError) {
   char arg1[] = "no_such_device";
   char *argv[] = {arg0, arg1, nullptr};
 
-  g_is_running = true;
+  SetRunningTrue();
   int rc = Cat(2, argv);
 
   EXPECT_EQ(-1, rc);
   EXPECT_EQ("Device not found: no_such_device", OutputAsString(cout_stream));
-  EXPECT_FALSE(g_is_running);
+  EXPECT_FALSE(IsRunning());
 }
 
 TEST(HydrolibCat, ReturnsMinusTwoOnStreamReadError) {
@@ -155,7 +155,7 @@ TEST(HydrolibCat, ReturnsMinusTwoOnStreamReadError) {
   char arg1[] = "stream1";
   char *argv[] = {arg0, arg1, nullptr};
 
-  g_is_running = true;
+  SetRunningTrue();
   stream.fail_next_read_ = true;
   int rc = Cat(2, argv);
 
