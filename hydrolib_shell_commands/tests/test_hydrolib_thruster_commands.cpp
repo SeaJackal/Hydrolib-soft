@@ -38,7 +38,6 @@ struct FakeStream
     bool fail_next_write_ = false;
 };
 
-// Free functions для ADL (Argument Dependent Lookup)
 int read(FakeStream &stream, void *dest, unsigned length)
 {
     if (length == 0)
@@ -82,7 +81,6 @@ static std::string OutputAsString(const FakeStream &stream)
     return std::string(stream.output_.begin(), stream.output_.end());
 }
 
-// Простой thruster driver (аналогично FakeStream для echo)
 struct SimpleThrusterDriver
 {
     SimpleThrusterDriver() = default;
@@ -98,7 +96,6 @@ struct SimpleThrusterDriver
     int last_speed = 0;
 };
 
-// Non-thruster device for testing (аналогично в echo тестах)
 class NonThrusterDevice : public hydrolib::device::Device
 {
 public:
@@ -108,7 +105,6 @@ public:
     }
 };
 
-// Reset POSIX getopt state before each test case that uses getopt
 void ResetGetopt()
 {
     optind = 1;
@@ -172,15 +168,13 @@ TEST(HydrolibThruster, InvalidCommandSetsError)
     char arg0[] = "thr";
     char arg1[] = "invalidcmd";
     char *argv[] = {arg0, arg1, nullptr};
-
-    // Просто вызываем и проверяем вывод
-    ThrusterCommands(2, argv);
+    g_is_running = true;
+    int rc = ThrusterCommands(2, argv);
 
     std::string output = OutputAsString(cout_stream);
-
-    // Главное - проверяем вывод ошибки
-    EXPECT_TRUE(output.find("Invalid command") != std::string::npos ||
-                output.find("Unknown command") != std::string::npos);
+    EXPECT_TRUE(output.find("Invalid command") != std::string::npos);
+    EXPECT_EQ(-1, rc);
+    EXPECT_FALSE(g_is_running);
 }
 
 TEST(HydrolibThruster, DeviceNotFoundSetsError)
@@ -303,7 +297,7 @@ TEST(HydrolibThruster, TooManyArgumentsForGetsp)
     EXPECT_EQ(-1, rc);
     EXPECT_TRUE(OutputAsString(cout_stream).find("Invalid option") !=
                     std::string::npos ||
-                OutputAsString(cout_stream).find("Too many") !=
+                OutputAsString(cout_stream).find("Too many arguments") !=
                     std::string::npos);
     EXPECT_FALSE(g_is_running);
 }
@@ -400,7 +394,6 @@ TEST(HydrolibThruster, OptionNWithoutSetspFails)
     ThrusterDevice<SimpleThrusterDriver> thruster_dev("thruster1", driver);
     DeviceManager mgr({&thruster_dev});
 
-    // -n should only work with setsp
     char arg0[] = "thr";
     char arg1[] = "getsp";
     char arg2[] = "thruster1";
