@@ -14,13 +14,6 @@
 namespace hydrolib::shell
 {
 
-enum class CommandType
-{
-    None,
-    SetSpeed,
-    GetSpeed
-};
-
 class ThrusterShell
 {
 public:
@@ -32,6 +25,13 @@ public:
     void ParseGetSpeed(int argc, char *argv[]);
 
 private:
+    enum class CommandType
+    {
+        None,
+        SetSpeed,
+        GetSpeed
+    };
+
     device::IThruster *thruster_device;
     int target_speed;
     bool speed_received_;
@@ -130,7 +130,7 @@ inline void ThrusterShell::ParseSetSpeed(int argc, char *argv[])
             else if (!speed_received_)
             {
                 int speed = std::atoi(optarg);
-                if (strcmp(optarg, "0") == 0)
+                if (optarg[0] == '0')
                 {
                     speed = 0;
                 }
