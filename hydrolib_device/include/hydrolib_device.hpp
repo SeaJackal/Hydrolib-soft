@@ -4,7 +4,11 @@
 
 namespace hydrolib::device {
 
-enum class DeviceType { STREAM };
+enum class DeviceType
+{
+    STREAM,
+    THRUSTER
+};
 
 class Device {
  public:
