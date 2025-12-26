@@ -23,7 +23,8 @@ class CatCommand {
 int Cat(int argc, char *argv[]);
 
 inline CatCommand::CatCommand(int argc, char *argv[]) {
-  int opt = getopt(argc, argv, "-:hx");
+  const char *format_string = "-:hx";
+  int opt = getopt(argc, argv, format_string);
   while (opt != -1) {
     device::Device *finded_device = nullptr;
     switch (opt) {
@@ -56,7 +57,7 @@ inline CatCommand::CatCommand(int argc, char *argv[]) {
         return_code_ = -1;
         return;
     }
-    opt = getopt(argc, argv, "-:h");
+    opt = getopt(argc, argv, format_string);
   }
   if (device_ == nullptr) {
     cout << "No device specified";
@@ -98,6 +99,7 @@ inline int CatCommand::Run() {
             digit /= 10;
           }
         }
+        cout << ' ';
       } else {
         cout << buffer;
       }
