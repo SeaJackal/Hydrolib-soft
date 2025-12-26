@@ -110,14 +110,14 @@ TEST(HydrolibCat, InvalidOptionSetsErrorAndPrintsCode) {
   DeviceManager mgr({});
 
   char arg0[] = "cat";
-  char arg1[] = "-x";
+  char arg1[] = "-l";
   char *argv[] = {arg0, arg1};
 
   g_is_running = true;
   int rc = Cat(2, argv);
 
   EXPECT_EQ(-1, rc);
-  EXPECT_EQ("Invalid option: x", OutputAsString(cout_stream));
+  EXPECT_EQ("Invalid option: l", OutputAsString(cout_stream));
   EXPECT_FALSE(g_is_running);
 }
 
