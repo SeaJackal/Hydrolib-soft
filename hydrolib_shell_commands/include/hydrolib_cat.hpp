@@ -29,7 +29,8 @@ inline CatCommand::CatCommand(int argc, char *argv[]) {
     device::Device *finded_device = nullptr;
     switch (opt) {
       case 'h':
-        cout << "Usage: cat [DEVICE_NAME]";
+        cout << "Usage: cat [DEVICE_NAME] [-x]\n";
+        cout << "x - hex";
         g_is_running = false;
         return;
       case 'x':
