@@ -97,7 +97,8 @@ TEST(HydrolibCat, PrintsUsageOnHelpAndStops) {
   int rc = Cat(2, argv);
 
   EXPECT_EQ(0, rc);
-  EXPECT_EQ("Usage: cat [DEVICE_NAME] [-x]\nx - hex", OutputAsString(cout_stream));
+  EXPECT_EQ("Usage: cat [DEVICE_NAME] [-x]\nx - hex",
+            OutputAsString(cout_stream));
   EXPECT_FALSE(g_is_running);
 }
 

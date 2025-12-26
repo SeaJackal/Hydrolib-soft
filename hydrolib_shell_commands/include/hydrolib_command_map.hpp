@@ -12,22 +12,14 @@ class CommandMap {
  public:
   using CommandType = decltype(&hydrolib::shell::Echo);
 
-public:
-    std::optional<CommandType> operator[](std::string_view command)
-    {
-        if (command == "echo")
-        {
-            return hydrolib::shell::Echo;
-        }
-        else if (command == "cat")
-        {
-            return hydrolib::shell::Cat;
-        }
-        else if (command == "thr")
-        {
-            return hydrolib::shell::ThrusterCommands;
-        }
-        return std::nullopt;
+ public:
+  std::optional<CommandType> operator[](std::string_view command) {
+    if (command == "echo") {
+      return hydrolib::shell::Echo;
+    } else if (command == "cat") {
+      return hydrolib::shell::Cat;
+    } else if (command == "thr") {
+      return hydrolib::shell::ThrusterCommands;
     }
     return std::nullopt;
   }
