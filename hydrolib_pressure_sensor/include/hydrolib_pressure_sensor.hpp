@@ -2,18 +2,16 @@
 
 #include <concepts>
 
-namespace hydrolib::sensors
-{
+namespace hydrolib::sensors {
 
-struct PressureSensorData
-{
-    int depth_mm;
-    int depth_rate_mm_per_s;
+struct PressureSensorData {
+  int depth_mm;
+  int depth_rate_mm_per_s;
 };
 
 template <typename T>
 concept PressureSensorConcept = requires(T sensor) {
-    { sensor.GetPressureData() } -> std::same_as<PressureSensorData>;
+  { sensor.GetPressureData() } -> std::same_as<PressureSensorData>;
 };
 
-} // namespace hydrolib::sensors
+}  // namespace hydrolib::sensors

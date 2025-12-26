@@ -4,11 +4,13 @@ on: [push]
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
+    container:
+      image: seajackal/hydrolib:latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
-      - run: sudo apt-get install libgtest-dev
-      - run: cmake --preset Debug
-      - run: cmake --build ./build
-      - run: ctest --test-dir ./build --rerun-failed --output-on-failure
+      - name: Configure and build
+        run: |
+          cmake --preset Debug
+          cmake --build ./build

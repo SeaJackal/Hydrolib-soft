@@ -5,62 +5,52 @@
 #include "hydrolib_formatable_string.hpp"
 #include "hydrolib_log.hpp"
 
-namespace hydrolib::logger
-{
+namespace hydrolib::logger {
 template <typename T, typename... Ts>
 concept LogDistributorConcept =
     requires(T distributor, unsigned source_id, Log<Ts...> &log, Ts... params) {
-        distributor.Notify(source_id, log, params...);
+      distributor.Notify(source_id, log, params...);
     };
 
 template <LogDistributorConcept Distributor>
-class Logger
-{
-public:
-    constexpr Logger(const char *name, unsigned id,
-                     const Distributor &distributor)
-        : name_(name), id_(id), distributor_(distributor)
-    {
-    }
+class Logger {
+ public:
+  constexpr Logger(const char *name, unsigned id,
+                   const Distributor &distributor)
+      : name_(name), id_(id), distributor_(distributor) {}
 
-public:
-    template <typename... Ts>
-    void WriteLog(LogLevel level,
-                  strings::StaticFormatableString<Ts...> message, Ts... params)
-    {
-        Log<Ts...> log{
-            .message = message, .level = level, .process_name = &name_};
+ public:
+  template <typename... Ts>
+  void WriteLog(LogLevel level, strings::StaticFormatableString<Ts...> message,
+                Ts... params) {
+    Log<Ts...> log{.message = message, .level = level, .process_name = &name_};
 
-        distributor_.Notify(id_, log, params...);
-    }
+    distributor_.Notify(id_, log, params...);
+  }
 
-private:
-    const strings::CString<LogInfo::MAX_NAME_LENGTH> name_;
-    const unsigned id_;
+ private:
+  const strings::CString<LogInfo::MAX_NAME_LENGTH> name_;
+  const unsigned id_;
 
-    const Distributor &distributor_;
+  const Distributor &distributor_;
 };
 
 template <LogDistributorConcept Distributor, typename... Ts>
-class LoggingCase
-{
-public:
-    constexpr LoggingCase(Logger<Distributor> &logger,
-                          [[maybe_unused]] Ts... params)
-        : logger_(logger)
-    {
-    }
+class LoggingCase {
+ public:
+  constexpr LoggingCase(Logger<Distributor> &logger,
+                        [[maybe_unused]] Ts... params)
+      : logger_(logger) {}
 
-public:
-    void WriteLog(LogLevel level,
-                  strings::StaticFormatableString<Ts...> message, Ts... params)
-    {
-        logger_.WriteLog(level, message, params...);
-    }
+ public:
+  void WriteLog(LogLevel level, strings::StaticFormatableString<Ts...> message,
+                Ts... params) {
+    logger_.WriteLog(level, message, params...);
+  }
 
-public:
-    Logger<Distributor> &logger_;
+ public:
+  Logger<Distributor> &logger_;
 };
-} // namespace hydrolib::logger
+}  // namespace hydrolib::logger
 
 #endif

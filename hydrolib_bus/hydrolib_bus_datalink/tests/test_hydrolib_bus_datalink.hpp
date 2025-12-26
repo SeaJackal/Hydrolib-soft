@@ -1,52 +1,48 @@
-#ifndef TEST_HYDROLIB_SP_SERIALIZE_ENV_H_
-#define TEST_HYDROLIB_SP_SERIALIZE_ENV_H_
+#pragma once
+
+#include <gtest/gtest.h>
+
+#include <deque>
 
 #include "hydrolib_bus_datalink_stream.hpp"
 #include "hydrolib_logger_mock.hpp"
-
-#include <deque>
-#include <gtest/gtest.h>
-
-#define PUBLIC_MEMORY_LENGTH 20
+#include "mock_stream.hpp"
 
 #define SERIALIZER_ADDRESS 3
 #define DESERIALIZER_ADDRESS 4
 
-class TestStream
-{
-    friend int read(TestStream &stream, void *dest, unsigned length);
-    friend int write(TestStream &stream, const void *dest, unsigned length);
+class TestHydrolibBusDatalink : public ::testing::Test {
+ public:
+  static constexpr int kTestMessageLength =
+      hydrolib::bus::datalink::kMaxDataLength;
+  static constexpr int kTestDataLength =
+      hydrolib::bus::datalink::kMaxDataLength;
 
-private:
-    std::deque<uint8_t> queue_;
-};
+ protected:
+  TestHydrolibBusDatalink();
 
-int read(TestStream &stream, void *dest, unsigned length);
-int write(TestStream &stream, const void *dest, unsigned length);
+ protected:
+  hydrolib::streams::mock::MockByteStream stream;
 
-class TestHydrolibBusDatalink : public ::testing::Test
-{
-protected:
-    TestHydrolibBusDatalink();
+  hydrolib::bus::datalink::StreamManager<
+      hydrolib::streams::mock::MockByteStream,
+      decltype(hydrolib::logger::mock_logger)>
+      sender_manager;
+  hydrolib::bus::datalink::StreamManager<
+      hydrolib::streams::mock::MockByteStream,
+      decltype(hydrolib::logger::mock_logger)>
+      receiver_manager;
 
-protected:
-    TestStream stream;
+  hydrolib::bus::datalink::Stream<hydrolib::streams::mock::MockByteStream,
+                                  decltype(hydrolib::logger::mock_logger)>
+      tx_stream;
+  hydrolib::bus::datalink::Stream<hydrolib::streams::mock::MockByteStream,
+                                  decltype(hydrolib::logger::mock_logger)>
+      rx_stream;
 
-    hydrolib::bus::datalink::StreamManager<
-        TestStream, decltype(hydrolib::logger::mock_logger)>
-        sender_manager;
-
-    hydrolib::bus::datalink::StreamManager<
-        TestStream, decltype(hydrolib::logger::mock_logger)>
-        receiver_manager;
-
-    uint8_t test_data[PUBLIC_MEMORY_LENGTH];
+  uint8_t test_data[kTestDataLength];
 };
 
 class TestHydrolibBusDatalinkParametrized
     : public TestHydrolibBusDatalink,
-      public ::testing::WithParamInterface<std::tuple<uint16_t, uint16_t>>
-{
-};
-
-#endif
+      public ::testing::WithParamInterface<int> {};

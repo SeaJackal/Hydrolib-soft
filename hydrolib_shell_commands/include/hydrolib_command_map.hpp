@@ -7,12 +7,10 @@
 #include "hydrolib_echo.hpp"
 #include "hydrolib_thruster_commands.hpp"
 
-namespace hydrolib::shell
-{
-class CommandMap
-{
-public:
-    using CommandType = decltype(&hydrolib::shell::Echo);
+namespace hydrolib::shell {
+class CommandMap {
+ public:
+  using CommandType = decltype(&hydrolib::shell::Echo);
 
 public:
     std::optional<CommandType> operator[](std::string_view command)
@@ -31,7 +29,9 @@ public:
         }
         return std::nullopt;
     }
+    return std::nullopt;
+  }
 };
 
 inline CommandMap command_map;
-} // namespace hydrolib::shell
+}  // namespace hydrolib::shell

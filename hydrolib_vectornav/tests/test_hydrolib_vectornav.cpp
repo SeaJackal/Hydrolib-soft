@@ -1,10 +1,11 @@
-#include "hydrolib_logger_mock.hpp"
-#include "hydrolib_vectornav.hpp"
+#include <gtest/gtest.h>
+#include <string.h>
 
 #include <cstdint>
-#include <gtest/gtest.h>
 #include <iostream>
-#include <string.h>
+
+#include "hydrolib_logger_mock.hpp"
+#include "hydrolib_vectornav.hpp"
 
 using namespace std;
 
@@ -2310,99 +2311,88 @@ uint8_t test_data[] = {
 //                        32,  63, 172, 68, 241, 62,  124, 233, 154, 59,
 //                        156, 19, 58,  58, 224, 190, 13,  57,  247, 204};
 
-class TestStream
-{
-public:
-    consteval TestStream() {}
+class TestStream {
+ public:
+  consteval TestStream() {}
 
-public:
-    unsigned Read(void *buffer, uint32_t length)
-    {
-        unsigned forward_length = sizeof(test_data) - pos_;
-        if (length > forward_length)
-        {
-            memcpy(buffer, test_data + pos_, forward_length);
-            memcpy(static_cast<uint8_t *>(buffer) + forward_length, test_data,
-                   length - forward_length);
-            pos_ = length - forward_length;
-        }
-        else
-        {
-            memcpy(buffer, test_data + pos_, length);
-            pos_ += length;
-        }
-        return length;
+ public:
+  unsigned Read(void *buffer, uint32_t length) {
+    unsigned forward_length = sizeof(test_data) - pos_;
+    if (length > forward_length) {
+      memcpy(buffer, test_data + pos_, forward_length);
+      memcpy(static_cast<uint8_t *>(buffer) + forward_length, test_data,
+             length - forward_length);
+      pos_ = length - forward_length;
+    } else {
+      memcpy(buffer, test_data + pos_, length);
+      pos_ += length;
     }
+    return length;
+  }
 
-private:
-    unsigned pos_ = 0;
+ private:
+  unsigned pos_ = 0;
 };
-inline int read(TestStream &stream, void *dest, unsigned length)
-{
-    return stream.Read(dest, length);
+inline int read(TestStream &stream, void *dest, unsigned length) {
+  return stream.Read(dest, length);
 }
 
-inline int write(TestStream &stream, const void *dest, unsigned length)
-{
-    return 0;
+inline int write(TestStream &stream, const void *dest, unsigned length) {
+  return 0;
 }
 
 using namespace hydrolib::logger;
 using namespace std;
 
-class TestLogStream
-{
-public:
-    void Push(const void *data, unsigned length)
-    {
-        for (unsigned i = 0; i < length; i++)
-        {
-            std::cout << (reinterpret_cast<const char *>(data))[i];
-        }
+class TestLogStream {
+ public:
+  void Push(const void *data, unsigned length) {
+    for (unsigned i = 0; i < length; i++) {
+      std::cout << (reinterpret_cast<const char *>(data))[i];
     }
+  }
 };
 
-inline int write(TestLogStream &stream, const void *dest, unsigned length)
-{
-    stream.Push(dest, length);
-    return length;
+inline int write(TestLogStream &stream, const void *dest, unsigned length) {
+  stream.Push(dest, length);
+  return length;
 }
 
 constinit TestStream stream;
-constinit hydrolib::VectorNAVParser vector_nav(stream, hydrolib::logger::mock_logger);
+constinit hydrolib::VectorNAVParser vector_nav(stream,
+                                               hydrolib::logger::mock_logger);
 
 constexpr unsigned packages_count = 1000;
 
-TEST(TestVectorNAV, BasicTest)
-{
-    hydrolib::logger::mock_distributor.SetAllFilters(0, hydrolib::logger::LogLevel::DEBUG);
+TEST(TestVectorNAV, BasicTest) {
+  hydrolib::logger::mock_distributor.SetAllFilters(
+      0, hydrolib::logger::LogLevel::DEBUG);
 
-    for (unsigned i = 0; i < packages_count; i++)
-    {
-        vector_nav.Process();
-    }
+  for (unsigned i = 0; i < packages_count; i++) {
+    vector_nav.Process();
+  }
 
-    unsigned wrong_crc_count = vector_nav.GetWrongCRCCount();
-    unsigned rubbish_bytes_count = vector_nav.GetRubbishBytesCount();
+  unsigned wrong_crc_count = vector_nav.GetWrongCRCCount();
+  unsigned rubbish_bytes_count = vector_nav.GetRubbishBytesCount();
 
-    std::cout << "Wrong crc: "
-              << static_cast<float>(wrong_crc_count) / packages_count
-              << std::endl;
-    std::cout << "Rubbish bytes: "
-              << static_cast<float>(rubbish_bytes_count) / (packages_count * 30)
-              << std::endl;
+  std::cout << "Wrong crc: "
+            << static_cast<float>(wrong_crc_count) / packages_count
+            << std::endl;
+  std::cout << "Rubbish bytes: "
+            << static_cast<float>(rubbish_bytes_count) / (packages_count * 30)
+            << std::endl;
 
-    float max_allowed_loss_percentage = 0.11f;
-    unsigned max_allowed_wrong_crc =
-        static_cast<unsigned>(packages_count * max_allowed_loss_percentage);
+  float max_allowed_loss_percentage = 0.11f;
+  unsigned max_allowed_wrong_crc =
+      static_cast<unsigned>(packages_count * max_allowed_loss_percentage);
 
-    std::cout << "Wrong CRC count: " << wrong_crc_count
-              << ", Max allowed: " << max_allowed_wrong_crc << " ("
-              << (max_allowed_loss_percentage * 100) << "%)" << std::endl;
+  std::cout << "Wrong CRC count: " << wrong_crc_count
+            << ", Max allowed: " << max_allowed_wrong_crc << " ("
+            << (max_allowed_loss_percentage * 100) << "%)" << std::endl;
 
-    // Проверка ASSERT
-    EXPECT_LE(wrong_crc_count, max_allowed_wrong_crc)
-        << "Too many packets lost! " << wrong_crc_count
-        << " packets failed CRC check (max allowed: " << max_allowed_wrong_crc
-        << ")";
+  // Проверка ASSERT
+  EXPECT_LE(wrong_crc_count, max_allowed_wrong_crc)
+      << "Too many packets lost! " << wrong_crc_count
+      << " packets failed CRC check (max allowed: " << max_allowed_wrong_crc
+      << ")";
 }
