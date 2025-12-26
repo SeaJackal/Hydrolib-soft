@@ -13,6 +13,14 @@
 
 namespace hydrolib::shell
 {
+
+enum class CommandType
+{
+    None,
+    SetSpeed,
+    GetSpeed
+};
+
 class ThrusterShell
 {
 public:
@@ -27,9 +35,8 @@ private:
     device::IThruster *thruster_device;
     int target_speed;
     bool speed_received_;
-    bool setspeed_flag;
-    bool getspeed_flag;
     bool negative_speed;
+    CommandType command_type_;
     int return_code_;
 };
 
@@ -39,9 +46,8 @@ inline ThrusterShell::ThrusterShell(int argc, char *argv[])
     : thruster_device(nullptr),
       target_speed(0),
       speed_received_(false),
-      setspeed_flag(false),
-      getspeed_flag(false),
       negative_speed(false),
+      command_type_(CommandType::None),
       return_code_(0)
 {
     int opt = getopt(argc, argv, "-:h");
@@ -57,13 +63,13 @@ inline ThrusterShell::ThrusterShell(int argc, char *argv[])
         case 1:
             if (strcmp(optarg, "setsp") == 0)
             {
-                setspeed_flag = true;
+                command_type_ = CommandType::SetSpeed;
                 ParseSetSpeed(argc, argv);
                 return;
             }
             else if (strcmp(optarg, "getsp") == 0)
             {
-                getspeed_flag = true;
+                command_type_ = CommandType::GetSpeed;
                 ParseGetSpeed(argc, argv);
                 return;
             }
@@ -123,9 +129,12 @@ inline void ThrusterShell::ParseSetSpeed(int argc, char *argv[])
             }
             else if (!speed_received_)
             {
-                char *endptr;
-                long int speed = std::strtol(optarg, &endptr, 10);
-                if (endptr == optarg || *endptr != '\0')
+                int speed = std::atoi(optarg);
+                if (strcmp(optarg, "0") == 0)
+                {
+                    speed = 0;
+                }
+                else if (!speed)
                 {
                     cout << "Invalid speed: " << optarg;
                     g_is_running = false;
@@ -144,10 +153,7 @@ inline void ThrusterShell::ParseSetSpeed(int argc, char *argv[])
             }
             break;
         case 'n':
-            if (setspeed_flag)
-            {
-                negative_speed = true;
-            }
+            negative_speed = true;
             break;
         default:
             cout << "Invalid option: " << static_cast<char>(optopt);
@@ -235,7 +241,9 @@ inline int ThrusterShell::Run()
     {
         return return_code_;
     }
-    if (setspeed_flag)
+    switch (command_type_)
+    {
+    case CommandType::SetSpeed:
     {
         if (negative_speed)
         {
@@ -254,13 +262,18 @@ inline int ThrusterShell::Run()
         {
             cout << "Thruster set speed: " << set_speed_buffer;
         }
+        break;
     }
-    else if (getspeed_flag)
+    case CommandType::GetSpeed:
     {
         int speed_value = thruster_device->GetSpeed();
         char get_speed_buffer[6];
         snprintf(get_speed_buffer, sizeof(get_speed_buffer), "%d", speed_value);
         cout << "Thruster speed: " << get_speed_buffer;
+        break;
+    }
+    case CommandType::None:
+        break;
     }
     return return_code_;
 }
