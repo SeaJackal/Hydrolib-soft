@@ -60,6 +60,7 @@ class Stream {
 
   uint8_t buffer[kMaxMessageLength] = {0};  // TODO: Make queue
   unsigned message_length_;
+  int head_ = 0;
 };
 
 template <concepts::stream::ByteFullStreamConcept RxTxStream, typename Logger,
@@ -85,6 +86,7 @@ void StreamManager<RxTxStream, Logger, MATES_COUNT>::Process() {
       if (streams_[i]->mate_address_ == message_source_address) {
         std::memcpy(streams_[i]->buffer, message_data, message_length);
         streams_[i]->message_length_ = message_length;
+        streams_[i]->head_ = 0;
         break;
       }
     }
@@ -112,10 +114,11 @@ constexpr Stream<RxTxStream, Logger, MATES_COUNT>::Stream(
 template <concepts::stream::ByteFullStreamConcept RxTxStream, typename Logger,
           int MATES_COUNT>
 int Stream<RxTxStream, Logger, MATES_COUNT>::Read(void *dest, unsigned length) {
-  if (length > message_length_) {
-    length = message_length_;
+  if (length > message_length_ - head_) {
+    length = message_length_ - head_;
   }
-  std::memcpy(dest, buffer, length);
+  std::memcpy(dest, buffer + head_, length);
+  head_ += length;
   return length;
 }
 

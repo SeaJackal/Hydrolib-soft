@@ -21,7 +21,6 @@ class TestHydrolibBusDatalink : public ::testing::Test {
  protected:
   TestHydrolibBusDatalink();
 
- protected:
   hydrolib::streams::mock::MockByteStream stream;
 
   hydrolib::bus::datalink::StreamManager<
@@ -41,6 +40,11 @@ class TestHydrolibBusDatalink : public ::testing::Test {
       rx_stream;
 
   uint8_t test_data[kTestDataLength];
+};
+
+class TestHydrolibBusDatalinkStreamInterface : public TestHydrolibBusDatalink {
+ public:
+  TestHydrolibBusDatalinkStreamInterface();
 };
 
 class TestHydrolibBusDatalinkParametrized

@@ -18,6 +18,6 @@ elseif(LOGGER_TYPE STREQUAL "none")
     add_library(${LIBRARY_NAME} INTERFACE)
     target_include_directories(${LIBRARY_NAME} INTERFACE specific/none)
 elseif(NOT LOGGER_TYPE STREQUAL "custom")
-    message(ERROR 
+    message(SEND_ERROR 
         "Invalid logger type: ${LOGGER_TYPE}, supported types are: hydrolib, none, custom")
 endif()

@@ -1,5 +1,7 @@
 #include "test_hydrolib_bus_datalink.hpp"
 
+#include <gtest/gtest.h>
+
 #include <cstddef>
 
 #include "hydrolib_bus_datalink_message.hpp"
@@ -19,6 +21,15 @@ TestHydrolibBusDatalink::TestHydrolibBusDatalink()
       test_data[i] = i;
     }
   }
+}
+
+TestHydrolibBusDatalinkStreamInterface::
+    TestHydrolibBusDatalinkStreamInterface() {
+  write(tx_stream, test_data, kTestMessageLength);
+  stream.MakeAllbytesAvailable();
+  int lost_bytes = receiver_manager.GetLostBytes();
+  receiver_manager.Process();
+  EXPECT_EQ(lost_bytes, 0);
 }
 
 INSTANTIATE_TEST_CASE_P(
@@ -179,6 +190,43 @@ TEST_F(TestHydrolibBusDatalink, ProgressiveTransmissionTest) {
   EXPECT_EQ(length, kTestMessageLength);
 
   for (unsigned i = 0; i < length; i++) {
+    EXPECT_EQ(buffer[i], test_data[i]);
+  }
+}
+
+TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadSome) {
+  uint8_t buffer[kTestMessageLength] = {};
+  int read_numbers[] = {2, 1, 5, 15, 7, 12};
+  int sum = 0;
+  for (int i = 0; i < sizeof(read_numbers) / sizeof(read_numbers[0]); i++) {
+    sum += read_numbers[i];
+  }
+  EXPECT_LE(sum, kTestMessageLength);
+  int read_count = 0;
+  for (int i = 0; i < sizeof(read_numbers) / sizeof(read_numbers[0]); i++) {
+    int length = read(rx_stream, buffer, read_numbers[i]);
+    EXPECT_EQ(length, read_numbers[i]);
+    for (int j = 0; j < read_numbers[i]; j++) {
+      EXPECT_EQ(buffer[j], test_data[read_count + j]);
+    }
+    read_count += length;
+  }
+}
+
+TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadMoreThanAvailable) {
+  uint8_t buffer[kTestMessageLength] = {};
+  int length = read(rx_stream, &buffer, kTestMessageLength + 1);
+  EXPECT_EQ(length, kTestMessageLength);
+  for (int i = 0; i < kTestMessageLength; i++) {
+    EXPECT_EQ(buffer[i], test_data[i]);
+  }
+}
+
+TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadFull) {
+  uint8_t buffer[kTestMessageLength] = {};
+  int length = read(rx_stream, buffer, kTestMessageLength);
+  EXPECT_EQ(length, kTestMessageLength);
+  for (int i = 0; i < kTestMessageLength; i++) {
     EXPECT_EQ(buffer[i], test_data[i]);
   }
 }
