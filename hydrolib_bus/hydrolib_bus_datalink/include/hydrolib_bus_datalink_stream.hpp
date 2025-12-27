@@ -114,7 +114,7 @@ constexpr Stream<RxTxStream, Logger, MATES_COUNT>::Stream(
 template <concepts::stream::ByteFullStreamConcept RxTxStream, typename Logger,
           int MATES_COUNT>
 int Stream<RxTxStream, Logger, MATES_COUNT>::Read(void *dest, unsigned length) {
-  if (length > message_length_ - head_) {
+  if (length > message_length_ - head_) {  // TODO: not thread safe
     length = message_length_ - head_;
   }
   std::memcpy(dest, buffer + head_, length);
