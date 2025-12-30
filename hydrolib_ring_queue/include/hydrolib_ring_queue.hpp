@@ -74,7 +74,7 @@ inline ReturnCode RingQueue<CAPACITY>::Push(const void *data, int data_length) {
     memcpy(buffer_.data() + tail_, data, data_length);
   } else {
     memcpy(buffer_.data() + tail_, data, forward_length);
-    memcpy(buffer_.data() + tail_,
+    memcpy(buffer_.data(),
            static_cast<const uint8_t *>(data) + forward_length,  // NOLINT
            data_length - forward_length);
   }
@@ -127,7 +127,7 @@ inline ReturnCode RingQueue<CAPACITY>::Read(void *data, int data_length,
       memcpy(static_cast<uint8_t *>(data) + forward_length - shift,  // NOLINT
              buffer_.data(), data_length - (forward_length - shift));
     } else {
-      memcpy(data, buffer_ + head_ + shift, data_length);
+      memcpy(data, buffer_.data() + head_ + shift, data_length);
     }
   } else {
     memcpy(data, buffer_.data() + shift - forward_length, data_length);

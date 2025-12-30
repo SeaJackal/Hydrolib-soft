@@ -1,31 +1,19 @@
-#ifndef TEST_HYDROLIB_RQ_ENV_H_
-#define TEST_HYDROLIB_RQ_ENV_H_
-
-#include "hydrolib_ring_queue.hpp"
+#pragma once
 
 #include <gtest/gtest.h>
 
-#define DEFAULT_CAPACITY 16
+#include "hydrolib_ring_queue.hpp"
 
-class TestHydrolibRingQueue : public ::testing::Test
-{
-protected:
-    TestHydrolibRingQueue()
-        : buffer_capacity(DEFAULT_CAPACITY), test_queue(buffer, buffer_capacity)
-    {
-    }
+class TestHydrolibRingQueue : public ::testing::Test {
+ public:
+  static constexpr int kDefaultCapacity = 16;
 
-    uint8_t buffer_capacity;
-    uint8_t buffer[DEFAULT_CAPACITY] = {};
-    hydrolib::ring_queue::RingQueue test_queue;
+ protected:
+  TestHydrolibRingQueue() = default;
 
-    ~TestHydrolibRingQueue() {}
+  hydrolib::ring_queue::RingQueue<kDefaultCapacity> test_queue = {};
 };
 
 class TestHydrolibRingQueueCommon
     : public TestHydrolibRingQueue,
-      public ::testing::WithParamInterface<uint16_t>
-{
-};
-
-#endif
+      public ::testing::WithParamInterface<uint16_t> {};

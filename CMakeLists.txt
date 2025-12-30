@@ -35,6 +35,7 @@ add_subdirectory(hydrolib_streams)
 add_subdirectory(hydrolib_strings)
 add_subdirectory(hydrolib_thrust_generator)
 add_subdirectory(hydrolib_vectornav)
+add_subdirectory(hydrolib_ring_queue)
 
 if(BUILD_TESTS AND COVERAGE)
 	find_program(LCOV_EXECUTABLE lcov REQUIRED)
