@@ -10,8 +10,8 @@ class TestHydrolibRingQueuePull : public TestHydrolibRingQueue,
 
 INSTANTIATE_TEST_CASE_P(
     Test, TestHydrolibRingQueuePull,
-    ::testing::Values(1, sizeof(TestHydrolibRingQueue::kDefaultCapacity), 2,
-                      7));
+    ::testing::Values(1, TestHydrolibRingQueue::kDefaultCapacity,
+                      TestHydrolibRingQueue::kDefaultCapacity - 1, 2, 7));
 
 TEST_P(TestHydrolibRingQueuePull, Pull) {
   int length = GetParam();
