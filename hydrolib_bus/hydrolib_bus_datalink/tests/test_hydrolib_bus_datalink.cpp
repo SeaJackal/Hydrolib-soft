@@ -25,6 +25,10 @@ TestHydrolibBusDatalink::TestHydrolibBusDatalink()
 
 TestHydrolibBusDatalinkStreamInterface::
     TestHydrolibBusDatalinkStreamInterface() {
+  Send();
+}
+
+void TestHydrolibBusDatalinkStreamInterface::Send() {
   write(tx_stream, test_data, kTestMessageLength);
   stream.MakeAllbytesAvailable();
   int lost_bytes = receiver_manager.GetLostBytes();
@@ -213,6 +217,27 @@ TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadSome) {
   }
 }
 
+TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadByBytes) {
+  uint8_t buffer = 0;
+  int length = 0;
+  for (int i = 0; i < kTestMessageLength; i++) {
+    length = read(rx_stream, &buffer, 1);
+    EXPECT_EQ(length, 1);
+    EXPECT_EQ(buffer, test_data[i]);
+  }
+  length = read(rx_stream, &buffer, 1);
+  EXPECT_EQ(length, 0);
+
+  Send();
+  for (int i = 0; i < kTestMessageLength; i++) {
+    length = read(rx_stream, &buffer, 1);
+    EXPECT_EQ(length, 1);
+    EXPECT_EQ(buffer, test_data[i]);
+  }
+  length = read(rx_stream, &buffer, 1);
+  EXPECT_EQ(length, 0);
+}
+
 TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadMoreThanAvailable) {
   uint8_t buffer[kTestMessageLength] = {};
   int length = read(rx_stream, &buffer, kTestMessageLength + 1);
@@ -222,11 +247,23 @@ TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadMoreThanAvailable) {
   }
 }
 
-TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadFull) {
+TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadFullAndNext) {
   uint8_t buffer[kTestMessageLength] = {};
   int length = read(rx_stream, buffer, kTestMessageLength);
   EXPECT_EQ(length, kTestMessageLength);
   for (int i = 0; i < kTestMessageLength; i++) {
     EXPECT_EQ(buffer[i], test_data[i]);
   }
+  length = read(rx_stream, &buffer, 1);
+  EXPECT_EQ(length, 0);
+
+  Send();
+
+  length = read(rx_stream, buffer, kTestMessageLength);
+  EXPECT_EQ(length, kTestMessageLength);
+  for (int i = 0; i < kTestMessageLength; i++) {
+    EXPECT_EQ(buffer[i], test_data[i]);
+  }
+  length = read(rx_stream, &buffer, 1);
+  EXPECT_EQ(length, 0);
 }

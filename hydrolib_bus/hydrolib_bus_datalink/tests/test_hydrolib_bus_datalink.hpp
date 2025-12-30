@@ -45,6 +45,8 @@ class TestHydrolibBusDatalink : public ::testing::Test {
 class TestHydrolibBusDatalinkStreamInterface : public TestHydrolibBusDatalink {
  public:
   TestHydrolibBusDatalinkStreamInterface();
+
+  void Send();
 };
 
 class TestHydrolibBusDatalinkParametrized

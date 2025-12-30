@@ -17,7 +17,7 @@ TEST_F(TestHydrolibRingQueue, PullByte)
 
 TEST_F(TestHydrolibRingQueue, PullSomeBytes)
 {
-    for (uint8_t i = 0; i < buffer_capacity; i++)
+    for (uint8_t i = 0; i < kDefaultCapacity; i++)
     {
         uint8_t write_byte = 1;
         hydrolib::ReturnCode push_status =
@@ -25,7 +25,7 @@ TEST_F(TestHydrolibRingQueue, PullSomeBytes)
         EXPECT_EQ(push_status, hydrolib::ReturnCode::OK);
     }
 
-    for (uint8_t i = 0; i < buffer_capacity; i++)
+    for (uint8_t i = 0; i < kDefaultCapacity; i++)
     {
         uint8_t write_byte = 1;
         uint8_t read_byte = -1;
@@ -61,7 +61,7 @@ TEST_F(TestHydrolibRingQueue, PullByteFromEmpty)
 
 TEST_F(TestHydrolibRingQueue, PullByteFromEmptyAfterFilling)
 {
-    for (uint8_t i = 0; i < buffer_capacity; i++)
+    for (uint8_t i = 0; i < kDefaultCapacity; i++)
     {
         hydrolib::ReturnCode push_status =
             test_queue.PushByte(i);
@@ -69,7 +69,7 @@ TEST_F(TestHydrolibRingQueue, PullByteFromEmptyAfterFilling)
     }
 
     uint8_t read_byte;
-    for (uint8_t i = 0; i < buffer_capacity; i++)
+    for (uint8_t i = 0; i < kDefaultCapacity; i++)
     {
         hydrolib::ReturnCode pull_status =
             test_queue.PullByte(  &read_byte);
