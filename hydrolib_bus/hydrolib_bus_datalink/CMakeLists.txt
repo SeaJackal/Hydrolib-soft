@@ -3,7 +3,8 @@ add_library(HydrolibBusDatalink INTERFACE)
 target_include_directories(HydrolibBusDatalink INTERFACE include)
 
 target_link_libraries(HydrolibBusDatalink INTERFACE HydrolibConcepts
-    INTERFACE HydrolibLogger INTERFACE HydrolibReturnCodes INTERFACE HydrolibCRC INTERFACE HydrolibStreams)
+    INTERFACE HydrolibLogger INTERFACE HydrolibReturnCodes INTERFACE HydrolibCRC
+    INTERFACE HydrolibStreams INTERFACE HydrolibRingQueue)
 
 include(${HYDROLIB_ROOT_DIR}/cmake/HydrolibGTest.cmake)
 hydrolib_add_tests_for_target(HydrolibBusDatalink)
