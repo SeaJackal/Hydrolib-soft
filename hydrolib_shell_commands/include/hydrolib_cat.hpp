@@ -35,7 +35,7 @@ inline CatCommand::CatCommand(int argc, char *argv[]) {
         return;
       case 'x':
         hex_mode_ = true;
-        return;
+        break;
       case 1:
         finded_device = (*device::g_device_manager)[optarg];
         if (finded_device == nullptr) {
