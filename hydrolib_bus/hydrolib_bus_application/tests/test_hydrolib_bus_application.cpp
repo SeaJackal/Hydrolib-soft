@@ -3,6 +3,9 @@
 #include <gtest/gtest.h>
 
 #include <cstring>
+#include <thread>
+
+using namespace std::literals::chrono_literals;
 
 constexpr std::array<TestCase, 10> kTestCases = {
     TestCase{.address = 0, .length = 1},
@@ -119,5 +122,43 @@ TEST_F(TestHydrolibBusApplication, ReadSeriaTest) {
     for (int i = 0; i < TestPublicMemory::kPublicMemoryLength; i++) {
       EXPECT_EQ(test_data[i], memory.memory[i]);
     }
+  }
+}
+
+TEST_F(TestHydrolibBusApplication, ReadTimeoutTest) {
+  auto test_case = kTestCases[0];
+  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+  ASSERT_LE(test_case.address + test_case.length,
+            TestPublicMemory::kPublicMemoryLength);
+  memcpy(memory.memory.data(), test_data.data(),
+         TestPublicMemory::kPublicMemoryLength);
+  master.Read(buffer.data(), test_case.address, test_case.length);
+  std::this_thread::sleep_for(decltype(master)::kRequestTimeout);
+  stream.Clear();
+  EXPECT_EQ(hydrolib::ReturnCode::TIMEOUT, master.Process());
+  stream.MakeAllbytesAvailable();
+  slave.Process();
+  stream.MakeAllbytesAvailable();
+  EXPECT_EQ(hydrolib::ReturnCode::OK, master.Process());
+  for (int i = 0; i < test_case.length; i++) {
+    EXPECT_EQ(buffer[i], memory.memory[test_case.address + i]);
+  }
+}
+
+TEST_F(TestHydrolibBusApplication, ReadAlmostTimeoutTest) {
+  auto test_case = kTestCases[0];
+  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+  ASSERT_LE(test_case.address + test_case.length,
+            TestPublicMemory::kPublicMemoryLength);
+  memcpy(memory.memory.data(), test_data.data(),
+         TestPublicMemory::kPublicMemoryLength);
+  master.Read(buffer.data(), test_case.address, test_case.length);
+  std::this_thread::sleep_for(decltype(master)::kRequestTimeout - 1ms);
+  stream.MakeAllbytesAvailable();
+  slave.Process();
+  stream.MakeAllbytesAvailable();
+  EXPECT_EQ(hydrolib::ReturnCode::OK, master.Process());
+  for (int i = 0; i < test_case.length; i++) {
+    EXPECT_EQ(buffer[i], memory.memory[test_case.address + i]);
   }
 }

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdint>
 #include <cstring>
 
 #include "hydrolib_bus_application_commands.hpp"
