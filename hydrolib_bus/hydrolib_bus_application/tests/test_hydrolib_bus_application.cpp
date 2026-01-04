@@ -2,69 +2,122 @@
 
 #include <gtest/gtest.h>
 
-int write([[maybe_unused]] TestLogStream &stream, const void *dest,
-          unsigned length) {
-  for (unsigned i = 0; i < length; i++) {
-    std::cout << (reinterpret_cast<const char *>(dest))[i];
-  }
-  return length;
-}
+#include <cstring>
 
-int read(TestStream &stream, void *dest, unsigned length) {
-  if (stream.has_data) {
-    stream.has_data = false;
-    memcpy(dest, stream.buffer, length);
-    return stream.length;
-  }
-  return 0;
-}
+constexpr std::array<TestCase, 10> kTestCases = {
+    TestCase{.address = 0, .length = 1},
+    TestCase{.address = 1, .length = 5},
+    TestCase{.address = TestPublicMemory::kPublicMemoryLength - 1, .length = 1},
+    TestCase{.address = TestPublicMemory::kPublicMemoryLength - 3, .length = 3},
+    TestCase{.address = 0, .length = TestPublicMemory::kPublicMemoryLength},
+    TestCase{.address = 2, .length = TestPublicMemory::kPublicMemoryLength - 2},
+    TestCase{.address = 6, .length = 3},
+    TestCase{.address = 5, .length = 5},
+    TestCase{.address = 1, .length = 9},
+    TestCase{.address = 9, .length = 5}};
 
-int write(TestStream &stream, const void *dest, unsigned length) {
-  stream.has_data = true;
-  stream.length = length;
-  memcpy(stream.buffer, dest, length);
-  return length;
-}
+INSTANTIATE_TEST_CASE_P(Test, TestHydrolibBusApplication,
+                        ::testing::ValuesIn(kTestCases));
 
 TestHydrolibBusApplication::TestHydrolibBusApplication()
     : master(stream, hydrolib::logger::mock_logger),
       slave(stream, memory, hydrolib::logger::mock_logger) {
   hydrolib::logger::mock_distributor.SetAllFilters(
       0, hydrolib::logger::LogLevel::DEBUG);
-  for (unsigned i = 0; i < TestPublicMemory::kPublicMemoryLength; i++) {
+  for (int i = 0; i < TestPublicMemory::kPublicMemoryLength; i++) {
     test_data[i] = i;
   }
 }
 
-TEST_F(TestHydrolibBusApplication, WriteTest) {
-  unsigned address = 0;
-  unsigned length = 5;
-  uint8_t buffer[TestPublicMemory::kPublicMemoryLength];
-  master.Write(test_data, address, length);
-  slave.Process();
-  memory.Read(buffer, address, length);
-  for (unsigned i = 0; i < length; i++) {
-    EXPECT_EQ(buffer[i], test_data[i]);
+hydrolib::ReturnCode TestPublicMemory::Read(void *read_buffer, unsigned address,
+                                            unsigned length) {
+  if (address + length > kPublicMemoryLength) {
+    return hydrolib::ReturnCode::FAIL;
   }
-  master.Write(test_data + TestPublicMemory::kPublicMemoryLength - length,
-               address, length);
+  memcpy(read_buffer, &memory[address], length);
+  return hydrolib::ReturnCode::OK;
+}
+
+hydrolib::ReturnCode TestPublicMemory::Write(const void *write_buffer,
+                                             unsigned address,
+                                             unsigned length) {
+  if (address + length > kPublicMemoryLength) {
+    return hydrolib::ReturnCode::FAIL;
+  }
+  memcpy(&memory[address], write_buffer, length);
+  return hydrolib::ReturnCode::OK;
+}
+
+TEST_P(TestHydrolibBusApplication, WriteTest) {
+  auto test_case = GetParam();
+  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> reference_data =
+      memory.memory;
+  ASSERT_LE(test_case.address + test_case.length,
+            TestPublicMemory::kPublicMemoryLength);
+  master.Write(test_data.data(), test_case.address, test_case.length);
+  memcpy(reference_data.data() + test_case.address, test_data.data(),
+         test_case.length);
+  stream.MakeAllbytesAvailable();
   slave.Process();
-  memory.Read(buffer, address, length);
-  for (unsigned i = 0; i < length; i++) {
-    EXPECT_EQ(buffer[i],
-              test_data[TestPublicMemory::kPublicMemoryLength - length + i]);
+  for (int i = 0; i < TestPublicMemory::kPublicMemoryLength; i++) {
+    EXPECT_EQ(reference_data[i], memory.memory[i]);
   }
 }
 
-TEST_F(TestHydrolibBusApplication, ReadTest) {
-  unsigned address = 0;
-  unsigned length = 5;
-  memory.Write(test_data, 0, TestPublicMemory::kPublicMemoryLength);
-  uint8_t buffer[TestPublicMemory::kPublicMemoryLength];
-  master.Read(buffer, address, length);
+TEST_F(TestHydrolibBusApplication, WriteSeriaTest) {
+  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> reference_data =
+      memory.memory;
+  for (const auto &test_case : kTestCases) {
+    ASSERT_LE(test_case.address + test_case.length,
+              TestPublicMemory::kPublicMemoryLength);
+    master.Write(test_data.data(), test_case.address, test_case.length);
+    memcpy(reference_data.data() + test_case.address, test_data.data(),
+           test_case.length);
+    stream.MakeAllbytesAvailable();
+    slave.Process();
+    for (int i = 0; i < TestPublicMemory::kPublicMemoryLength; i++) {
+      EXPECT_EQ(reference_data[i], memory.memory[i]);
+    }
+  }
+}
+
+TEST_P(TestHydrolibBusApplication, ReadTest) {
+  auto test_case = GetParam();
+  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+  ASSERT_LE(test_case.address + test_case.length,
+            TestPublicMemory::kPublicMemoryLength);
+  memcpy(memory.memory.data(), test_data.data(),
+         TestPublicMemory::kPublicMemoryLength);
+  master.Read(buffer.data(), test_case.address, test_case.length);
+  stream.MakeAllbytesAvailable();
   slave.Process();
+  stream.MakeAllbytesAvailable();
   master.Process();
-  for (unsigned i = 0; i < length; i++) {
-    EXPECT_EQ(buffer[i], test_data[address + i]);
+  for (int i = 0; i < test_case.length; i++) {
+    EXPECT_EQ(buffer[i], memory.memory[test_case.address + i]);
+  }
+  for (int i = 0; i < TestPublicMemory::kPublicMemoryLength; i++) {
+    EXPECT_EQ(test_data[i], memory.memory[i]);
+  }
+}
+
+TEST_F(TestHydrolibBusApplication, ReadSeriaTest) {
+  memcpy(memory.memory.data(), test_data.data(),
+         TestPublicMemory::kPublicMemoryLength);
+  for (const auto &test_case : kTestCases) {
+    std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+    ASSERT_LE(test_case.address + test_case.length,
+              TestPublicMemory::kPublicMemoryLength);
+    master.Read(buffer.data(), test_case.address, test_case.length);
+    stream.MakeAllbytesAvailable();
+    slave.Process();
+    stream.MakeAllbytesAvailable();
+    master.Process();
+    for (int i = 0; i < test_case.length; i++) {
+      EXPECT_EQ(buffer[i], memory.memory[test_case.address + i]);
+    }
+    for (int i = 0; i < TestPublicMemory::kPublicMemoryLength; i++) {
+      EXPECT_EQ(test_data[i], memory.memory[i]);
+    }
   }
 }

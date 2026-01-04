@@ -23,8 +23,12 @@ template <PublicMemoryConcept Memory, typename Logger,
 class Slave {
  public:
   constexpr Slave(TxRxStream &stream, Memory &memory, Logger &logger);
+  Slave(const Slave &) = delete;
+  Slave(Slave &&) = delete;
+  Slave &operator=(const Slave &) = delete;
+  Slave &operator=(Slave &&) = delete;
+  ~Slave() = default;
 
- public:
   void Process();
 
  private:
@@ -33,8 +37,8 @@ class Slave {
 
   Logger &logger_;
 
-  uint8_t rx_buffer_[kMaxMessageLength];
-  uint8_t tx_buffer_[kMaxMessageLength];
+  MemoryAccessMessageBuffer rx_buffer_{};
+  ResponseMessageBuffer tx_buffer_{};
 };
 
 template <PublicMemoryConcept Memory, typename Logger,
@@ -42,64 +46,56 @@ template <PublicMemoryConcept Memory, typename Logger,
 constexpr Slave<Memory, Logger, TxRxStream>::Slave(TxRxStream &stream,
                                                    Memory &memory,
                                                    Logger &logger)
-    : stream_(stream), memory_(memory), logger_(logger) {
-  for (unsigned i = 0; i < kMaxMessageLength; i++) {
-    rx_buffer_[i] = 0;
-  }
-  for (unsigned i = 0; i < kMaxMessageLength; i++) {
-    tx_buffer_[i] = 0;
-  }
-}
+    : stream_(stream), memory_(memory), logger_(logger) {}
 
 template <PublicMemoryConcept Memory, typename Logger,
           concepts::stream::ByteFullStreamConcept TxRxStream>
 void Slave<Memory, Logger, TxRxStream>::Process() {
-  int read_length = read(stream_, rx_buffer_, kMaxMessageLength);
-  if (!read_length) {
+  int read_length = read(stream_, &rx_buffer_, kMaxMessageLength);
+  if (read_length == 0) {
     return;
   }
 
-  Command command = *reinterpret_cast<Command *>(rx_buffer_);
-  switch (command) {
+  switch (rx_buffer_.header.command) {
     case Command::READ: {
-      MemoryAccessInfo *info =
-          reinterpret_cast<MemoryAccessInfo *>(rx_buffer_ + sizeof(Command));
-      ReturnCode res = memory_.Read(tx_buffer_ + sizeof(Command), info->address,
-                                    info->length);
+      ReturnCode res =
+          memory_.Read(tx_buffer_.data, rx_buffer_.header.info.address,
+                       rx_buffer_.header.info.length);
       if (res == ReturnCode::OK) {
         LOG_INFO(logger_, "Transmitting {} bytes from {}",
-            info->length, info->address);
-        *reinterpret_cast<Command *>(tx_buffer_) = Command::RESPONSE;
-        write(stream_, tx_buffer_, sizeof(Command) + info->length);
+                 rx_buffer_.header.info.length, rx_buffer_.header.info.address);
+        tx_buffer_.command = Command::RESPONSE;
+        write(stream_, &tx_buffer_,
+              sizeof(Command) + rx_buffer_.header.info.length);
       } else {
         LOG_WARNING(logger_, "Can't read {} bytes from {}",
-            info->length, info->address);
-        *reinterpret_cast<Command *>(tx_buffer_) = Command::ERROR;
-        write(stream_, tx_buffer_, sizeof(Command));
+                    rx_buffer_.header.info.length,
+                    rx_buffer_.header.info.address);
+        tx_buffer_.command = Command::ERROR;
       }
-    } break;
+      break;
+    }
     case Command::WRITE: {
-      MemoryAccessInfo *info =
-          reinterpret_cast<MemoryAccessInfo *>(rx_buffer_ + sizeof(Command));
       ReturnCode res =
-          memory_.Write(rx_buffer_ + sizeof(Command) + sizeof(MemoryAccessInfo),
-                        info->address, info->length);
+          memory_.Write(rx_buffer_.data, rx_buffer_.header.info.address,
+                        rx_buffer_.header.info.length);
       if (res != ReturnCode::OK) {
         LOG_WARNING(logger_, "Can't write {} bytes to {}",
-            info->length, info->address);
-        *reinterpret_cast<Command *>(tx_buffer_) = Command::ERROR;
-        write(stream_, tx_buffer_, sizeof(Command));
+                    rx_buffer_.header.info.length,
+                    rx_buffer_.header.info.address);
+        tx_buffer_.command = Command::ERROR;
+        write(stream_, &tx_buffer_, sizeof(Command));
       } else {
-        LOG_INFO(logger_, "Wrote {} bytes to {}",
-            info->length, info->address);
+        LOG_INFO(logger_, "Wrote {} bytes to {}", rx_buffer_.header.info.length,
+                 rx_buffer_.header.info.address);
       }
     } break;
     case Command::ERROR:
     case Command::RESPONSE:
     default:
       LOG_WARNING(logger_, "Wrong command");
-      *reinterpret_cast<Command *>(tx_buffer_) = Command::ERROR;
-      write(stream_, tx_buffer_, sizeof(Command));
+      tx_buffer_.command = Command::ERROR;
+      write(stream_, &tx_buffer_, sizeof(Command));
       break;
   }
 }

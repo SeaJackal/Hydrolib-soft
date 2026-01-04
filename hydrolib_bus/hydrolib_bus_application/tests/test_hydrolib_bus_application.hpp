@@ -7,71 +7,41 @@
 #include "hydrolib_bus_application_slave.hpp"
 #include "hydrolib_logger_mock.hpp"
 #include "hydrolib_return_codes.hpp"
-
-class TestLogStream {};
-
-int write([[maybe_unused]] TestLogStream &stream, const void *dest,
-          unsigned length);
+#include "mock_stream.hpp"
 
 class TestPublicMemory {
  public:
-  static constexpr unsigned kPublicMemoryLength = 10;
+  static constexpr int kPublicMemoryLength = 30;
 
- public:
-  TestPublicMemory() {
-    for (unsigned i = 0; i < kPublicMemoryLength; i++) {
-      memory[i] = i;
-    }
-  }
-
- public:
   hydrolib::ReturnCode Read(void *read_buffer, unsigned address,
-                            unsigned length) {
-    if (address + length > kPublicMemoryLength) {
-      return hydrolib::ReturnCode::FAIL;
-    }
-    memcpy(read_buffer, &memory[address], length);
-    return hydrolib::ReturnCode::OK;
-  }
+                            unsigned length);
 
- public:
   hydrolib::ReturnCode Write(const void *write_buffer, unsigned address,
-                             unsigned length) {
-    if (address + length > kPublicMemoryLength) {
-      return hydrolib::ReturnCode::FAIL;
-    }
-    memcpy(&memory[address], write_buffer, length);
-    return hydrolib::ReturnCode::OK;
-  }
+                             unsigned length);
 
- public:
-  uint8_t memory[kPublicMemoryLength];
+  std::array<uint8_t, kPublicMemoryLength> memory{};
 };
 
-class TestStream {
- public:
-  uint8_t buffer[hydrolib::bus::application::kMaxMessageLength];
-  unsigned length = 0;
-  bool has_data = false;
+struct TestCase {
+  int address;
+  int length;
 };
 
-int write(TestStream &stream, const void *dest, unsigned length);
-int read(TestStream &stream, void *dest, unsigned length);
-
-class TestHydrolibBusApplication : public ::testing::Test {
+class TestHydrolibBusApplication
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<TestCase> {
  protected:
   TestHydrolibBusApplication();
 
- protected:
-  TestStream stream;
-  TestPublicMemory memory;
+  hydrolib::streams::mock::MockByteStream stream{};
+  TestPublicMemory memory{};
 
-  hydrolib::bus::application::Master<TestStream,
+  hydrolib::bus::application::Master<hydrolib::streams::mock::MockByteStream,
                                      decltype(hydrolib::logger::mock_logger)>
       master;
-  hydrolib::bus::application::Slave<
-      TestPublicMemory, decltype(hydrolib::logger::mock_logger), TestStream>
+  hydrolib::bus::application::Slave<TestPublicMemory,
+                                    decltype(hydrolib::logger::mock_logger),
+                                    hydrolib::streams::mock::MockByteStream>
       slave;
-
-  uint8_t test_data[TestPublicMemory::kPublicMemoryLength];
+  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> test_data{};
 };

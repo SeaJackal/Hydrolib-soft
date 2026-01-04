@@ -18,4 +18,15 @@ struct MemoryAccessHeader {
 constexpr unsigned kMaxDataLength = UINT8_MAX;
 constexpr unsigned kMaxMessageLength =
     sizeof(MemoryAccessHeader) + kMaxDataLength;
+
+struct MemoryAccessMessageBuffer {
+  MemoryAccessHeader header;
+  uint8_t data[kMaxDataLength];  // NOLINT
+} __attribute__((__packed__));
+
+struct ResponseMessageBuffer {
+  Command command;
+  uint8_t data[kMaxDataLength];  // NOLINT
+} __attribute__((__packed__));
+
 }  // namespace hydrolib::bus::application
