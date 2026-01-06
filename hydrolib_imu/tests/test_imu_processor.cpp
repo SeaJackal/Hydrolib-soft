@@ -14,7 +14,7 @@ TEST(TestIMUProcessor, Process) {
   RawIMUMock<FixedPointBase> imu_mock;
   Vector3D<FixedPointBase> axis{2, 3, 1};
   axis.Normalize();
-  FixedPointBase angle_rad = FixedPointBase(50, 180) * pi;
+  FixedPointBase angle_rad = FixedPointBase(50, 180) * kPi;
   Quaternion<FixedPointBase> target{axis * sin(angle_rad / 2),
                                     cos(angle_rad / 2)};
 
@@ -60,7 +60,7 @@ TEST(TestIMUProcessor, ProcessCorner) {
   RawIMUMock<FixedPointBase> imu_mock;
   Vector3D<FixedPointBase> axis{1, 0, 0};
   axis.Normalize();
-  FixedPointBase angle_rad = pi;
+  FixedPointBase angle_rad = kPi;
   Quaternion<FixedPointBase> target{axis * sin(angle_rad / 2),
                                     cos(angle_rad / 2)};
 
@@ -93,7 +93,7 @@ TEST(TestIMUProcessor, ProcessCorner) {
 
   axis = {0, 0, 1};
   axis.Normalize();
-  angle_rad = pi;
+  angle_rad = kPi;
   target = {axis * sin(angle_rad / 2), cos(angle_rad / 2)};
 
   imu_mock.SetTarget(axis, angle_rad, 15);
