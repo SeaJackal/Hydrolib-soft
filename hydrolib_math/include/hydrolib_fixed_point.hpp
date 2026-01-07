@@ -61,29 +61,22 @@ class FixedPoint {
 
   explicit operator double() const;
 
-  FixedPoint &operator+=(const FixedPoint &other);
-  FixedPoint &operator-=(const FixedPoint &other);
-  FixedPoint operator-() const;
-  FixedPoint operator+(const FixedPoint &other) const;
-  FixedPoint operator-(const FixedPoint &other) const;
-  FixedPoint operator*(const FixedPoint &other) const;
-  FixedPoint operator/(const FixedPoint &other) const;
-  FixedPoint &operator*=(const FixedPoint &other);
-  FixedPoint &operator/=(const FixedPoint &other);
+  constexpr FixedPoint &operator+=(const FixedPoint &other);
+  constexpr FixedPoint &operator-=(const FixedPoint &other);
+  constexpr FixedPoint operator-() const;
+  constexpr FixedPoint operator+(const FixedPoint &other) const;
+  constexpr FixedPoint operator-(const FixedPoint &other) const;
+  constexpr FixedPoint operator*(const FixedPoint &other) const;
+  constexpr FixedPoint operator/(const FixedPoint &other) const;
+  constexpr FixedPoint &operator*=(const FixedPoint &other);
+  constexpr FixedPoint &operator/=(const FixedPoint &other);
 
-  bool operator==(const FixedPoint &other) const;
-  bool operator!=(const FixedPoint &other) const;
-  bool operator<(const FixedPoint &other) const;
-  bool operator<=(const FixedPoint &other) const;
-  bool operator>(const FixedPoint &other) const;
-  bool operator>=(const FixedPoint &other) const;
-
-  bool operator==(int other) const;
-  bool operator!=(int other) const;
-  bool operator<(int other) const;
-  bool operator<=(int other) const;
-  bool operator>(int other) const;
-  bool operator>=(int other) const;
+  constexpr bool operator==(const FixedPoint &other) const;
+  constexpr bool operator!=(const FixedPoint &other) const;
+  constexpr bool operator<(const FixedPoint &other) const;
+  constexpr bool operator<=(const FixedPoint &other) const;
+  constexpr bool operator>(const FixedPoint &other) const;
+  constexpr bool operator>=(const FixedPoint &other) const;
 
   [[nodiscard]] constexpr FixedPoint Abs() const;
 
@@ -147,28 +140,29 @@ FixedPoint<FRACTION_BITS>::operator double() const {
 }
 
 template <int FRACTION_BITS>
-FixedPoint<FRACTION_BITS> &FixedPoint<FRACTION_BITS>::operator+=(
+constexpr FixedPoint<FRACTION_BITS> &FixedPoint<FRACTION_BITS>::operator+=(
     const FixedPoint<FRACTION_BITS> &other) {
   value_ += other.value_;
   return *this;
 }
 
 template <int FRACTION_BITS>
-FixedPoint<FRACTION_BITS> &FixedPoint<FRACTION_BITS>::operator-=(
+constexpr FixedPoint<FRACTION_BITS> &FixedPoint<FRACTION_BITS>::operator-=(
     const FixedPoint<FRACTION_BITS> &other) {
   *this += -other;
   return *this;
 }
 
 template <int FRACTION_BITS>
-FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator-() const {
+constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator-()
+    const {
   FixedPoint<FRACTION_BITS> result = *this;
   result.value_ = -result.value_;
   return result;
 }
 
 template <int FRACTION_BITS>
-FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator+(
+constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator+(
     const FixedPoint<FRACTION_BITS> &other) const {
   FixedPoint<FRACTION_BITS> result = *this;
   result += other;
@@ -176,7 +170,7 @@ FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator+(
 }
 
 template <int FRACTION_BITS>
-FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator-(
+constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator-(
     const FixedPoint<FRACTION_BITS> &other) const {
   FixedPoint<FRACTION_BITS> result = *this;
   result += -other;
@@ -184,7 +178,7 @@ FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator-(
 }
 
 template <int FRACTION_BITS>
-FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator*(
+constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator*(
     const FixedPoint<FRACTION_BITS> &other) const {
   FixedPoint<FRACTION_BITS> result = *this;
   int64_t result_value =
@@ -194,7 +188,7 @@ FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator*(
 }
 
 template <int FRACTION_BITS>
-FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator/(
+constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator/(
     const FixedPoint<FRACTION_BITS> &other) const {
   FixedPoint<FRACTION_BITS> result = *this;
   int64_t result_value =
@@ -204,77 +198,53 @@ FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator/(
 }
 
 template <int FRACTION_BITS>
-FixedPoint<FRACTION_BITS> &FixedPoint<FRACTION_BITS>::operator*=(
+constexpr FixedPoint<FRACTION_BITS> &FixedPoint<FRACTION_BITS>::operator*=(
     const FixedPoint<FRACTION_BITS> &other) {
   *this = *this * other;
   return *this;
 }
 
 template <int FRACTION_BITS>
-FixedPoint<FRACTION_BITS> &FixedPoint<FRACTION_BITS>::operator/=(
+constexpr FixedPoint<FRACTION_BITS> &FixedPoint<FRACTION_BITS>::operator/=(
     const FixedPoint<FRACTION_BITS> &other) {
   *this = *this / other;
   return *this;
 }
 
 template <int FRACTION_BITS>
-bool FixedPoint<FRACTION_BITS>::operator==(const FixedPoint &other) const {
-  return (value_ - other.value_) < (1 << (FRACTION_BITS / 2));
+constexpr bool FixedPoint<FRACTION_BITS>::operator==(
+    const FixedPoint &other) const {
+  return value_ == other.value_;
 }
 
 template <int FRACTION_BITS>
-bool FixedPoint<FRACTION_BITS>::operator!=(const FixedPoint &other) const {
+constexpr bool FixedPoint<FRACTION_BITS>::operator!=(
+    const FixedPoint &other) const {
   return value_ != other.value_;
 }
 
 template <int FRACTION_BITS>
-bool FixedPoint<FRACTION_BITS>::operator<(const FixedPoint &other) const {
+constexpr bool FixedPoint<FRACTION_BITS>::operator<(
+    const FixedPoint &other) const {
   return value_ < other.value_;
 }
 
 template <int FRACTION_BITS>
-bool FixedPoint<FRACTION_BITS>::operator<=(const FixedPoint &other) const {
+constexpr bool FixedPoint<FRACTION_BITS>::operator<=(
+    const FixedPoint &other) const {
   return value_ <= other.value_;
 }
 
 template <int FRACTION_BITS>
-bool FixedPoint<FRACTION_BITS>::operator>(const FixedPoint &other) const {
+constexpr bool FixedPoint<FRACTION_BITS>::operator>(
+    const FixedPoint &other) const {
   return value_ > other.value_;
 }
 
 template <int FRACTION_BITS>
-bool FixedPoint<FRACTION_BITS>::operator>=(const FixedPoint &other) const {
+constexpr bool FixedPoint<FRACTION_BITS>::operator>=(
+    const FixedPoint &other) const {
   return value_ >= other.value_;
-}
-
-template <int FRACTION_BITS>
-bool FixedPoint<FRACTION_BITS>::operator==(int other) const {
-  return value_ == (other << FRACTION_BITS);
-}
-
-template <int FRACTION_BITS>
-bool FixedPoint<FRACTION_BITS>::operator!=(int other) const {
-  return value_ != (other << FRACTION_BITS);
-}
-
-template <int FRACTION_BITS>
-bool FixedPoint<FRACTION_BITS>::operator<(int other) const {
-  return value_ < (other << FRACTION_BITS);
-}
-
-template <int FRACTION_BITS>
-bool FixedPoint<FRACTION_BITS>::operator<=(int other) const {
-  return value_ <= (other << FRACTION_BITS);
-}
-
-template <int FRACTION_BITS>
-bool FixedPoint<FRACTION_BITS>::operator>(int other) const {
-  return value_ > (other << FRACTION_BITS);
-}
-
-template <int FRACTION_BITS>
-bool FixedPoint<FRACTION_BITS>::operator>=(int other) const {
-  return value_ >= (other << FRACTION_BITS);
 }
 
 consteval FixedPointBase operator""_fp(long double value) { return {value}; }
