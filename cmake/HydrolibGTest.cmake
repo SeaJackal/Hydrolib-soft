@@ -17,10 +17,17 @@ function(hydrolib_add_tests_for_target TESTED_TARGET)
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Testing"
         )
         target_compile_features(${TEST_EXECUTABLE_NAME} PUBLIC cxx_std_20)
-
+        set(SANITIZER_FLAGS
+            "-fsanitize=address"
+            "-fsanitize=undefined"
+            "-fno-sanitize-recover=all"
+            "-fsanitize=float-divide-by-zero"
+            "-fsanitize=float-cast-overflow" 
+            "-fno-sanitize=null" 
+            "-fno-sanitize=alignment")
         target_compile_options(${TEST_EXECUTABLE_NAME} PRIVATE --coverage -Wall -Wextra -Wpedantic -Wc++20-compat
-            -Wno-format-security -Woverloaded-virtual -Wsuggest-override -fno-exceptions -fno-rtti -fsanitize=address -fsanitize=undefined)
-        target_link_options(${TEST_EXECUTABLE_NAME} PRIVATE --coverage -fsanitize=address -fsanitize=undefined)
+            -Wno-format-security -Woverloaded-virtual -Wsuggest-override -fno-exceptions -fno-rtti ${SANITIZER_FLAGS})
+        target_link_options(${TEST_EXECUTABLE_NAME} PRIVATE --coverage ${SANITIZER_FLAGS})
         target_link_libraries(${TEST_EXECUTABLE_NAME} ${TESTED_TARGET} GTest::gtest GTest::gtest_main -pthread)
 
         gtest_discover_tests(${TEST_EXECUTABLE_NAME})

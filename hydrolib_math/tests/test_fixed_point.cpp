@@ -22,8 +22,8 @@ class TestFixedPointConstructorInt : public ::testing::Test,
 INSTANTIATE_TEST_CASE_P(
     Test, TestFixedPointConstructorInt,
     ::testing::Values(0, FixedPointBase::kUpperNotIncludedBound - 1,
-                      FixedPointBase::kLowerIncludedBound, 1, -1, 5, 7, 32, -15,
-                      -192, 134));
+                      FixedPointBase::kLowerNotIncludedBound + 1, 1, -1, 5, 7,
+                      32, -15, -192, 134));
 
 TEST_P(TestFixedPointConstructorInt, Basic) {
   auto value = GetParam();
@@ -66,14 +66,13 @@ struct DoubleConstructorTestCase {
   FixedPointBase fixed_point;  // NOLINT
 };
 
-constexpr std::array<DoubleConstructorTestCase, 21>
+constexpr std::array<DoubleConstructorTestCase, 20>
     kDoubleConstructorTestCases = {
         0,
         1,
         -1,
         FixedPointBase::kUpperNotIncludedBound - FixedPointBase::kLeastBitValue,
-        FixedPointBase::kLowerIncludedBound,
-        FixedPointBase::kLowerIncludedBound + FixedPointBase::kLeastBitValue,
+        FixedPointBase::kLowerNotIncludedBound + FixedPointBase::kLeastBitValue,
         FixedPointBase::kLeastBitValue,
         -FixedPointBase::kLeastBitValue,
         3.5,
@@ -103,6 +102,12 @@ TEST_P(TestFixedPointConstructorDouble, Basic) {
               FixedPointBase::kLeastBitValue);
 }
 
+TEST_P(TestFixedPointConstructorDouble, ToInt) {
+  auto test_case = GetParam();
+  EXPECT_EQ(static_cast<int>(test_case.fixed_point),
+            static_cast<int>(test_case.value));
+}
+
 TEST(TestHydrolibMath, FixedPointBaseConstructorWithLiteral) {
   constexpr auto fixed_point = 3.5_fp;
 
@@ -114,12 +119,12 @@ constexpr std::array<FixedPointBase, 10> kFixedPointCases = {
     1,
     -1,
     FixedPointBase::kUpperNotIncludedBound - FixedPointBase::kLeastBitValue,
-    FixedPointBase::kLowerIncludedBound,
-    FixedPointBase::kLowerIncludedBound + FixedPointBase::kLeastBitValue,
+    FixedPointBase::kLowerNotIncludedBound + FixedPointBase::kLeastBitValue,
     FixedPointBase::kLeastBitValue,
     -FixedPointBase::kLeastBitValue,
     2.7568,
-    -7.891};
+    -7.891,
+    107.11231};
 
 class TestFixedPointBinaryOperations
     : public ::testing::Test,
@@ -130,9 +135,9 @@ INSTANTIATE_TEST_CASE_P(
     Test, TestFixedPointBinaryOperations,
     ::testing::Combine(::testing::ValuesIn(kFixedPointCases),
                        ::testing::ValuesIn(kFixedPointCases)),
-    [](const testing::TestParamInfo<TestFixedPointBinaryOperations::ParamType>
-           &info) {
-      static const auto sanitize = [](const std::string &input) -> std::string {
+    [](const testing::TestParamInfo<TestFixedPointBinaryOperations::ParamType>&
+           info) {
+      static const auto sanitize = [](const std::string& input) -> std::string {
         std::string out;
         out.reserve(input.size() * 5);
         for (char chr : input) {
@@ -160,7 +165,7 @@ TEST_P(TestFixedPointBinaryOperations, Addition) {
 
   double expected = static_cast<double>(first) + static_cast<double>(second);
   if (expected < FixedPointBase::kUpperNotIncludedBound &&
-      expected >= FixedPointBase::kLowerIncludedBound) {
+      expected > FixedPointBase::kLowerNotIncludedBound) {
     FixedPointBase result = first + second;
     EXPECT_DOUBLE_EQ(static_cast<double>(result),
                      static_cast<double>(first) + static_cast<double>(second));
@@ -174,7 +179,7 @@ TEST_P(TestFixedPointBinaryOperations, AdditionAssignment) {
 
   double expected = static_cast<double>(first) + static_cast<double>(second);
   if (expected < FixedPointBase::kUpperNotIncludedBound &&
-      expected >= FixedPointBase::kLowerIncludedBound) {
+      expected > FixedPointBase::kLowerNotIncludedBound) {
     first += second;
     EXPECT_DOUBLE_EQ(static_cast<double>(first), expected);
   }
@@ -187,7 +192,7 @@ TEST_P(TestFixedPointBinaryOperations, Subtraction) {
 
   double expected = static_cast<double>(first) - static_cast<double>(second);
   if (expected < FixedPointBase::kUpperNotIncludedBound &&
-      expected >= FixedPointBase::kLowerIncludedBound) {
+      expected > FixedPointBase::kLowerNotIncludedBound) {
     FixedPointBase result = first - second;
     EXPECT_DOUBLE_EQ(static_cast<double>(result), expected);
   }
@@ -200,7 +205,7 @@ TEST_P(TestFixedPointBinaryOperations, SubtractionAssignment) {
 
   double expected = static_cast<double>(first) - static_cast<double>(second);
   if (expected < FixedPointBase::kUpperNotIncludedBound &&
-      expected >= FixedPointBase::kLowerIncludedBound) {
+      expected > FixedPointBase::kLowerNotIncludedBound) {
     first -= second;
     EXPECT_DOUBLE_EQ(static_cast<double>(first), expected);
   }
@@ -213,7 +218,7 @@ TEST_P(TestFixedPointBinaryOperations, Multiplication) {
 
   double expected = static_cast<double>(first) * static_cast<double>(second);
   if (expected < FixedPointBase::kUpperNotIncludedBound &&
-      expected >= FixedPointBase::kLowerIncludedBound) {
+      expected > FixedPointBase::kLowerNotIncludedBound) {
     auto result = first * second;
     EXPECT_NEAR(static_cast<double>(result), expected,
                 FixedPointBase::kLeastBitValue);
@@ -227,7 +232,7 @@ TEST_P(TestFixedPointBinaryOperations, MultiplicationAssignment) {
 
   double expected = static_cast<double>(first) * static_cast<double>(second);
   if (expected < FixedPointBase::kUpperNotIncludedBound &&
-      expected >= FixedPointBase::kLowerIncludedBound) {
+      expected > FixedPointBase::kLowerNotIncludedBound) {
     first *= second;
     EXPECT_NEAR(static_cast<double>(first), expected,
                 FixedPointBase::kLeastBitValue);
@@ -242,7 +247,7 @@ TEST_P(TestFixedPointBinaryOperations, Division) {
   if (second != 0) {
     double expected = static_cast<double>(first) / static_cast<double>(second);
     if (expected < FixedPointBase::kUpperNotIncludedBound &&
-        expected >= FixedPointBase::kLowerIncludedBound) {
+        expected > FixedPointBase::kLowerNotIncludedBound) {
       auto result = first / second;
       EXPECT_NEAR(static_cast<double>(result), expected,
                   FixedPointBase::kLeastBitValue);
@@ -258,7 +263,7 @@ TEST_P(TestFixedPointBinaryOperations, DivisionAssignment) {
   if (second != 0) {
     double expected = static_cast<double>(first) / static_cast<double>(second);
     if (expected < FixedPointBase::kUpperNotIncludedBound &&
-        expected >= FixedPointBase::kLowerIncludedBound) {
+        expected > FixedPointBase::kLowerNotIncludedBound) {
       first /= second;
       EXPECT_NEAR(static_cast<double>(first), expected,
                   FixedPointBase::kLeastBitValue);
@@ -344,65 +349,83 @@ TEST_P(TestFixedPointBinaryOperations, GreaterOrEqual) {
   }
 }
 
-TEST(TestHydrolibMath, FixedPointBaseSin) {
-  constexpr auto rads1 = kPi / 4;
-  constexpr auto rads2 = -kPi / 6;
-  constexpr auto rads3 = -kPi / 3;
-  FixedPointBase result1 = sin(rads1);
-  FixedPointBase result2 = sin(rads2);
-  FixedPointBase result3 = sin(rads3);
+constexpr std::array<FixedPointBase, 21> kFixedPointTrigonometryCases = {
+    0,
+    kPi<FixedPointBase::kFractionBits>,
+    -kPi<FixedPointBase::kFractionBits>,
+    kPi<FixedPointBase::kFractionBits> / 2,
+    -kPi<FixedPointBase::kFractionBits> / 2,
+    kPi<FixedPointBase::kFractionBits> / 4,
+    -kPi<FixedPointBase::kFractionBits> / 4,
+    kPi<FixedPointBase::kFractionBits> / 4 * 3,
+    -kPi<FixedPointBase::kFractionBits> / 4 * 3,
+    kPi<FixedPointBase::kFractionBits> / 3,
+    -kPi<FixedPointBase::kFractionBits> / 3,
+    kPi<FixedPointBase::kFractionBits> / 6,
+    -kPi<FixedPointBase::kFractionBits> / 6,
+    kPi<FixedPointBase::kFractionBits> + kPi<FixedPointBase::kFractionBits> / 2,
+    -kPi<FixedPointBase::kFractionBits> -
+        kPi<FixedPointBase::kFractionBits> / 2,
+    kPi<FixedPointBase::kFractionBits> + kPi<FixedPointBase::kFractionBits> / 4,
+    -kPi<FixedPointBase::kFractionBits> -
+        kPi<FixedPointBase::kFractionBits> / 4,
+    FixedPointBase::kUpperNotIncludedBound - FixedPointBase::kLeastBitValue,
+    FixedPointBase::kLowerNotIncludedBound + FixedPointBase::kLeastBitValue,
+    FixedPointBase::kLeastBitValue,
+    -FixedPointBase::kLeastBitValue,
+};
 
-  EXPECT_NEAR(static_cast<double>(result1), sin(static_cast<double>(rads1)),
-              0.002);
-  EXPECT_NEAR(static_cast<double>(result2), sin(static_cast<double>(rads2)),
-              0.002);
-  EXPECT_NEAR(static_cast<double>(result3), sin(static_cast<double>(rads3)),
-              0.002);
+class TestFixedPointTrigonometry
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<FixedPointBase> {};
+
+INSTANTIATE_TEST_CASE_P(
+    Test, TestFixedPointTrigonometry,
+    ::testing::ValuesIn(kFixedPointTrigonometryCases),
+    [](const testing::TestParamInfo<TestFixedPointTrigonometry::ParamType>&
+           info) {
+      static const auto sanitize = [](const std::string& input) -> std::string {
+        std::string out;
+        out.reserve(input.size() * 5);
+        for (char chr : input) {
+          if (chr == '.') {
+            out += "point";
+          } else if (chr == '-') {
+            out += "minus";
+          } else {
+            out += chr;
+          }
+        }
+        return out;
+      };
+      auto value = info.param;
+      return sanitize(std::to_string(static_cast<double>(value)));
+    });
+
+TEST_P(TestFixedPointTrigonometry, Sin) {
+  auto value = GetParam();
+  auto result = sin(value);
+  if (value > hydrolib::math::kPi<FixedPointBase::kFractionBits> * 2 ||
+      value < -hydrolib::math::kPi<FixedPointBase::kFractionBits> * 2) {
+    EXPECT_NEAR(static_cast<double>(result), sin(static_cast<double>(value)),
+                0.001);
+  } else {
+    EXPECT_NEAR(static_cast<double>(result), sin(static_cast<double>(value)),
+                2 * FixedPointBase::kLeastBitValue);
+  }
 }
 
-TEST(TestHydrolibMath, FixedPointBaseCos) {
-  constexpr double rads = 3.14159265358979323846 / 4;
-  constexpr double rads2 = 3.14159265358979323846 / 6;
-  constexpr double rads3 = 3.14159265358979323846 / 3;
-  FixedPointBase a(rads);
-  FixedPointBase a2(rads2);
-  FixedPointBase a3(rads3);
-  FixedPointBase result = cos(a);
-  FixedPointBase result2 = cos(a2);
-  FixedPointBase result3 = cos(a3);
-  EXPECT_NEAR(static_cast<double>(result), cos(rads), 0.002);
-  EXPECT_NEAR(static_cast<double>(result2), cos(rads2), 0.002);
-  EXPECT_NEAR(static_cast<double>(result3), cos(rads3), 0.002);
-}
-
-TEST(TestHydrolibMath, FixedPointBaseSinNegativeArgument) {
-  constexpr double rads = -3.14159265358979323846 / 4.0;
-  constexpr double rads2 = -3.14159265358979323846 / 6.0;
-  constexpr double rads3 = -3.14159265358979323846 / 3.0;
-  FixedPointBase a(rads);
-  FixedPointBase result_sin = sin(a);
-  FixedPointBase a2(rads2);
-  FixedPointBase result_sin2 = sin(a2);
-  FixedPointBase a3(rads3);
-  FixedPointBase result_sin3 = sin(a3);
-  EXPECT_NEAR(static_cast<double>(result_sin), sin(rads), 0.002);
-  EXPECT_NEAR(static_cast<double>(result_sin2), sin(rads2), 0.002);
-  EXPECT_NEAR(static_cast<double>(result_sin3), sin(rads3), 0.002);
-}
-
-TEST(TestHydrolibMath, FixedPointBaseCosNegativeArgument) {
-  constexpr double rads = -3.14159265358979323846 / 4.0;
-  constexpr double rads2 = -3.14159265358979323846 / 6.0;
-  constexpr double rads3 = -3.14159265358979323846 / 3.0;
-  FixedPointBase a(rads);
-  FixedPointBase result_cos = cos(a);
-  FixedPointBase a2(rads2);
-  FixedPointBase result_cos2 = cos(a2);
-  FixedPointBase a3(rads3);
-  FixedPointBase result_cos3 = cos(a3);
-  EXPECT_NEAR(static_cast<double>(result_cos), cos(rads), 0.002);
-  EXPECT_NEAR(static_cast<double>(result_cos2), cos(rads2), 0.002);
-  EXPECT_NEAR(static_cast<double>(result_cos3), cos(rads3), 0.002);
+TEST_P(TestFixedPointTrigonometry, Cos) {
+  auto value = GetParam();
+  auto result = cos(value);
+  if (value > hydrolib::math::kPi<FixedPointBase::kFractionBits> * 2 ||
+      value < -hydrolib::math::kPi<FixedPointBase::kFractionBits> * 2) {
+    EXPECT_NEAR(static_cast<double>(result), cos(static_cast<double>(value)),
+                0.001);
+  } else {
+    EXPECT_NEAR(static_cast<double>(result), cos(static_cast<double>(value)),
+                2 * FixedPointBase::kLeastBitValue);
+  }
 }
 
 TEST(TestHydrolibMath, FixedPointBaseGetAbsIntPart) {
