@@ -428,6 +428,54 @@ TEST_P(TestFixedPointTrigonometry, Cos) {
   }
 }
 
+constexpr std::array<FixedPointBase, 10> kFixedPointSqrtCases = {
+  0,
+  1,
+  FixedPointBase::kUpperNotIncludedBound - FixedPointBase::kLeastBitValue,
+  FixedPointBase::kLeastBitValue,
+  2.7568,
+  107.11231,
+0.25,
+7304.4209,
+0.0881,
+4.001};
+
+class TestFixedPointSqrt
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<FixedPointBase> {};
+
+INSTANTIATE_TEST_CASE_P(
+    Test, TestFixedPointSqrt, ::testing::ValuesIn(kFixedPointSqrtCases),
+    [](const testing::TestParamInfo<TestFixedPointTrigonometry::ParamType>&
+           info) {
+      static const auto sanitize = [](const std::string& input) -> std::string {
+        std::string out;
+        out.reserve(input.size() * 5);
+        for (char chr : input) {
+          if (chr == '.') {
+            out += "point";
+          } else if (chr == '-') {
+            out += "minus";
+          } else {
+            out += chr;
+          }
+        }
+        return out;
+      };
+      auto value = info.param;
+      return sanitize(std::to_string(static_cast<double>(value)));
+    });
+
+TEST_P(TestFixedPointSqrt, Base) {
+  auto value = GetParam();
+  if (value >= 0) {
+    FixedPointBase result = sqrt(value);
+
+    EXPECT_NEAR(static_cast<double>(result), sqrt(static_cast<double>(value)),
+                FixedPointBase::kLeastBitValue);
+  }
+}
+
 TEST(TestHydrolibMath, FixedPointBaseGetAbsIntPart) {
   FixedPointBase fp1(5.75);
   EXPECT_EQ(fp1.GetAbsIntPart(), 5);
