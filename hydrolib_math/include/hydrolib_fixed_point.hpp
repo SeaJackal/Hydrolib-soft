@@ -407,7 +407,7 @@ hydrolib::math::FixedPoint<FRACTION_BITS> sqrt(
   int high = INT_MAX;
   int mid = high / 2;
 
-  while (low < high) {
+  while (low + 1 < high) {
     int64_t square = static_cast<int64_t>(mid) * mid;
     if (square > target_sq) {
       high = mid;
@@ -417,17 +417,13 @@ hydrolib::math::FixedPoint<FRACTION_BITS> sqrt(
       value.value_ = mid;
       return value;
     }
-    if (high - low == 1) {
-      if (static_cast<int64_t>(high) * high - target_sq <
-          target_sq - static_cast<int64_t>(low) * low) {
-        value.value_ = high;
-      } else {
-        value.value_ = low;
-      }
-      return value;
-    }
-    mid = low + (high - low) / 2;
+    mid = low + ((high - low) / 2);
   }
-
+  if ((static_cast<int64_t>(high) * high) - target_sq <
+      target_sq - (static_cast<int64_t>(low) * low)) {
+    value.value_ = high;
+  } else {
+    value.value_ = low;
+  }
   return value;
 }
