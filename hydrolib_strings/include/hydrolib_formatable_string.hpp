@@ -219,7 +219,7 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
     return ReturnCode::OVERFLOW;
   }
   int fractional = (param.GetAbsFractionPart() * 1000) >>
-                   math::FixedPointBase::GetFractionBits();
+                   math::FixedPointBase::kFractionBits;
   int nulls_counter = 1000 / 10;
   while (nulls_counter > fractional) {
     nulls_counter /= 10;
