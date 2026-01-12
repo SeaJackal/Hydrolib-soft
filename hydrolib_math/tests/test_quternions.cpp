@@ -1,207 +1,369 @@
 #include <gtest/gtest.h>
 
-#include "hydrolib_quaternions.hpp"
-#include "hydrolib_vector3d.hpp"
+#include <array>
+#include <tuple>
 
-using namespace hydrolib::math;
+#include "hydrolib_quaternions.hpp"
+
+using hydrolib::math::Quaternion;
+
+using BinaryParam =
+    std::tuple<Quaternion<double>, Quaternion<double>, Quaternion<double>>;
+
+static constexpr std::array<BinaryParam, 6> kQuaternionAdditionCases{{
+    BinaryParam{Quaternion<double>{.x = 1, .y = 2, .z = 3, .w = 4},
+                Quaternion<double>{.x = 5, .y = 6, .z = 7, .w = 8},
+                Quaternion<double>{.x = 6, .y = 8, .z = 10, .w = 12}},
+    BinaryParam{Quaternion<double>{.x = -1, .y = -2, .z = -3, .w = -4},
+                Quaternion<double>{.x = 1, .y = 2, .z = 3, .w = 4},
+                Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0}},
+    BinaryParam{Quaternion<double>{.x = 1, .y = 2, .z = 3, .w = 4},
+                Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0},
+                Quaternion<double>{.x = 1, .y = 2, .z = 3, .w = 4}},
+    BinaryParam{Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0},
+                Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0},
+                Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0}},
+    BinaryParam{Quaternion<double>{.x = 0.5, .y = -0.25, .z = 0.75, .w = -1.5},
+                Quaternion<double>{.x = -0.5, .y = 0.25, .z = -0.75, .w = 1.5},
+                Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0}},
+    BinaryParam{
+        Quaternion<double>{.x = 1.25, .y = -2.5, .z = 3.75, .w = -4.125},
+        Quaternion<double>{.x = -10.5, .y = 20.25, .z = -30.75, .w = 40.875},
+        Quaternion<double>{.x = -9.25, .y = 17.75, .z = -27.0, .w = 36.75}},
+}};
+
+static constexpr std::array<BinaryParam, 6> kQuaternionSubtractionCases{{
+    BinaryParam{Quaternion<double>{.x = 10, .y = 20, .z = 30, .w = 40},
+                Quaternion<double>{.x = 5, .y = 6, .z = 7, .w = 8},
+                Quaternion<double>{.x = 5, .y = 14, .z = 23, .w = 32}},
+    BinaryParam{Quaternion<double>{.x = 1, .y = 2, .z = 3, .w = 4},
+                Quaternion<double>{.x = 1, .y = 1, .z = 1, .w = 1},
+                Quaternion<double>{.x = 0, .y = 1, .z = 2, .w = 3}},
+    BinaryParam{Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0},
+                Quaternion<double>{.x = 1, .y = 2, .z = 3, .w = 4},
+                Quaternion<double>{.x = -1, .y = -2, .z = -3, .w = -4}},
+    BinaryParam{Quaternion<double>{.x = 1, .y = 2, .z = 3, .w = 4},
+                Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0},
+                Quaternion<double>{.x = 1, .y = 2, .z = 3, .w = 4}},
+    BinaryParam{
+        Quaternion<double>{.x = 1.25, .y = -2.5, .z = 3.75, .w = -4.125},
+        Quaternion<double>{.x = 1.25, .y = -2.5, .z = 3.75, .w = -4.125},
+        Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0}},
+    BinaryParam{
+        Quaternion<double>{.x = -10.5, .y = 20.25, .z = -30.75, .w = 40.875},
+        Quaternion<double>{.x = 1.25, .y = -2.5, .z = 3.75, .w = -4.125},
+        Quaternion<double>{.x = -11.75, .y = 22.75, .z = -34.5, .w = 45.0}},
+}};
+
+static constexpr std::array<BinaryParam, 8> kQuaternionMultiplicationCases{{
+    BinaryParam{Quaternion<double>{.x = 1, .y = 0, .z = 0, .w = 0},
+                Quaternion<double>{.x = 0, .y = 1, .z = 0, .w = 0},
+                Quaternion<double>{.x = 0, .y = 0, .z = 1, .w = 0}},
+    BinaryParam{Quaternion<double>{.x = 2, .y = 4, .z = 1, .w = 3},
+                Quaternion<double>{.x = 3, .y = 5, .z = 2, .w = 1},
+                Quaternion<double>{.x = 14, .y = 18, .z = 5, .w = -25}},
+    BinaryParam{Quaternion<double>{.x = 3, .y = 5, .z = 2, .w = 1},
+                Quaternion<double>{.x = 2, .y = 4, .z = 1, .w = 3},
+                Quaternion<double>{.x = 8, .y = 20, .z = 9, .w = -25}},
+    BinaryParam{Quaternion<double>{.x = 2, .y = 4, .z = 6, .w = 8},
+                Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 1},
+                Quaternion<double>{.x = 2, .y = 4, .z = 6, .w = 8}},
+    BinaryParam{Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 1},
+                Quaternion<double>{.x = 2, .y = 4, .z = 6, .w = 8},
+                Quaternion<double>{.x = 2, .y = 4, .z = 6, .w = 8}},
+    BinaryParam{Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0},
+                Quaternion<double>{.x = 2, .y = 4, .z = 6, .w = 8},
+                Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0}},
+    BinaryParam{Quaternion<double>{.x = 2, .y = 4, .z = 6, .w = 8},
+                Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0},
+                Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0}},
+    BinaryParam{Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 1},
+                Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 1},
+                Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 1}},
+}};
+
+using UnaryParam = std::tuple<Quaternion<double>, Quaternion<double>>;
+
+static constexpr std::array<UnaryParam, 4> kQuaternionUnaryMinusCases{{
+    UnaryParam{Quaternion<double>{.x = 1, .y = -2, .z = 3, .w = -4},
+               Quaternion<double>{.x = -1, .y = 2, .z = -3, .w = 4}},
+    UnaryParam{Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0},
+               Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0}},
+    UnaryParam{Quaternion<double>{.x = -1, .y = 2, .z = -3, .w = 4},
+               Quaternion<double>{.x = 1, .y = -2, .z = 3, .w = -4}},
+    UnaryParam{Quaternion<double>{.x = 0.5, .y = -0.25, .z = 0.75, .w = -1.5},
+               Quaternion<double>{.x = -0.5, .y = 0.25, .z = -0.75, .w = 1.5}},
+}};
+
+static constexpr std::array<UnaryParam, 4> kQuaternionConjugateCases{{
+    UnaryParam{Quaternion<double>{.x = 1, .y = 2, .z = 3, .w = 4},
+               Quaternion<double>{.x = -1, .y = -2, .z = -3, .w = 4}},
+    UnaryParam{Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0},
+               Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0}},
+    UnaryParam{Quaternion<double>{.x = 0.5, .y = -0.25, .z = 0.75, .w = -1.5},
+               Quaternion<double>{.x = -0.5, .y = 0.25, .z = -0.75, .w = -1.5}},
+    UnaryParam{
+        Quaternion<double>{.x = -10.5, .y = 20.25, .z = -30.75, .w = 40.875},
+        Quaternion<double>{.x = 10.5, .y = -20.25, .z = 30.75, .w = 40.875}},
+}};
+
+using ScalarParam = std::tuple<Quaternion<double>, double, Quaternion<double>>;
+
+static constexpr std::array<ScalarParam, 5>
+    kQuaternionScalarMultiplicationCases{{
+        ScalarParam{Quaternion<double>{.x = 2, .y = 4, .z = 6, .w = 8}, 3.0,
+                    Quaternion<double>{.x = 6, .y = 12, .z = 18, .w = 24}},
+        ScalarParam{Quaternion<double>{.x = 2, .y = 4, .z = 6, .w = 8}, 0.0,
+                    Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0}},
+        ScalarParam{Quaternion<double>{.x = 2, .y = 4, .z = 6, .w = 8}, 1.0,
+                    Quaternion<double>{.x = 2, .y = 4, .z = 6, .w = 8}},
+        ScalarParam{Quaternion<double>{.x = 2, .y = -4, .z = 6, .w = -8}, -2.0,
+                    Quaternion<double>{.x = -4, .y = 8, .z = -12, .w = 16}},
+        ScalarParam{
+            Quaternion<double>{.x = 0.5, .y = -0.25, .z = 0.75, .w = -1.5}, 2.0,
+            Quaternion<double>{.x = 1.0, .y = -0.5, .z = 1.5, .w = -3.0}},
+    }};
+
+static constexpr std::array<ScalarParam, 4> kQuaternionScalarDivisionCases{{
+    ScalarParam{Quaternion<double>{.x = 6, .y = 12, .z = 18, .w = 24}, 3.0,
+                Quaternion<double>{.x = 2, .y = 4, .z = 6, .w = 8}},
+    ScalarParam{Quaternion<double>{.x = 6, .y = 12, .z = 18, .w = 24}, 1.0,
+                Quaternion<double>{.x = 6, .y = 12, .z = 18, .w = 24}},
+    ScalarParam{Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0}, 3.0,
+                Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0}},
+    ScalarParam{Quaternion<double>{.x = 1.0, .y = -0.5, .z = 1.5, .w = -3.0},
+                2.0,
+                Quaternion<double>{.x = 0.5, .y = -0.25, .z = 0.75, .w = -1.5}},
+}};
+
+using DotParam = std::tuple<Quaternion<double>, Quaternion<double>, double>;
+
+static constexpr std::array<DotParam, 4> kQuaternionDotCases{{
+    DotParam{Quaternion<double>{.x = 1, .y = 2, .z = 3, .w = 4},
+             Quaternion<double>{.x = 5, .y = 6, .z = 7, .w = 8}, 70.0},
+    DotParam{Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0},
+             Quaternion<double>{.x = 5, .y = 6, .z = 7, .w = 8}, 0.0},
+    DotParam{Quaternion<double>{.x = 1, .y = 2, .z = 3, .w = 4},
+             Quaternion<double>{.x = 1, .y = 2, .z = 3, .w = 4}, 30.0},
+    DotParam{Quaternion<double>{.x = 0.5, .y = -0.25, .z = 0.75, .w = -1.5},
+             Quaternion<double>{.x = -0.5, .y = 0.25, .z = -0.75, .w = 1.5},
+             -3.125},
+}};
+
+using NormParam = std::tuple<Quaternion<double>, double>;
+
+static constexpr std::array<NormParam, 4> kQuaternionNormCases{{
+    NormParam{Quaternion<double>{.x = 3, .y = 4, .z = 0, .w = 0}, 5.0},
+    NormParam{Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0}, 0.0},
+    NormParam{Quaternion<double>{.x = 1, .y = 2, .z = 3, .w = 4},
+              5.477225575051661},
+    NormParam{Quaternion<double>{.x = 0.5, .y = -0.25, .z = 0.75, .w = -1.5},
+              1.7677669529663689},
+}};
+
+using NormalizeParam = std::tuple<Quaternion<double>, Quaternion<double>>;
+
+static constexpr std::array<NormalizeParam, 3> kQuaternionNormalizeCases{{
+    NormalizeParam{Quaternion<double>{.x = 3, .y = 4, .z = 0, .w = 0},
+                   Quaternion<double>{.x = 0.6, .y = 0.8, .z = 0, .w = 0}},
+    NormalizeParam{Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0},
+                   Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = 0}},
+    NormalizeParam{Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = -2},
+                   Quaternion<double>{.x = 0, .y = 0, .z = 0, .w = -1}},
+}};
 
 TEST(TestHydrolibMath, QuaternionConstructorWithComponents) {
-  Quaternion<double> q(1.0, 2.0, 3.0, 4.0);
+  Quaternion<double> quaternion{.x = 1.0, .y = 2.0, .z = 3.0, .w = 4.0};
 
-  EXPECT_EQ(q.x, 1.0);
-  EXPECT_EQ(q.y, 2.0);
-  EXPECT_EQ(q.z, 3.0);
-  EXPECT_EQ(q.w, 4.0);
+  EXPECT_DOUBLE_EQ(quaternion.x, 1.0);
+  EXPECT_DOUBLE_EQ(quaternion.y, 2.0);
+  EXPECT_DOUBLE_EQ(quaternion.z, 3.0);
+  EXPECT_DOUBLE_EQ(quaternion.w, 4.0);
 }
 
-TEST(TestHydrolibMath, QuaternionConstructorWithVector3D) {
-  Vector3D<double> v{10.0, 20.0, 30.0};
-  Quaternion<double> q(v);
+class TestQuaternionBinaryOperations
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<std::tuple<
+          Quaternion<double>, Quaternion<double>, Quaternion<double>>> {};
 
-  EXPECT_EQ(q.x, 10.0);
-  EXPECT_EQ(q.y, 20.0);
-  EXPECT_EQ(q.z, 30.0);
-  EXPECT_EQ(q.w, 0.0);
+class TestQuaternionAddition : public TestQuaternionBinaryOperations {};
+
+INSTANTIATE_TEST_CASE_P(Test, TestQuaternionAddition,
+                        ::testing::ValuesIn(kQuaternionAdditionCases));
+
+TEST_P(TestQuaternionAddition, Basic) {
+  auto values = GetParam();
+  auto quaternion_1 = std::get<0>(values);
+  auto quaternion_2 = std::get<1>(values);
+  auto expected = std::get<2>(values);
+
+  auto result = quaternion_1 + quaternion_2;
+
+  EXPECT_DOUBLE_EQ(result.x, expected.x);
+  EXPECT_DOUBLE_EQ(result.y, expected.y);
+  EXPECT_DOUBLE_EQ(result.z, expected.z);
+  EXPECT_DOUBLE_EQ(result.w, expected.w);
 }
 
-TEST(TestHydrolibMath, QuaternionAddition) {
-  Quaternion<double> q1(double(1), double(2), double(3), double(4));
-  Quaternion<double> q2(double(5), double(6), double(7), double(8));
-  Quaternion<double> result = q1 + q2;
+class TestQuaternionSubtraction : public TestQuaternionBinaryOperations {};
 
-  EXPECT_EQ(result.x, double(6));
-  EXPECT_EQ(result.y, double(8));
-  EXPECT_EQ(result.z, double(10));
-  EXPECT_EQ(result.w, double(12));
+INSTANTIATE_TEST_CASE_P(Test, TestQuaternionSubtraction,
+                        ::testing::ValuesIn(kQuaternionSubtractionCases));
+
+TEST_P(TestQuaternionSubtraction, Basic) {
+  auto values = GetParam();
+  auto quaternion_1 = std::get<0>(values);
+  auto quaternion_2 = std::get<1>(values);
+  auto expected = std::get<2>(values);
+
+  auto result = quaternion_1 - quaternion_2;
+
+  EXPECT_DOUBLE_EQ(result.x, expected.x);
+  EXPECT_DOUBLE_EQ(result.y, expected.y);
+  EXPECT_DOUBLE_EQ(result.z, expected.z);
+  EXPECT_DOUBLE_EQ(result.w, expected.w);
 }
 
-TEST(TestHydrolibMath, QuaternionAdditionAssignment) {
-  Quaternion<double> q1(double(1), double(2), double(3), double(4));
-  Quaternion<double> q2(double(5), double(6), double(7), double(8));
-  q1 += q2;
+class TestQuaternionMultiplication : public TestQuaternionBinaryOperations {};
 
-  EXPECT_EQ(q1.x, double(6));
-  EXPECT_EQ(q1.y, double(8));
-  EXPECT_EQ(q1.z, double(10));
-  EXPECT_EQ(q1.w, double(12));
+INSTANTIATE_TEST_CASE_P(Test, TestQuaternionMultiplication,
+                        ::testing::ValuesIn(kQuaternionMultiplicationCases));
+
+TEST_P(TestQuaternionMultiplication, Basic) {
+  auto values = GetParam();
+  auto quaternion_1 = std::get<0>(values);
+  auto quaternion_2 = std::get<1>(values);
+  auto expected = std::get<2>(values);
+
+  auto result = quaternion_1 * quaternion_2;
+
+  EXPECT_DOUBLE_EQ(result.x, expected.x);
+  EXPECT_DOUBLE_EQ(result.y, expected.y);
+  EXPECT_DOUBLE_EQ(result.z, expected.z);
+  EXPECT_DOUBLE_EQ(result.w, expected.w);
 }
 
-TEST(TestHydrolibMath, QuaternionSubtraction) {
-  Quaternion<double> q1(double(10), double(20), double(30), double(40));
-  Quaternion<double> q2(double(5), double(6), double(7), double(8));
-  Quaternion<double> result = q1 - q2;
+class TestQuaternionUnaryOperations
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<UnaryParam> {};
 
-  EXPECT_EQ(result.x, double(5));
-  EXPECT_EQ(result.y, double(14));
-  EXPECT_EQ(result.z, double(23));
-  EXPECT_EQ(result.w, double(32));
+class TestQuaternionUnaryMinus : public TestQuaternionUnaryOperations {};
+
+INSTANTIATE_TEST_CASE_P(Test, TestQuaternionUnaryMinus,
+                        ::testing::ValuesIn(kQuaternionUnaryMinusCases));
+
+TEST_P(TestQuaternionUnaryMinus, Basic) {
+  auto values = GetParam();
+  auto quaternion = std::get<0>(values);
+  auto expected = std::get<1>(values);
+  auto result = -quaternion;
+  EXPECT_DOUBLE_EQ(result.x, expected.x);
+  EXPECT_DOUBLE_EQ(result.y, expected.y);
+  EXPECT_DOUBLE_EQ(result.z, expected.z);
+  EXPECT_DOUBLE_EQ(result.w, expected.w);
 }
 
-TEST(TestHydrolibMath, QuaternionUnaryMinus) {
-  Quaternion<double> q(double(1), double(-2), double(3), double(-4));
-  Quaternion<double> result = -q;
+class TestQuaternionConjugate : public TestQuaternionUnaryOperations {};
 
-  EXPECT_EQ(result.x, double(-1));
-  EXPECT_EQ(result.y, double(2));
-  EXPECT_EQ(result.z, double(-3));
-  EXPECT_EQ(result.w, double(4));
+INSTANTIATE_TEST_CASE_P(Test, TestQuaternionConjugate,
+                        ::testing::ValuesIn(kQuaternionConjugateCases));
+
+TEST_P(TestQuaternionConjugate, Basic) {
+  auto values = GetParam();
+  auto quaternion = std::get<0>(values);
+  auto expected = std::get<1>(values);
+  auto result = !quaternion;
+  EXPECT_DOUBLE_EQ(result.x, expected.x);
+  EXPECT_DOUBLE_EQ(result.y, expected.y);
+  EXPECT_DOUBLE_EQ(result.z, expected.z);
+  EXPECT_DOUBLE_EQ(result.w, expected.w);
 }
 
-TEST(TestHydrolibMath, QuaternionMultiplication) {
-  Quaternion<double> q1(double(1), double(0), double(0), double(0));
-  Quaternion<double> q2(double(0), double(1), double(0), double(0));
-  Quaternion<double> result = q1 * q2;
+class TestQuaternionScalarMultiplication
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<ScalarParam> {};
 
-  EXPECT_EQ(result.x, double(0));
-  EXPECT_EQ(result.y, double(0));
-  EXPECT_EQ(result.z, double(1));
-  EXPECT_EQ(result.w, double(0));
+INSTANTIATE_TEST_CASE_P(
+    Test, TestQuaternionScalarMultiplication,
+    ::testing::ValuesIn(kQuaternionScalarMultiplicationCases));
+
+TEST_P(TestQuaternionScalarMultiplication, Basic) {
+  auto values = GetParam();
+  auto quaternion = std::get<0>(values);
+  auto multiplier = std::get<1>(values);
+  auto expected = std::get<2>(values);
+  auto left = quaternion * multiplier;
+  auto right = multiplier * quaternion;
+  EXPECT_DOUBLE_EQ(left.x, expected.x);
+  EXPECT_DOUBLE_EQ(left.y, expected.y);
+  EXPECT_DOUBLE_EQ(left.z, expected.z);
+  EXPECT_DOUBLE_EQ(left.w, expected.w);
+  EXPECT_DOUBLE_EQ(right.x, expected.x);
+  EXPECT_DOUBLE_EQ(right.y, expected.y);
+  EXPECT_DOUBLE_EQ(right.z, expected.z);
+  EXPECT_DOUBLE_EQ(right.w, expected.w);
 }
 
-TEST(TestHydrolibMath, QuaternionMultiplicationWithIdentity) {
-  Quaternion<double> q(double(1), double(2), double(3), double(0));
-  Quaternion<double> identity(double(0), double(0), double(0), double(1));
-  Quaternion<double> result = q * identity;
+class TestQuaternionScalarDivision
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<ScalarParam> {};
 
-  EXPECT_EQ(result.x, double(1));
-  EXPECT_EQ(result.y, double(2));
-  EXPECT_EQ(result.z, double(3));
-  EXPECT_EQ(result.w, double(0));
+INSTANTIATE_TEST_CASE_P(Test, TestQuaternionScalarDivision,
+                        ::testing::ValuesIn(kQuaternionScalarDivisionCases));
+
+TEST_P(TestQuaternionScalarDivision, Basic) {
+  auto values = GetParam();
+  auto quaternion = std::get<0>(values);
+  auto divider = std::get<1>(values);
+  auto expected = std::get<2>(values);
+  auto result = quaternion / divider;
+  EXPECT_DOUBLE_EQ(result.x, expected.x);
+  EXPECT_DOUBLE_EQ(result.y, expected.y);
+  EXPECT_DOUBLE_EQ(result.z, expected.z);
+  EXPECT_DOUBLE_EQ(result.w, expected.w);
 }
 
-TEST(TestHydrolibMath, QuaternionConjugate) {
-  Quaternion<double> q(double(1), double(2), double(3), double(4));
-  Quaternion<double> conjugate = !q;
+class TestQuaternionDot : public ::testing::Test,
+                          public ::testing::WithParamInterface<DotParam> {};
 
-  EXPECT_EQ(conjugate.x, double(-1));
-  EXPECT_EQ(conjugate.y, double(-2));
-  EXPECT_EQ(conjugate.z, double(-3));
-  EXPECT_EQ(conjugate.w, double(4));
+INSTANTIATE_TEST_CASE_P(Test, TestQuaternionDot,
+                        ::testing::ValuesIn(kQuaternionDotCases));
+
+TEST_P(TestQuaternionDot, Basic) {
+  auto values = GetParam();
+  auto first = std::get<0>(values);
+  auto second = std::get<1>(values);
+  auto expected = std::get<2>(values);
+  EXPECT_DOUBLE_EQ(Quaternion<double>::Dot(first, second), expected);
 }
 
-TEST(TestHydrolibMath, QuaternionScalarMultiplication) {
-  Quaternion<double> q(double(2), double(4), double(6), double(8));
-  Quaternion<double> result = q * double(3);
+class TestQuaternionNorm : public ::testing::Test,
+                           public ::testing::WithParamInterface<NormParam> {};
 
-  EXPECT_EQ(result.x, double(6));
-  EXPECT_EQ(result.y, double(12));
-  EXPECT_EQ(result.z, double(18));
-  EXPECT_EQ(result.w, double(24));
+INSTANTIATE_TEST_CASE_P(Test, TestQuaternionNorm,
+                        ::testing::ValuesIn(kQuaternionNormCases));
+
+TEST_P(TestQuaternionNorm, Basic) {
+  auto values = GetParam();
+  auto quaternion = std::get<0>(values);
+  auto expected = std::get<1>(values);
+  EXPECT_DOUBLE_EQ(Quaternion<double>::GetNorm(quaternion), expected);
 }
 
-TEST(TestHydrolibMath, QuaternionScalarDivision) {
-  Quaternion<double> q(double(6), double(12), double(18), double(24));
-  Quaternion<double> result = q / double(3);
+class TestQuaternionNormalize
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<NormalizeParam> {};
 
-  EXPECT_EQ(result.x, double(2));
-  EXPECT_EQ(result.y, double(4));
-  EXPECT_EQ(result.z, double(6));
-  EXPECT_EQ(result.w, double(8));
-}
+INSTANTIATE_TEST_CASE_P(Test, TestQuaternionNormalize,
+                        ::testing::ValuesIn(kQuaternionNormalizeCases));
 
-TEST(TestHydrolibMath, QuaternionNorm) {
-  Quaternion<double> q(double(3), double(4), double(0), double(0));
-  double norm = q.GetNorm();
-
-  EXPECT_EQ(norm, double(5));
-}
-
-TEST(TestHydrolibMath, QuaternionNormZero) {
-  Quaternion<double> q(double(0), double(0), double(0), double(0));
-  double norm = q.GetNorm();
-
-  EXPECT_EQ(norm, double(0));
-}
-
-TEST(TestHydrolibMath, QuaternionNormalize) {
-  Quaternion<double> q(double(3), double(4), double(0), double(0));
-  q.Normalize();
-
-  auto norm = q.GetNorm();
-  EXPECT_EQ(norm, double(1));
-}
-
-TEST(TestHydrolibMath, QuaternionChainOperations) {
-  Quaternion<double> q1(double(1), double(2), double(3), double(4));
-  Quaternion<double> q2(double(2), double(3), double(4), double(5));
-  Quaternion<double> q3(double(1), double(1), double(1), double(1));
-
-  Quaternion<double> result = (q1 + q2) - q3;
-
-  EXPECT_EQ(result.x, double(2));
-  EXPECT_EQ(result.y, double(4));
-  EXPECT_EQ(result.z, double(6));
-  EXPECT_EQ(result.w, double(8));
-}
-
-TEST(TestHydrolibMath, QuaternionNegativeComponents) {
-  Quaternion<double> q(double(-1), double(-2), double(-3), double(-4));
-
-  EXPECT_EQ(q.x, double(-1));
-  EXPECT_EQ(q.y, double(-2));
-  EXPECT_EQ(q.z, double(-3));
-  EXPECT_EQ(q.w, double(-4));
-
-  Quaternion<double> positive = -q;
-  EXPECT_EQ(positive.x, double(1));
-  EXPECT_EQ(positive.y, double(2));
-  EXPECT_EQ(positive.z, double(3));
-  EXPECT_EQ(positive.w, double(4));
-}
-
-TEST(TestHydrolibMath, QuaternionScalarOperationsWithZero) {
-  Quaternion<double> q(double(5), double(10), double(15), double(20));
-  Quaternion<double> result_mult = q * double(0);
-
-  EXPECT_EQ(result_mult.x, double(0));
-  EXPECT_EQ(result_mult.y, double(0));
-  EXPECT_EQ(result_mult.z, double(0));
-  EXPECT_EQ(result_mult.w, double(0));
-}
-
-TEST(TestHydrolibMath, QuaternionScalarOperationsWithOne) {
-  Quaternion<double> q(double(5), double(10), double(15), double(20));
-  Quaternion<double> result_mult = q * double(1);
-  Quaternion<double> result_div = q / double(1);
-
-  EXPECT_EQ(result_mult.x, double(5));
-  EXPECT_EQ(result_mult.y, double(10));
-  EXPECT_EQ(result_mult.z, double(15));
-  EXPECT_EQ(result_mult.w, double(20));
-
-  EXPECT_EQ(result_div.x, double(5));
-  EXPECT_EQ(result_div.y, double(10));
-  EXPECT_EQ(result_div.z, double(15));
-  EXPECT_EQ(result_div.w, double(20));
-}
-
-TEST(TestHydrolibMath, QuaternionComplexMultiplication) {
-  Quaternion<double> q1(double(2), double(4), double(1), double(3));
-  Quaternion<double> q2(double(3), double(5), double(2), double(1));
-  Quaternion<double> result = q1 * q2;
-
-  EXPECT_EQ(result.w, double(-25));
-  EXPECT_EQ(result.x, double(14));
-  EXPECT_EQ(result.y, double(18));
-  EXPECT_EQ(result.z, double(5));
+TEST_P(TestQuaternionNormalize, Basic) {
+  auto values = GetParam();
+  auto quaternion = std::get<0>(values);
+  auto expected = std::get<1>(values);
+  Quaternion<double>::Normalize(quaternion);
+  EXPECT_DOUBLE_EQ(quaternion.x, expected.x);
+  EXPECT_DOUBLE_EQ(quaternion.y, expected.y);
+  EXPECT_DOUBLE_EQ(quaternion.z, expected.z);
+  EXPECT_DOUBLE_EQ(quaternion.w, expected.w);
 }

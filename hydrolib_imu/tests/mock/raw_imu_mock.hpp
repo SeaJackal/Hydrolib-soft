@@ -30,14 +30,19 @@ class RawIMUMock {
 
 template <math::ArithmeticConcept Number>
 inline RawIMUMock<Number>::RawIMUMock()
-    : counter_(0), orientation_(0, 0, 0, 1), delta_orientation_(0, 0, 0, 1) {}
+    : counter_(0),
+      orientation_({0, 0, 0, 1}),
+      delta_orientation_({0, 0, 0, 1}) {}
 
 template <math::ArithmeticConcept Number>
 inline void RawIMUMock<Number>::SetTarget(math::Vector3D<Number> axis,
                                           Number angle_rad, int n) {
   auto delta_angle_rad = angle_rad / n;
-  delta_orientation_ = {axis * sin(delta_angle_rad / 2),
-                        cos(delta_angle_rad / 2)};
+  auto vector_part = axis * sin(delta_angle_rad / 2);
+  delta_orientation_ = math::Quaternion<Number>{.x = vector_part.x,
+                                                .y = vector_part.y,
+                                                .z = vector_part.z,
+                                                .w = cos(delta_angle_rad / 2)};
   w_ = axis * delta_angle_rad;
   counter_ = n;
 }
@@ -57,7 +62,7 @@ template <math::ArithmeticConcept Number>
 inline math::Vector3D<Number> RawIMUMock<Number>::GetAcceleration() const {
   math::Vector3D<Number> g(0, 0, -1);
   auto result = math::Rotate(g, orientation_);
-  result.Normalize();
+  math::Vector3D<Number>::Normalize(result);
   return result;
 }
 

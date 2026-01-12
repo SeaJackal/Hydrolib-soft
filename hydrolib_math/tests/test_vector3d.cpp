@@ -1,249 +1,322 @@
 #include <gtest/gtest.h>
 
+#include <array>
+#include <tuple>
+
 #include "hydrolib_vector3d.hpp"
 
-using namespace hydrolib::math;
+using hydrolib::math::Vector3D;
+using Vector = Vector3D<double>;
 
-// Basic Vector3D construction and initialization tests
-TEST(TestHydrolibMathVector3D, DoubleConstruction) {
-  Vector3D<double> vec{1.0, 2.0, 3.0};
+static constexpr std::array<std::tuple<Vector, Vector, double>, 6> kDotCases{{
+    {Vector{1.0, 0.0, 0.0}, Vector{0.0, 1.0, 0.0}, 0.0},
+    {Vector{3.0, 4.0, 5.0}, Vector{3.0, 4.0, 5.0}, 50.0},
+    {Vector{1.0, 2.0, 3.0}, Vector{4.0, 5.0, 6.0}, 32.0},
+    {Vector{1.0, -2.0, 3.0}, Vector{-1.0, 2.0, 1.0}, -2.0},
+    {Vector{0.0, 0.0, 0.0}, Vector{5.0, 10.0, 15.0}, 0.0},
+    {Vector{3.0, 4.0, 0.0}, Vector{3.0, 4.0, 0.0}, 25.0},
+}};
 
-  EXPECT_DOUBLE_EQ(vec.x, 1.0);
-  EXPECT_DOUBLE_EQ(vec.y, 2.0);
-  EXPECT_DOUBLE_EQ(vec.z, 3.0);
+static constexpr std::array<std::tuple<Vector, Vector, Vector>, 5> kCrossCases{{
+    {Vector{1.0, 0.0, 0.0}, Vector{0.0, 1.0, 0.0}, Vector{0.0, 0.0, 1.0}},
+    {Vector{1.0, 2.0, 3.0}, Vector{4.0, 5.0, 6.0}, Vector{-3.0, 6.0, -3.0}},
+    {Vector{2.0, 4.0, 6.0}, Vector{1.0, 2.0, 3.0}, Vector{0.0, 0.0, 0.0}},
+    {Vector{0.0, 0.0, 0.0}, Vector{5.0, 10.0, 15.0}, Vector{0.0, 0.0, 0.0}},
+    {Vector{1.0, 2.0, 3.0}, Vector{1.0, 2.0, 3.0}, Vector{0.0, 0.0, 0.0}},
+}};
+
+static constexpr std::array<std::tuple<Vector, double>, 3> kLengthCases{{
+    {Vector{3.0, 4.0, 0.0}, 5.0},
+    {Vector{1.0, 2.0, 2.0}, 3.0},
+    {Vector{0.0, 0.0, 0.0}, 0.0},
+}};
+
+static constexpr std::array<std::tuple<Vector, Vector>, 3> kNormalizeCases{{
+    {Vector{3.0, 4.0, 0.0}, Vector{3.0 / 5.0, 4.0 / 5.0, 0.0}},
+    {Vector{0.0, 0.0, 0.0}, Vector{0.0, 0.0, 0.0}},
+    {Vector{1.0, 2.0, 2.0}, Vector{1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0}},
+}};
+
+static constexpr std::array<std::tuple<Vector, Vector, Vector>, 6>
+    kAdditionCases{{
+        {Vector{1.0, 2.0, 3.0}, Vector{4.0, 5.0, 6.0}, Vector{5.0, 7.0, 9.0}},
+        {Vector{-1.0, -2.0, -3.0}, Vector{1.0, 2.0, 3.0}, Vector{0.0, 0.0, 0.0}},
+        {Vector{0.0, 0.0, 0.0}, Vector{0.0, 0.0, 0.0}, Vector{0.0, 0.0, 0.0}},
+        {Vector{0.5, -0.25, 0.75}, Vector{-0.5, 0.25, -0.75}, Vector{0.0, 0.0, 0.0}},
+        {Vector{10.0, 20.0, 30.0}, Vector{-5.0, 6.0, -7.0}, Vector{5.0, 26.0, 23.0}},
+        {Vector{1.25, -2.5, 3.75}, Vector{-10.5, 20.25, -30.75},
+         Vector{-9.25, 17.75, -27.0}},
+    }};
+
+static constexpr std::array<std::tuple<Vector, Vector, Vector>, 6>
+    kSubtractionCases{{
+        {Vector{10.0, 20.0, 30.0}, Vector{5.0, 6.0, 7.0}, Vector{5.0, 14.0, 23.0}},
+        {Vector{1.0, 2.0, 3.0}, Vector{1.0, 1.0, 1.0}, Vector{0.0, 1.0, 2.0}},
+        {Vector{0.0, 0.0, 0.0}, Vector{1.0, 2.0, 3.0}, Vector{-1.0, -2.0, -3.0}},
+        {Vector{1.0, 2.0, 3.0}, Vector{0.0, 0.0, 0.0}, Vector{1.0, 2.0, 3.0}},
+        {Vector{1.25, -2.5, 3.75}, Vector{1.25, -2.5, 3.75}, Vector{0.0, 0.0, 0.0}},
+        {Vector{-10.5, 20.25, -30.75}, Vector{1.25, -2.5, 3.75},
+         Vector{-11.75, 22.75, -34.5}},
+    }};
+
+static constexpr std::array<std::tuple<Vector, Vector>, 4> kUnaryMinusCases{{
+    {Vector{1.0, -2.0, 3.0}, Vector{-1.0, 2.0, -3.0}},
+    {Vector{0.0, 0.0, 0.0}, Vector{0.0, 0.0, 0.0}},
+    {Vector{-1.0, 2.0, -3.0}, Vector{1.0, -2.0, 3.0}},
+    {Vector{0.5, -0.25, 0.75}, Vector{-0.5, 0.25, -0.75}},
+}};
+
+static constexpr std::array<std::tuple<Vector, Vector, Vector>, 3> kPlusAssignCases{{
+    {Vector{1.0, 2.0, 3.0}, Vector{4.0, 5.0, 6.0}, Vector{5.0, 7.0, 9.0}},
+    {Vector{0.0, 0.0, 0.0}, Vector{1.0, 2.0, 3.0}, Vector{1.0, 2.0, 3.0}},
+    {Vector{-1.0, -2.0, -3.0}, Vector{1.0, 2.0, 3.0}, Vector{0.0, 0.0, 0.0}},
+}};
+
+static constexpr std::array<std::tuple<Vector, Vector, Vector>, 3>
+    kMinusAssignCases{{
+        {Vector{10.0, 20.0, 30.0}, Vector{5.0, 6.0, 7.0}, Vector{5.0, 14.0, 23.0}},
+        {Vector{0.0, 0.0, 0.0}, Vector{1.0, 2.0, 3.0}, Vector{-1.0, -2.0, -3.0}},
+        {Vector{1.0, 2.0, 3.0}, Vector{0.0, 0.0, 0.0}, Vector{1.0, 2.0, 3.0}},
+    }};
+
+static constexpr std::array<std::tuple<Vector, double, Vector>, 6>
+    kScalarMultiplicationCases{{
+        {Vector{1.0, 2.0, 3.0}, 2.0, Vector{2.0, 4.0, 6.0}},
+        {Vector{2.0, 4.0, 6.0}, 0.5, Vector{1.0, 2.0, 3.0}},
+        {Vector{5.0, 10.0, 15.0}, 0.0, Vector{0.0, 0.0, 0.0}},
+        {Vector{1.0, -2.0, 3.0}, -2.0, Vector{-2.0, 4.0, -6.0}},
+        {Vector{2.5, 5.0, 7.5}, 4.0, Vector{10.0, 20.0, 30.0}},
+        {Vector{1.0, 2.0, 3.0}, 6.0, Vector{6.0, 12.0, 18.0}},
+    }};
+
+static constexpr std::array<std::tuple<Vector, double, Vector>, 5>
+    kScalarDivisionCases{{
+        {Vector{6.0, 8.0, 10.0}, 2.0, Vector{3.0, 4.0, 5.0}},
+        {Vector{9.0, 12.0, 15.0}, 3.0, Vector{3.0, 4.0, 5.0}},
+        {Vector{1.0, 2.0, 3.0}, 0.5, Vector{2.0, 4.0, 6.0}},
+        {Vector{10.0, 20.0, 30.0}, 1.0, Vector{10.0, 20.0, 30.0}},
+        {Vector{0.0, 0.0, 0.0}, 3.0, Vector{0.0, 0.0, 0.0}},
+    }};
+
+class TestVectorDot : public ::testing::Test,
+                      public ::testing::WithParamInterface<
+                          std::tuple<Vector, Vector, double>> {};
+
+INSTANTIATE_TEST_CASE_P(Test, TestVectorDot, ::testing::ValuesIn(kDotCases));
+
+TEST_P(TestVectorDot, Basic) {
+  auto values = GetParam();
+  auto first = std::get<0>(values);
+  auto second = std::get<1>(values);
+  auto expected = std::get<2>(values);
+  EXPECT_DOUBLE_EQ(Vector::Dot(first, second), expected);
 }
 
-// Dot product tests
-TEST(TestHydrolibMathVector3D, DotProductOrthogonalVectors) {
-  Vector3D<double> vec1{1.0, 0.0, 0.0};
-  Vector3D<double> vec2{0.0, 1.0, 0.0};
+class TestVectorCross : public ::testing::Test,
+                        public ::testing::WithParamInterface<
+                            std::tuple<Vector, Vector, Vector>> {};
 
-  double result = vec1.Dot(vec2);
+INSTANTIATE_TEST_CASE_P(Test, TestVectorCross, ::testing::ValuesIn(kCrossCases));
 
-  EXPECT_DOUBLE_EQ(result, 0.0);
+TEST_P(TestVectorCross, Basic) {
+  auto values = GetParam();
+  auto first = std::get<0>(values);
+  auto second = std::get<1>(values);
+  auto expected = std::get<2>(values);
+  auto result = Vector::Cross(first, second);
+  EXPECT_DOUBLE_EQ(result.x, expected.x);
+  EXPECT_DOUBLE_EQ(result.y, expected.y);
+  EXPECT_DOUBLE_EQ(result.z, expected.z);
 }
 
-TEST(TestHydrolibMathVector3D, DotProductParallelVectors) {
-  Vector3D<double> vec1{3.0, 4.0, 5.0};
-  Vector3D<double> vec2{3.0, 4.0, 5.0};
+class TestVectorLength : public ::testing::Test,
+                         public ::testing::WithParamInterface<
+                             std::tuple<Vector, double>> {};
 
-  double result = vec1.Dot(vec2);
+INSTANTIATE_TEST_CASE_P(Test, TestVectorLength, ::testing::ValuesIn(kLengthCases));
 
-  // 3*3 + 4*4 + 5*5 = 9 + 16 + 25 = 50
-  EXPECT_DOUBLE_EQ(result, 50.0);
+TEST_P(TestVectorLength, Basic) {
+  auto values = GetParam();
+  auto vector = std::get<0>(values);
+  auto expected = std::get<1>(values);
+  EXPECT_DOUBLE_EQ(Vector::Length(vector), expected);
 }
 
-TEST(TestHydrolibMathVector3D, DotProductGeneralCase) {
-  Vector3D<double> vec1{1.0, 2.0, 3.0};
-  Vector3D<double> vec2{4.0, 5.0, 6.0};
+class TestVectorNormalize : public ::testing::Test,
+                            public ::testing::WithParamInterface<
+                                std::tuple<Vector, Vector>> {};
 
-  double result = vec1.Dot(vec2);
+INSTANTIATE_TEST_CASE_P(Test, TestVectorNormalize,
+                        ::testing::ValuesIn(kNormalizeCases));
 
-  // 1*4 + 2*5 + 3*6 = 4 + 10 + 18 = 32
-  EXPECT_DOUBLE_EQ(result, 32.0);
+TEST_P(TestVectorNormalize, Basic) {
+  auto values = GetParam();
+  auto vector = std::get<0>(values);
+  auto expected = std::get<1>(values);
+  Vector::Normalize(vector);
+  EXPECT_DOUBLE_EQ(vector.x, expected.x);
+  EXPECT_DOUBLE_EQ(vector.y, expected.y);
+  EXPECT_DOUBLE_EQ(vector.z, expected.z);
 }
 
-TEST(TestHydrolibMathVector3D, DotProductWithNegativeValues) {
-  Vector3D<double> vec1{1.0, -2.0, 3.0};
-  Vector3D<double> vec2{-1.0, 2.0, 1.0};
+class TestVectorAddition : public ::testing::Test,
+                           public ::testing::WithParamInterface<
+                               std::tuple<Vector, Vector, Vector>> {};
 
-  double result = vec1.Dot(vec2);
+INSTANTIATE_TEST_CASE_P(Test, TestVectorAddition,
+                        ::testing::ValuesIn(kAdditionCases));
 
-  // 1*(-1) + (-2)*2 + 3*1 = -1 - 4 + 3 = -2
-  EXPECT_DOUBLE_EQ(result, -2.0);
+TEST_P(TestVectorAddition, Basic) {
+  auto values = GetParam();
+  auto first = std::get<0>(values);
+  auto second = std::get<1>(values);
+  auto expected = std::get<2>(values);
+  auto result = first + second;
+  EXPECT_DOUBLE_EQ(result.x, expected.x);
+  EXPECT_DOUBLE_EQ(result.y, expected.y);
+  EXPECT_DOUBLE_EQ(result.z, expected.z);
 }
 
-// Cross product tests
-TEST(TestHydrolibMathVector3D, CrossProductUnitVectors) {
-  Vector3D<double> vec1{1.0, 0.0, 0.0};  // i
-  Vector3D<double> vec2{0.0, 1.0, 0.0};  // j
+class TestVectorSubtraction : public ::testing::Test,
+                              public ::testing::WithParamInterface<
+                                  std::tuple<Vector, Vector, Vector>> {};
 
-  Vector3D<double> result = vec1.Cross(vec2);
+INSTANTIATE_TEST_CASE_P(Test, TestVectorSubtraction,
+                        ::testing::ValuesIn(kSubtractionCases));
 
-  // i × j = k
-  EXPECT_DOUBLE_EQ(result.x, 0.0);
-  EXPECT_DOUBLE_EQ(result.y, 0.0);
-  EXPECT_DOUBLE_EQ(result.z, 1.0);
+TEST_P(TestVectorSubtraction, Basic) {
+  auto values = GetParam();
+  auto first = std::get<0>(values);
+  auto second = std::get<1>(values);
+  auto expected = std::get<2>(values);
+  auto result = first - second;
+  EXPECT_DOUBLE_EQ(result.x, expected.x);
+  EXPECT_DOUBLE_EQ(result.y, expected.y);
+  EXPECT_DOUBLE_EQ(result.z, expected.z);
 }
 
-TEST(TestHydrolibMathVector3D, CrossProductGeneralCase) {
-  Vector3D<double> vec1{1.0, 2.0, 3.0};
-  Vector3D<double> vec2{4.0, 5.0, 6.0};
+class TestVectorUnaryMinus : public ::testing::Test,
+                             public ::testing::WithParamInterface<
+                                 std::tuple<Vector, Vector>> {};
 
-  Vector3D<double> result = vec1.Cross(vec2);
+INSTANTIATE_TEST_CASE_P(Test, TestVectorUnaryMinus,
+                        ::testing::ValuesIn(kUnaryMinusCases));
 
-  // (2*6 - 3*5, 3*4 - 1*6, 1*5 - 2*4) = (12 - 15, 12 - 6, 5 - 8) = (-3, 6,
-  // -3)
-  EXPECT_DOUBLE_EQ(result.x, -3.0);
-  EXPECT_DOUBLE_EQ(result.y, 6.0);
-  EXPECT_DOUBLE_EQ(result.z, -3.0);
+TEST_P(TestVectorUnaryMinus, Basic) {
+  auto values = GetParam();
+  auto vector = std::get<0>(values);
+  auto expected = std::get<1>(values);
+  auto result = -vector;
+  EXPECT_DOUBLE_EQ(result.x, expected.x);
+  EXPECT_DOUBLE_EQ(result.y, expected.y);
+  EXPECT_DOUBLE_EQ(result.z, expected.z);
 }
 
-TEST(TestHydrolibMathVector3D, CrossProductParallelVectors) {
-  Vector3D<double> vec1{2.0, 4.0, 6.0};
-  Vector3D<double> vec2{1.0, 2.0, 3.0};
+class TestVectorPlusAssign : public ::testing::Test,
+                             public ::testing::WithParamInterface<
+                                 std::tuple<Vector, Vector, Vector>> {};
 
-  Vector3D<double> result = vec1.Cross(vec2);
+INSTANTIATE_TEST_CASE_P(Test, TestVectorPlusAssign,
+                        ::testing::ValuesIn(kPlusAssignCases));
 
-  // Cross product of parallel vectors should be zero vector
-  EXPECT_DOUBLE_EQ(result.x, 0.0);
-  EXPECT_DOUBLE_EQ(result.y, 0.0);
-  EXPECT_DOUBLE_EQ(result.z, 0.0);
+TEST_P(TestVectorPlusAssign, Basic) {
+  auto values = GetParam();
+  auto first = std::get<0>(values);
+  auto second = std::get<1>(values);
+  auto expected = std::get<2>(values);
+  first += second;
+  EXPECT_DOUBLE_EQ(first.x, expected.x);
+  EXPECT_DOUBLE_EQ(first.y, expected.y);
+  EXPECT_DOUBLE_EQ(first.z, expected.z);
 }
 
-TEST(TestHydrolibMathVector3D, LengthCalculation) {
-  Vector3D<double> vec{3.0, 4.0, 0.0};
+class TestVectorMinusAssign : public ::testing::Test,
+                              public ::testing::WithParamInterface<
+                                  std::tuple<Vector, Vector, Vector>> {};
 
-  double length = vec.Length();
+INSTANTIATE_TEST_CASE_P(Test, TestVectorMinusAssign,
+                        ::testing::ValuesIn(kMinusAssignCases));
 
-  EXPECT_DOUBLE_EQ(length, 5.0);
+TEST_P(TestVectorMinusAssign, Basic) {
+  auto values = GetParam();
+  auto first = std::get<0>(values);
+  auto second = std::get<1>(values);
+  auto expected = std::get<2>(values);
+  first -= second;
+  EXPECT_DOUBLE_EQ(first.x, expected.x);
+  EXPECT_DOUBLE_EQ(first.y, expected.y);
+  EXPECT_DOUBLE_EQ(first.z, expected.z);
 }
 
-TEST(TestHydrolibMathVector3D, Length3DVector) {
-  Vector3D<double> vec{1.0, 2.0, 2.0};
+class TestVectorScalarMultiplication
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<std::tuple<Vector, double, Vector>> {};
 
-  double length = vec.Length();
+INSTANTIATE_TEST_CASE_P(Test, TestVectorScalarMultiplication,
+                        ::testing::ValuesIn(kScalarMultiplicationCases));
 
-  EXPECT_DOUBLE_EQ(length, 3.0);
+TEST_P(TestVectorScalarMultiplication, Basic) {
+  auto values = GetParam();
+  auto vector = std::get<0>(values);
+  auto scalar = std::get<1>(values);
+  auto expected = std::get<2>(values);
+  auto result = vector * scalar;
+  EXPECT_DOUBLE_EQ(result.x, expected.x);
+  EXPECT_DOUBLE_EQ(result.y, expected.y);
+  EXPECT_DOUBLE_EQ(result.z, expected.z);
 }
 
-TEST(TestHydrolibMathVector3D, ScalarMultiplicationRight) {
-  Vector3D<double> vec{1.0, 2.0, 3.0};
-  double scalar(2);
+class TestVectorScalarMultiplicationAssign
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<std::tuple<Vector, double, Vector>> {
+};
 
-  Vector3D<double> result = vec * scalar;
+INSTANTIATE_TEST_CASE_P(Test, TestVectorScalarMultiplicationAssign,
+                        ::testing::ValuesIn(kScalarMultiplicationCases));
 
-  EXPECT_DOUBLE_EQ(result.x, 2.0);
-  EXPECT_DOUBLE_EQ(result.y, 4.0);
-  EXPECT_DOUBLE_EQ(result.z, 6.0);
+TEST_P(TestVectorScalarMultiplicationAssign, Basic) {
+  auto values = GetParam();
+  auto vector = std::get<0>(values);
+  auto scalar = std::get<1>(values);
+  auto expected = std::get<2>(values);
+  vector *= scalar;
+  EXPECT_DOUBLE_EQ(vector.x, expected.x);
+  EXPECT_DOUBLE_EQ(vector.y, expected.y);
+  EXPECT_DOUBLE_EQ(vector.z, expected.z);
 }
 
-TEST(TestHydrolibMathVector3D, ScalarMultiplicationAssignment) {
-  Vector3D<double> vec{2.0, 4.0, 6.0};
-  double scalar(0.5);
+class TestVectorScalarDivision
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<std::tuple<Vector, double, Vector>> {};
 
-  vec *= scalar;
+INSTANTIATE_TEST_CASE_P(Test, TestVectorScalarDivision,
+                        ::testing::ValuesIn(kScalarDivisionCases));
 
-  EXPECT_DOUBLE_EQ(vec.x, 1.0);
-  EXPECT_DOUBLE_EQ(vec.y, 2.0);
-  EXPECT_DOUBLE_EQ(vec.z, 3.0);
+TEST_P(TestVectorScalarDivision, Basic) {
+  auto values = GetParam();
+  auto vector = std::get<0>(values);
+  auto divisor = std::get<1>(values);
+  auto expected = std::get<2>(values);
+  auto result = vector / divisor;
+  EXPECT_DOUBLE_EQ(result.x, expected.x);
+  EXPECT_DOUBLE_EQ(result.y, expected.y);
+  EXPECT_DOUBLE_EQ(result.z, expected.z);
 }
 
-TEST(TestHydrolibMathVector3D, ScalarMultiplicationZero) {
-  Vector3D<double> vec{5.0, 10.0, 15.0};
-  double zero(0);
+class TestVectorScalarDivisionAssign
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<std::tuple<Vector, double, Vector>> {};
 
-  Vector3D<double> result = vec * zero;
+INSTANTIATE_TEST_CASE_P(Test, TestVectorScalarDivisionAssign,
+                        ::testing::ValuesIn(kScalarDivisionCases));
 
-  EXPECT_DOUBLE_EQ(result.x, 0.0);
-  EXPECT_DOUBLE_EQ(result.y, 0.0);
-  EXPECT_DOUBLE_EQ(result.z, 0.0);
-}
-
-TEST(TestHydrolibMathVector3D, ScalarMultiplicationNegative) {
-  Vector3D<double> vec{1.0, -2.0, 3.0};
-  double scalar(-2);
-
-  Vector3D<double> result = vec * scalar;
-
-  EXPECT_DOUBLE_EQ(result.x, -2.0);
-  EXPECT_DOUBLE_EQ(result.y, 4.0);
-  EXPECT_DOUBLE_EQ(result.z, -6.0);
-}
-
-TEST(TestHydrolibMathVector3D, ScalarDivision) {
-  Vector3D<double> vec{6.0, 8.0, 10.0};
-  double divisor(2);
-
-  Vector3D<double> result = vec / divisor;
-
-  EXPECT_DOUBLE_EQ(result.x, 3.0);
-  EXPECT_DOUBLE_EQ(result.y, 4.0);
-  EXPECT_DOUBLE_EQ(result.z, 5.0);
-}
-
-TEST(TestHydrolibMathVector3D, ScalarDivisionAssignment) {
-  Vector3D<double> vec{9.0, 12.0, 15.0};
-  double divisor(3);
-
-  vec /= divisor;
-
-  EXPECT_DOUBLE_EQ(vec.x, 3.0);
-  EXPECT_DOUBLE_EQ(vec.y, 4.0);
-  EXPECT_DOUBLE_EQ(vec.z, 5.0);
-}
-
-TEST(TestHydrolibMathVector3D, ScalarDivisionDecimal) {
-  Vector3D<double> vec{1.0, 2.0, 3.0};
-  double divisor(0.5);
-
-  Vector3D<double> result = vec / divisor;
-
-  EXPECT_DOUBLE_EQ(result.x, 2.0);
-  EXPECT_DOUBLE_EQ(result.y, 4.0);
-  EXPECT_DOUBLE_EQ(result.z, 6.0);
-}
-
-TEST(TestHydrolibMathVector3D, ScalarOperationsChaining) {
-  Vector3D<double> vec{1.0, 2.0, 3.0};
-  double scalar1(2);
-  double scalar2(3);
-
-  Vector3D<double> result = (vec * scalar1) * scalar2;
-
-  EXPECT_DOUBLE_EQ(result.x, 6.0);
-  EXPECT_DOUBLE_EQ(result.y, 12.0);
-  EXPECT_DOUBLE_EQ(result.z, 18.0);
-}
-
-TEST(TestHydrolibMathVector3D, ScalarMultiplicationDivisionInverse) {
-  Vector3D<double> original{2.5, 5.0, 7.5};
-  double scalar(4);
-
-  Vector3D<double> multiplied = original * scalar;
-  Vector3D<double> result = multiplied / scalar;
-
-  EXPECT_DOUBLE_EQ(result.x, original.x);
-  EXPECT_DOUBLE_EQ(result.y, original.y);
-  EXPECT_DOUBLE_EQ(result.z, original.z);
-}
-
-TEST(TestHydrolibMathVector3D, ZeroVectorDotProduct) {
-  Vector3D<double> zero_vec{0.0, 0.0, 0.0};
-  Vector3D<double> any_vec{5.0, 10.0, 15.0};
-
-  double result = zero_vec.Dot(any_vec);
-
-  EXPECT_DOUBLE_EQ(result, 0.0);
-}
-
-TEST(TestHydrolibMathVector3D, ZeroVectorCrossProduct) {
-  Vector3D<double> zero_vec{0.0, 0.0, 0.0};
-  Vector3D<double> any_vec{5.0, 10.0, 15.0};
-
-  Vector3D<double> result = zero_vec.Cross(any_vec);
-
-  EXPECT_DOUBLE_EQ(result.x, 0.0);
-  EXPECT_DOUBLE_EQ(result.y, 0.0);
-  EXPECT_DOUBLE_EQ(result.z, 0.0);
-}
-
-TEST(TestHydrolibMathVector3D, SelfCrossProduct) {
-  Vector3D<double> vec{1.0, 2.0, 3.0};
-
-  Vector3D<double> result = vec.Cross(vec);
-
-  // Any vector crossed with itself should be zero vector
-  EXPECT_DOUBLE_EQ(result.x, 0.0);
-  EXPECT_DOUBLE_EQ(result.y, 0.0);
-  EXPECT_DOUBLE_EQ(result.z, 0.0);
-}
-
-TEST(TestHydrolibMathVector3D, SelfDotProduct) {
-  Vector3D<double> vec{3.0, 4.0, 0.0};
-
-  double result = vec.Dot(vec);
-
-  // 3^2 + 4^2 + 0^2 = 9 + 16 + 0 = 25
-  EXPECT_DOUBLE_EQ(result, 25.0);
+TEST_P(TestVectorScalarDivisionAssign, Basic) {
+  auto values = GetParam();
+  auto vector = std::get<0>(values);
+  auto divisor = std::get<1>(values);
+  auto expected = std::get<2>(values);
+  vector /= divisor;
+  EXPECT_DOUBLE_EQ(vector.x, expected.x);
+  EXPECT_DOUBLE_EQ(vector.y, expected.y);
+  EXPECT_DOUBLE_EQ(vector.z, expected.z);
 }
