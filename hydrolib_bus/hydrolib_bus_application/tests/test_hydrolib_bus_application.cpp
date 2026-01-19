@@ -132,8 +132,11 @@ TEST_F(TestHydrolibBusApplication, ReadTimeoutTest) {
             TestPublicMemory::kPublicMemoryLength);
   memcpy(memory.memory.data(), test_data.data(),
          TestPublicMemory::kPublicMemoryLength);
+  auto start_time = std::chrono::steady_clock::now();
   master.Read(buffer.data(), test_case.address, test_case.length);
-  std::this_thread::sleep_for(decltype(master)::kRequestTimeout);
+  while (std::chrono::steady_clock::now() - start_time <
+         decltype(master)::kRequestTimeout) {
+  }
   stream.Clear();
   EXPECT_EQ(hydrolib::ReturnCode::TIMEOUT, master.Process());
   stream.MakeAllbytesAvailable();
@@ -152,8 +155,11 @@ TEST_F(TestHydrolibBusApplication, ReadAlmostTimeoutTest) {
             TestPublicMemory::kPublicMemoryLength);
   memcpy(memory.memory.data(), test_data.data(),
          TestPublicMemory::kPublicMemoryLength);
+  auto start_time = std::chrono::steady_clock::now();
   master.Read(buffer.data(), test_case.address, test_case.length);
-  std::this_thread::sleep_for(decltype(master)::kRequestTimeout - 1ms);
+  while (std::chrono::steady_clock::now() - start_time <
+         decltype(master)::kRequestTimeout - 1ms) {
+  }
   stream.MakeAllbytesAvailable();
   slave.Process();
   stream.MakeAllbytesAvailable();
