@@ -132,7 +132,8 @@ void TestEnvironment<Number>::ManySteps(Vector3D<Number> axis, int steps) {
     EXPECT_NEAR(static_cast<double>(result_z.y),
                 static_cast<double>(target_z.y), tolerance);
     EXPECT_NEAR(static_cast<double>(result_z.z),
-                static_cast<double>(target_z.z), tolerance);
+                static_cast<double>(target_z.z),
+                tolerance);  // TODO(vscode): Check tolerance
   }
 }
 
