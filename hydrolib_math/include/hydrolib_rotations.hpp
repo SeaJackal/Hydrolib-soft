@@ -12,8 +12,8 @@ class Rotation {
   static Rotation GetMean(const Rotation& first, const Rotation& second);
 
   constexpr Rotation() = default;
-  Rotation(Vector3D<Number> axis, Number angle_rad);
-  Rotation(Vector3D<Number> from_dir, Vector3D<Number> to_dir);
+  constexpr Rotation(Vector3D<Number> axis, Number angle_rad);
+  constexpr Rotation(Vector3D<Number> from_dir, Vector3D<Number> to_dir);
 
   Rotation ExtractZComponent();
   [[nodiscard]] Vector3D<Number> Rotate(const Vector3D<Number>& vector) const;
@@ -27,13 +27,13 @@ class Rotation {
  private:
   constexpr static Number kTolerance = 0.001;
 
-  explicit Rotation(const Quaternion<Number>& quaternion);
+  explicit constexpr Rotation(const Quaternion<Number>& quaternion);
 
   Quaternion<Number> quaternion_{.x = 0, .y = 0, .z = 0, .w = 1};
 };
 
 template <ArithmeticConcept Number>
-inline Rotation<Number>::Rotation(Vector3D<Number> from_dir,
+constexpr Rotation<Number>::Rotation(Vector3D<Number> from_dir,
                                   Vector3D<Number> to_dir) {
   Number w_component =
       Vector3D<Number>::Dot(from_dir, to_dir) +
@@ -55,7 +55,7 @@ inline Rotation<Number>::Rotation(Vector3D<Number> from_dir,
 }
 
 template <>
-inline Rotation<double>::Rotation(Vector3D<double> from_dir,
+constexpr Rotation<double>::Rotation(Vector3D<double> from_dir,
                                   Vector3D<double> to_dir) {
   double w_component =
       Vector3D<double>::Dot(from_dir, to_dir) +
@@ -78,7 +78,7 @@ inline Rotation<double>::Rotation(Vector3D<double> from_dir,
 }
 
 template <ArithmeticConcept Number>
-inline Rotation<Number>::Rotation(Vector3D<Number> axis, Number angle_rad) {
+constexpr Rotation<Number>::Rotation(Vector3D<Number> axis, Number angle_rad) {
   Vector3D<Number>::Normalize(axis);
   quaternion_ = {.x = axis.x * sin(angle_rad / 2),  // NOLINT
                  .y = axis.y * sin(angle_rad / 2),
@@ -87,7 +87,7 @@ inline Rotation<Number>::Rotation(Vector3D<Number> axis, Number angle_rad) {
 }
 
 template <ArithmeticConcept Number>
-inline Rotation<Number>::Rotation(const Quaternion<Number>& quaternion)
+constexpr Rotation<Number>::Rotation(const Quaternion<Number>& quaternion)
     : quaternion_(quaternion) {}
 
 template <ArithmeticConcept Number>

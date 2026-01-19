@@ -4,6 +4,7 @@
 #include <climits>
 #include <cmath>
 #include <concepts>
+#include <cstdint>
 #include <numbers>
 
 namespace hydrolib::math {
@@ -29,7 +30,7 @@ template <typename T>
 concept ArithmeticConcept = requires(T first, T second) {
   { first + second } -> std::convertible_to<T>;
   { first - second } -> std::convertible_to<T>;
-  { first * second } -> std::convertible_to<T>;
+  { first* second } -> std::convertible_to<T>;
   { sqrt(first) } -> std::convertible_to<T>;
   { first / second } -> std::convertible_to<T>;
   { -first } -> std::convertible_to<T>;
