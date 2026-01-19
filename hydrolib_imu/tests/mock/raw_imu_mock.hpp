@@ -10,58 +10,50 @@ namespace hydrolib::sensors {
 template <math::ArithmeticConcept Number>
 class RawIMUMock {
  public:
-  RawIMUMock();
+  RawIMUMock() = default;
 
- public:
   void SetTarget(math::Vector3D<Number> axis, Number angle_rad, int n);
 
   bool Step();
 
   math::Vector3D<Number> GetAcceleration() const;
   math::Vector3D<Number> GetGyro() const;
-  math::Quaternion<Number> GetOrientation() const;
+  math::Rotation<Number> GetOrientation() const;
+
+  math::Vector3D<Number> GetXAxis() const;
+  math::Vector3D<Number> GetYAxis() const;
+  math::Vector3D<Number> GetZAxis() const;
 
  private:
-  int counter_;
-  math::Quaternion<Number> orientation_;
-  math::Quaternion<Number> delta_orientation_;
-  math::Vector3D<Number> w_;
+  int counter_{};
+  math::Rotation<Number> orientation_;
+  math::Rotation<Number> delta_orientation_;
+  math::Vector3D<Number> w_{.x = 0, .y = 0, .z = 0};
 };
-
-template <math::ArithmeticConcept Number>
-inline RawIMUMock<Number>::RawIMUMock()
-    : counter_(0),
-      orientation_({0, 0, 0, 1}),
-      delta_orientation_({0, 0, 0, 1}) {}
 
 template <math::ArithmeticConcept Number>
 inline void RawIMUMock<Number>::SetTarget(math::Vector3D<Number> axis,
                                           Number angle_rad, int n) {
-  auto delta_angle_rad = angle_rad / n;
-  auto vector_part = axis * sin(delta_angle_rad / 2);
-  delta_orientation_ = math::Quaternion<Number>{.x = vector_part.x,
-                                                .y = vector_part.y,
-                                                .z = vector_part.z,
-                                                .w = cos(delta_angle_rad / 2)};
-  w_ = axis * delta_angle_rad;
+  delta_orientation_ = math::Rotation<Number>(axis, angle_rad / n);
+  w_ = axis * (angle_rad / n);
   counter_ = n;
 }
 
 template <math::ArithmeticConcept Number>
 inline bool RawIMUMock<Number>::Step() {
   if (counter_ == 0) {
-    w_ = {0, 0, 0};
+    w_ = {.x = 0, .y = 0, .z = 0};
     return false;
   }
   counter_--;
-  orientation_ = orientation_ * delta_orientation_;
+  orientation_ += delta_orientation_;
   return true;
 }
 
 template <math::ArithmeticConcept Number>
 inline math::Vector3D<Number> RawIMUMock<Number>::GetAcceleration() const {
-  math::Vector3D<Number> g(0, 0, -1);
-  auto result = math::Rotate(g, orientation_);
+  math::Vector3D<Number> gravity{.x = 0, .y = 0, .z = -1};
+  auto result = orientation_.Rotate(gravity);
   math::Vector3D<Number>::Normalize(result);
   return result;
 }
@@ -72,8 +64,23 @@ inline math::Vector3D<Number> RawIMUMock<Number>::GetGyro() const {
 }
 
 template <math::ArithmeticConcept Number>
-inline math::Quaternion<Number> RawIMUMock<Number>::GetOrientation() const {
+inline math::Rotation<Number> RawIMUMock<Number>::GetOrientation() const {
   return orientation_;
+}
+
+template <math::ArithmeticConcept Number>
+inline math::Vector3D<Number> RawIMUMock<Number>::GetXAxis() const {
+  return orientation_.Rotate({.x = 1, .y = 0, .z = 0});
+}
+
+template <math::ArithmeticConcept Number>
+inline math::Vector3D<Number> RawIMUMock<Number>::GetYAxis() const {
+  return orientation_.Rotate({.x = 0, .y = 1, .z = 0});
+}
+
+template <math::ArithmeticConcept Number>
+inline math::Vector3D<Number> RawIMUMock<Number>::GetZAxis() const {
+  return orientation_.Rotate({.x = 0, .y = 0, .z = 1});
 }
 
 }  // namespace hydrolib::sensors

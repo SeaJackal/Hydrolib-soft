@@ -1,133 +1,254 @@
-// #include <gtest/gtest.h>
+#include <gtest/gtest-param-test.h>
+#include <gtest/gtest.h>
 
-// #include "hydrolib_fixed_point.hpp"
-// #include "hydrolib_imu_processor.hpp"
-// #include "hydrolib_quaternions.hpp"
-// #include "hydrolib_rotations.hpp"
-// #include "mock/imu_distortion_model.hpp"
-// #include "mock/raw_imu_mock.hpp"
+#include <array>
+#include <cmath>
+#include <tuple>
 
-// using namespace hydrolib::sensors;
-// using namespace hydrolib::math;
+#include "hydrolib_fixed_point.hpp"
+#include "hydrolib_imu_processor.hpp"
+#include "hydrolib_rotations.hpp"
+#include "hydrolib_vector3d.hpp"
+#include "mock/raw_imu_mock.hpp"
 
-// TEST(TestIMUProcessor, Process) {
-//   RawIMUMock<FixedPointBase> imu_mock;
-//   Vector3D<FixedPointBase> axis{2, 3, 1};
-//   Vector3D<FixedPointBase>::Normalize(axis);
-//   FixedPointBase angle_rad =
-//       FixedPointBase(50, 180) * kPi<FixedPointBase::kFractionBits>;
-//   auto vector_part = axis * sin(angle_rad / 2);
-//   Quaternion<FixedPointBase> target{.x = vector_part.x,
-//                                     .y = vector_part.y,
-//                                     .z = vector_part.z,
-//                                     .w = cos(angle_rad / 2)};
+using hydrolib::math::FixedPointBase;
+using hydrolib::math::Rotation;
+using hydrolib::math::Vector3D;
+using hydrolib::sensors::IMUProcessor;
+using hydrolib::sensors::RawIMUMock;
 
-//   imu_mock.SetTarget(axis, angle_rad, 15);
+template <typename Number>
+class TestEnvironment {
+ public:
+  static constexpr std::array kAxisCases{
+      Vector3D<Number>{.x = 1, .y = 1, .z = 1},
+      Vector3D<Number>{.x = 9, .y = -2, .z = 4},
+      Vector3D<Number>{.x = 1, .y = 0, .z = 0},
+      Vector3D<Number>{.x = 0, .y = 1, .z = 0},
+      Vector3D<Number>{.x = 0, .y = 0, .z = 1},
+      Vector3D<Number>{.x = 1, .y = 2, .z = 3},
+      Vector3D<Number>{.x = -1, .y = -2, .z = -3},
+      Vector3D<Number>{.x = 1, .y = -2, .z = 3},
+      Vector3D<Number>{.x = -1, .y = 2, .z = -3},
+      Vector3D<Number>{.x = -1, .y = -1, .z = -1},
+  };
 
-//   IMUProcessor<FixedPointBase, 1.0> imu_processor;
+  static constexpr double GetTolerance();
 
-//   Quaternion<FixedPointBase> result({0, 0, 0, 1});
+  static void OneStep(Vector3D<Number> axis);
+  static void ManySteps(Vector3D<Number> axis, int steps);
+};
 
-//   auto q = imu_mock.GetOrientation();
+template <>
+constexpr double TestEnvironment<double>::GetTolerance() {
+  return 1e-10;
+}
 
-//   while (imu_mock.Step()) {
-//     q = imu_mock.GetOrientation();
-//     std::cout << static_cast<double>(q.x) << " " << static_cast<double>(q.y)
-//               << " " << static_cast<double>(q.z) << " "
-//               << static_cast<double>(q.w) << std::endl;
-//     result =
-//         imu_processor.Process(imu_mock.GetAcceleration(), imu_mock.GetGyro());
-//     std::cout << static_cast<double>(result.x) << " "
-//               << static_cast<double>(result.y) << " "
-//               << static_cast<double>(result.z) << " "
-//               << static_cast<double>(result.w) << std::endl;
-//     std::cout << "===========" << std::endl;
-//   }
+template <>
+constexpr double TestEnvironment<FixedPointBase>::GetTolerance() {
+  return 0.05;
+}
 
-//   q = imu_mock.GetOrientation();
-//   std::cout << static_cast<double>(target.x) << " "
-//             << static_cast<double>(target.y) << " "
-//             << static_cast<double>(target.z) << " "
-//             << static_cast<double>(target.w) << std::endl;
+template <typename Number>
+void TestEnvironment<Number>::OneStep(Vector3D<Number> axis) {
+  RawIMUMock<Number> imu_mock;
+  Vector3D<Number>::Normalize(axis);
 
-//   EXPECT_NEAR(static_cast<double>(result.w), static_cast<double>(target.w),
-//               0.01);
-//   EXPECT_NEAR(static_cast<double>(result.x), static_cast<double>(target.x),
-//               0.01);
-//   EXPECT_NEAR(static_cast<double>(result.y), static_cast<double>(target.y),
-//               0.01);
-//   EXPECT_NEAR(static_cast<double>(result.z), static_cast<double>(target.z),
-//               0.01);
-// }
+  constexpr double kTolerance = GetTolerance();
 
-// TEST(TestIMUProcessor, ProcessCorner) {
-//   RawIMUMock<FixedPointBase> imu_mock;
-//   Vector3D<FixedPointBase> axis{1, 0, 0};
-//   Vector3D<FixedPointBase>::Normalize(axis);
-//   FixedPointBase angle_rad = kPi<FixedPointBase::kFractionBits>;
-//   auto vector_part = axis * sin(angle_rad / 2);
-//   Quaternion<FixedPointBase> target{.x = vector_part.x,
-//                                     .y = vector_part.y,
-//                                     .z = vector_part.z,
-//                                     .w = cos(angle_rad / 2)};
+  imu_mock.SetTarget(axis, M_PI / 4, 1);
 
-//   imu_mock.SetTarget(axis, angle_rad, 15);
+  IMUProcessor<Number, 1.0> imu_processor;
 
-//   IMUProcessor<FixedPointBase, 1.0> imu_processor;
+  Rotation<Number> result;
 
-//   Quaternion<FixedPointBase> result{.x = 0, .y = 0, .z = 0, .w = 1};
+  imu_mock.Step();
+  result = imu_processor.Process(
+      typename decltype(imu_processor)::AccelG(imu_mock.GetAcceleration()),
+      typename decltype(imu_processor)::GyroRadPerS(imu_mock.GetGyro()));
+  auto result_x = result.Rotate({.x = 1, .y = 0, .z = 0});
+  auto result_y = result.Rotate({.x = 0, .y = 1, .z = 0});
+  auto result_z = result.Rotate({.x = 0, .y = 0, .z = 1});
+  auto target_x = imu_mock.GetXAxis();
+  auto target_y = imu_mock.GetYAxis();
+  auto target_z = imu_mock.GetZAxis();
+  EXPECT_NEAR(static_cast<double>(result_x.x), static_cast<double>(target_x.x),
+              kTolerance);
+  EXPECT_NEAR(static_cast<double>(result_x.y), static_cast<double>(target_x.y),
+              kTolerance);
+  EXPECT_NEAR(static_cast<double>(result_x.z), static_cast<double>(target_x.z),
+              kTolerance);
+  EXPECT_NEAR(static_cast<double>(result_y.x), static_cast<double>(target_y.x),
+              kTolerance);
+  EXPECT_NEAR(static_cast<double>(result_y.y), static_cast<double>(target_y.y),
+              kTolerance);
+  EXPECT_NEAR(static_cast<double>(result_y.z), static_cast<double>(target_y.z),
+              kTolerance);
+  EXPECT_NEAR(static_cast<double>(result_z.x), static_cast<double>(target_z.x),
+              kTolerance);
+  EXPECT_NEAR(static_cast<double>(result_z.y), static_cast<double>(target_z.y),
+              kTolerance);
+  EXPECT_NEAR(static_cast<double>(result_z.z), static_cast<double>(target_z.z),
+              kTolerance);
+}
 
-//   auto q = imu_mock.GetOrientation();
+template <typename Number>
+void TestEnvironment<Number>::ManySteps(Vector3D<Number> axis, int steps) {
+  RawIMUMock<Number> imu_mock;
+  Vector3D<Number>::Normalize(axis);
 
-//   while (imu_mock.Step()) {
-//     q = imu_mock.GetOrientation();
-//     std::cout << static_cast<double>(q.x) << " " << static_cast<double>(q.y)
-//               << " " << static_cast<double>(q.z) << " "
-//               << static_cast<double>(q.w) << std::endl;
-//     result =
-//         imu_processor.Process(imu_mock.GetAcceleration(), imu_mock.GetGyro());
-//     std::cout << static_cast<double>(result.x) << " "
-//               << static_cast<double>(result.y) << " "
-//               << static_cast<double>(result.z) << " "
-//               << static_cast<double>(result.w) << std::endl;
-//     std::cout << "===========" << std::endl;
+  imu_mock.SetTarget(axis, 2 * M_PI, steps * 10);
 
-//     EXPECT_NEAR(static_cast<double>(result.w), static_cast<double>(q.w), 0.01);
-//     EXPECT_NEAR(static_cast<double>(result.x), static_cast<double>(q.x), 0.01);
-//     EXPECT_NEAR(static_cast<double>(result.y), static_cast<double>(q.y), 0.01);
-//     EXPECT_NEAR(static_cast<double>(result.z), static_cast<double>(q.z), 0.01);
-//   }
+  IMUProcessor<Number, 1.0> imu_processor;
 
-//   axis = {0, 0, 1};
-//   Vector3D<FixedPointBase>::Normalize(axis);
-//   angle_rad = kPi<FixedPointBase::kFractionBits>;
-//   vector_part = axis * sin(angle_rad / 2);
-//   target = Quaternion<FixedPointBase>{.x = vector_part.x,
-//                                       .y = vector_part.y,
-//                                       .z = vector_part.z,
-//                                       .w = cos(angle_rad / 2)};
+  Rotation<Number> result;
 
-//   imu_mock.SetTarget(axis, angle_rad, 15);
+  double tolerance = GetTolerance() * std::pow(6, steps - 1);
 
-//   while (imu_mock.Step()) {
-//     q = imu_mock.GetOrientation();
-//     std::cout << static_cast<double>(q.x) << " " << static_cast<double>(q.y)
-//               << " " << static_cast<double>(q.z) << " "
-//               << static_cast<double>(q.w) << std::endl;
-//     result =
-//         imu_processor.Process(imu_mock.GetAcceleration(), imu_mock.GetGyro());
-//     std::cout << static_cast<double>(result.x) << " "
-//               << static_cast<double>(result.y) << " "
-//               << static_cast<double>(result.z) << " "
-//               << static_cast<double>(result.w) << std::endl;
-//     std::cout << "===========" << std::endl;
+  while (imu_mock.Step()) {
+    result = imu_processor.Process(
+        typename decltype(imu_processor)::AccelG(imu_mock.GetAcceleration()),
+        typename decltype(imu_processor)::GyroRadPerS(imu_mock.GetGyro()));
+    auto result_x = result.Rotate({.x = 1, .y = 0, .z = 0});
+    auto result_y = result.Rotate({.x = 0, .y = 1, .z = 0});
+    auto result_z = result.Rotate({.x = 0, .y = 0, .z = 1});
+    auto target_x = imu_mock.GetXAxis();
+    auto target_y = imu_mock.GetYAxis();
+    auto target_z = imu_mock.GetZAxis();
+    EXPECT_NEAR(static_cast<double>(result_x.x),
+                static_cast<double>(target_x.x), tolerance);
+    EXPECT_NEAR(static_cast<double>(result_x.y),
+                static_cast<double>(target_x.y), tolerance);
+    EXPECT_NEAR(static_cast<double>(result_x.z),
+                static_cast<double>(target_x.z), tolerance);
+    EXPECT_NEAR(static_cast<double>(result_y.x),
+                static_cast<double>(target_y.x), tolerance);
+    EXPECT_NEAR(static_cast<double>(result_y.y),
+                static_cast<double>(target_y.y), tolerance);
+    EXPECT_NEAR(static_cast<double>(result_y.z),
+                static_cast<double>(target_y.z), tolerance);
+    EXPECT_NEAR(static_cast<double>(result_z.x),
+                static_cast<double>(target_z.x), tolerance);
+    EXPECT_NEAR(static_cast<double>(result_z.y),
+                static_cast<double>(target_z.y), tolerance);
+    EXPECT_NEAR(static_cast<double>(result_z.z),
+                static_cast<double>(target_z.z), tolerance);
+  }
+}
 
-//     EXPECT_NEAR(static_cast<double>(result.w), static_cast<double>(q.w), 0.01);
-//     EXPECT_NEAR(static_cast<double>(result.x), static_cast<double>(q.x), 0.01);
-//     EXPECT_NEAR(static_cast<double>(result.y), static_cast<double>(q.y), 0.01);
-//     EXPECT_NEAR(static_cast<double>(result.z), static_cast<double>(q.z), 0.01);
-//   }
-// }
+std::string Sanitize(const std::string& input) {
+  std::string out;
+  out.reserve(input.size() * 5);
+  for (char chr : input) {
+    if (chr == '.') {
+      out += "point";
+    } else if (chr == '-') {
+      out += "minus";
+    } else {
+      out += chr;
+    }
+  }
+  return out;
+};
+
+class TestIMUProcessorParametrizedOneStepDouble
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<Vector3D<double>> {};
+
+INSTANTIATE_TEST_CASE_P(
+    Test, TestIMUProcessorParametrizedOneStepDouble,
+    ::testing::ValuesIn(TestEnvironment<double>::kAxisCases),
+    [](const testing::TestParamInfo<
+        TestIMUProcessorParametrizedOneStepDouble::ParamType>& info) {
+      auto axis = info.param;
+      return "axis_" + Sanitize(std::to_string(axis.x)) + "_" +
+             Sanitize(std::to_string(axis.y)) + "_" +
+             Sanitize(std::to_string(axis.z));
+    });
+
+TEST_P(TestIMUProcessorParametrizedOneStepDouble, Basic) {
+  auto axis = GetParam();
+
+  TestEnvironment<double>::OneStep(axis);
+}
+
+class TestIMUProcessorParametrizedManyStepsDouble
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<std::tuple<Vector3D<double>, int>> {
+};
+
+INSTANTIATE_TEST_CASE_P(
+    Test, TestIMUProcessorParametrizedManyStepsDouble,
+    ::testing::Combine(::testing::ValuesIn(TestEnvironment<double>::kAxisCases),
+                       ::testing::Range(1, 11)),
+    [](const testing::TestParamInfo<
+        TestIMUProcessorParametrizedManyStepsDouble::ParamType>& info) {
+      auto values = info.param;
+      auto axis = std::get<0>(values);
+      auto steps = std::get<1>(values);
+      return "axis_" + Sanitize(std::to_string(axis.x)) + "_" +
+             Sanitize(std::to_string(axis.y)) + "_" +
+             Sanitize(std::to_string(axis.z)) + "_steps_" +
+             std::to_string(steps);
+    });
+
+TEST_P(TestIMUProcessorParametrizedManyStepsDouble, Basic) {
+  auto values = GetParam();
+  auto axis = std::get<0>(values);
+  auto steps = std::get<1>(values);
+
+  TestEnvironment<double>::ManySteps(axis, steps);
+}
+
+class TestIMUProcessorParametrizedOneStepFixedPoint
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<Vector3D<FixedPointBase>> {};
+
+INSTANTIATE_TEST_CASE_P(
+    Test, TestIMUProcessorParametrizedOneStepFixedPoint,
+    ::testing::ValuesIn(TestEnvironment<FixedPointBase>::kAxisCases),
+    [](const testing::TestParamInfo<
+        TestIMUProcessorParametrizedOneStepFixedPoint::ParamType>& info) {
+      auto axis = info.param;
+      return "axis_" + Sanitize(std::to_string(static_cast<double>(axis.x))) +
+             "_" + Sanitize(std::to_string(static_cast<double>(axis.y))) + "_" +
+             Sanitize(std::to_string(static_cast<double>(axis.z)));
+    });
+
+TEST_P(TestIMUProcessorParametrizedOneStepFixedPoint, Basic) {
+  auto axis = GetParam();
+
+  TestEnvironment<FixedPointBase>::OneStep(axis);
+}
+
+class TestIMUProcessorParametrizedManyStepsFixedPoint
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<
+          std::tuple<Vector3D<FixedPointBase>, int>> {};
+
+INSTANTIATE_TEST_CASE_P(
+    Test, TestIMUProcessorParametrizedManyStepsFixedPoint,
+    ::testing::Combine(
+        ::testing::ValuesIn(TestEnvironment<FixedPointBase>::kAxisCases),
+        ::testing::Range(1, 11)),
+    [](const testing::TestParamInfo<
+        TestIMUProcessorParametrizedManyStepsFixedPoint::ParamType>& info) {
+      auto values = info.param;
+      auto axis = std::get<0>(values);
+      auto steps = std::get<1>(values);
+      return "axis_" + Sanitize(std::to_string(static_cast<double>(axis.x))) +
+             "_" + Sanitize(std::to_string(static_cast<double>(axis.y))) + "_" +
+             Sanitize(std::to_string(static_cast<double>(axis.z))) + "_steps_" +
+             std::to_string(steps);
+    });
+
+TEST_P(TestIMUProcessorParametrizedManyStepsFixedPoint, Basic) {
+  auto values = GetParam();
+  auto axis = std::get<0>(values);
+  auto steps = std::get<1>(values);
+
+  TestEnvironment<FixedPointBase>::ManySteps(axis, steps);
+}
 
 // TEST(TestIMUProcessor, DistortionTest) {
 //   Quaternion<double> rotation = Quaternion<double>({1, 2, 3, 4});
@@ -151,7 +272,9 @@
 //   auto g_distorted = distorter.DistortAccel(g);
 //   auto result = imu_processor.Process(g_distorted, {0, 0, 0});
 //   auto result_g = Rotate({0, 0, -1}, result);
-//   EXPECT_NEAR(static_cast<double>(result_g.x), static_cast<double>(g.x), 0.01);
-//   EXPECT_NEAR(static_cast<double>(result_g.y), static_cast<double>(g.y), 0.01);
-//   EXPECT_NEAR(static_cast<double>(result_g.z), static_cast<double>(g.z), 0.01);
+//   EXPECT_NEAR(static_cast<double>(result_g.x), static_cast<double>(g.x),
+//   0.01); EXPECT_NEAR(static_cast<double>(result_g.y),
+//   static_cast<double>(g.y), 0.01);
+//   EXPECT_NEAR(static_cast<double>(result_g.z), static_cast<double>(g.z),
+//   0.01);
 // }

@@ -22,6 +22,8 @@ class Rotation {
   Rotation& operator+=(const Rotation& other);
   Rotation operator-(const Rotation& other) const;
 
+  void Normalize();
+
  private:
   constexpr static Number kTolerance = 0.001;
 
@@ -156,5 +158,10 @@ template <ArithmeticConcept Number>
 inline Rotation<Number> Rotation<Number>::operator-(
     const Rotation<Number>& other) const {
   return Rotation<Number>(quaternion_ * (!other.quaternion_));
+}
+
+template <ArithmeticConcept Number>
+inline void Rotation<Number>::Normalize() {
+  Quaternion<Number>::Normalize(quaternion_);
 }
 }  // namespace hydrolib::math
