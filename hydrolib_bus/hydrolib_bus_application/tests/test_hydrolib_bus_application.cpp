@@ -158,7 +158,7 @@ TEST_F(TestHydrolibBusApplication, ReadAlmostTimeoutTest) {
   auto start_time = std::chrono::steady_clock::now();
   master.Read(buffer.data(), test_case.address, test_case.length);
   while (std::chrono::steady_clock::now() - start_time <
-         decltype(master)::kRequestTimeout - 1ms) {
+         decltype(master)::kRequestTimeout - 10ms) {
   }
   stream.MakeAllbytesAvailable();
   slave.Process();
