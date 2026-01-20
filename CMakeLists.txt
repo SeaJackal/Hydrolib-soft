@@ -37,6 +37,12 @@ add_subdirectory(hydrolib_thrust_generator)
 add_subdirectory(hydrolib_vectornav)
 add_subdirectory(hydrolib_ring_queue)
 
+add_custom_target(compdb ALL
+    COMMAND /bin/sh -c "compdb -p ${CMAKE_BINARY_DIR} list > compile_commands.json && mv compile_commands.json ${CMAKE_BINARY_DIR}/compile_commands.json"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    VERBATIM
+)
+
 if(BUILD_TESTS AND COVERAGE)
 	find_program(LCOV_EXECUTABLE lcov REQUIRED)
 	find_program(GENHTML_EXECUTABLE genhtml REQUIRED)
@@ -45,7 +51,7 @@ if(BUILD_TESTS AND COVERAGE)
 		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/coverage
 		COMMAND ${LCOV_EXECUTABLE} --directory ${CMAKE_BINARY_DIR} --zerocounters
 		COMMAND ${LCOV_EXECUTABLE} --capture --initial --directory ${CMAKE_BINARY_DIR} --output-file ${CMAKE_BINARY_DIR}/coverage/base.info
-		COMMAND ${CMAKE_CTEST_COMMAND} --test-dir ${CMAKE_BINARY_DIR} --output-on-failure
+		COMMAND ${CMAKE_CTEST_COMMAND} --test-dir ${CMAKE_BINARY_DIR} -j 10 --output-on-failure
 		COMMAND ${LCOV_EXECUTABLE} --capture --directory ${CMAKE_BINARY_DIR} --output-file ${CMAKE_BINARY_DIR}/coverage/test.info
 		COMMAND ${LCOV_EXECUTABLE} --add-tracefile ${CMAKE_BINARY_DIR}/coverage/base.info --add-tracefile ${CMAKE_BINARY_DIR}/coverage/test.info --output-file ${CMAKE_BINARY_DIR}/coverage/coverage.info
 		COMMAND ${LCOV_EXECUTABLE} --remove ${CMAKE_BINARY_DIR}/coverage/coverage.info /usr/* ${CMAKE_BINARY_DIR}/* */tests/* */external/* */_deps/* --output-file ${CMAKE_BINARY_DIR}/coverage/coverage.info
