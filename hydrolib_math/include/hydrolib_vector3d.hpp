@@ -5,9 +5,10 @@
 namespace hydrolib::math {
 template <ArithmeticConcept Number>
 struct Vector3D {
-  static Number Dot(const Vector3D& first, const Vector3D& second);
-  static Vector3D Cross(const Vector3D& first, const Vector3D& second);
-  static Number Length(const Vector3D& vector);
+  static constexpr Number Dot(const Vector3D& first, const Vector3D& second);
+  static constexpr Vector3D Cross(const Vector3D& first,
+                                  const Vector3D& second);
+  static constexpr Number Length(const Vector3D& vector);
   static void Normalize(Vector3D& vector);
 
   Number x;
@@ -41,21 +42,21 @@ template <ArithmeticConcept Number>
 Vector3D<Number>& operator/=(Vector3D<Number>& vector, Number scalar);
 
 template <ArithmeticConcept Number>
-inline Number Vector3D<Number>::Dot(const Vector3D& first,
-                                    const Vector3D& second) {
+constexpr Number Vector3D<Number>::Dot(const Vector3D& first,
+                                       const Vector3D& second) {
   return (first.x * second.x) + (first.y * second.y) + (first.z * second.z);
 }
 
 template <ArithmeticConcept Number>
-inline Vector3D<Number> Vector3D<Number>::Cross(const Vector3D& first,
-                                                const Vector3D& second) {
+constexpr Vector3D<Number> Vector3D<Number>::Cross(const Vector3D& first,
+                                                   const Vector3D& second) {
   return Vector3D<Number>(first.y * second.z - first.z * second.y,
                           first.z * second.x - first.x * second.z,
                           first.x * second.y - first.y * second.x);
 }
 
 template <ArithmeticConcept Number>
-inline Number Vector3D<Number>::Length(const Vector3D& vector) {
+constexpr Number Vector3D<Number>::Length(const Vector3D& vector) {
   return sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
 }
 
