@@ -71,6 +71,7 @@ void Slave<Memory, Logger, TxRxStream>::Process() {
                     rx_buffer_.header.info.length,
                     rx_buffer_.header.info.address);
         tx_buffer_.command = Command::ERROR;
+        write(stream_, &tx_buffer_, sizeof(Command));
       }
       break;
     }
