@@ -34,6 +34,7 @@ class Master {
 
   void *requested_data_ = nullptr;
   int requested_length_ = 0;
+  bool is_write_request_ = false;
 
   ResponseMessageBuffer rx_buffer_{};
   MemoryAccessMessageBuffer tx_buffer_{};
@@ -47,7 +48,7 @@ constexpr Master<TxRxStream, Logger>::Master(TxRxStream &stream, Logger &logger)
 
 template <concepts::stream::ByteFullStreamConcept TxRxStream, typename Logger>
 hydrolib::ReturnCode Master<TxRxStream, Logger>::Process() {
-  if (requested_data_ == nullptr) {
+  if (requested_data_ == nullptr && !is_write_request_) {
     return hydrolib::ReturnCode::FAIL;
   }
 
@@ -98,6 +99,8 @@ void Master<TxRxStream, Logger>::Read(void *data, int address, int length) {
 template <concepts::stream::ByteFullStreamConcept TxRxStream, typename Logger>
 void Master<TxRxStream, Logger>::Write(const void *data, int address,
                                        int length) {
+  is_write_request_ = true;
+
   tx_buffer_.header.command = Command::WRITE;
   tx_buffer_.header.info.address = address;
   tx_buffer_.header.info.length = length;
@@ -105,6 +108,8 @@ void Master<TxRxStream, Logger>::Write(const void *data, int address,
   memcpy(static_cast<void *>(tx_buffer_.data), data, length);
 
   write(stream_, &tx_buffer_, sizeof(MemoryAccessHeader) + length);
+
+  last_request_time_ = std::chrono::steady_clock::now();
 }
 
 }  // namespace hydrolib::bus::application
