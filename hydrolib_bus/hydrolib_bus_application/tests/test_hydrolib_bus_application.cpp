@@ -242,19 +242,20 @@ TEST_F(TestHydrolibBusApplication, MasterCommandIsEmpty) {
   EXPECT_EQ(master.Process(), hydrolib::ReturnCode::FAIL);
 }
 
-TEST_F(TestHydrolibBusApplication, StreamIsEmptyAfterRead) {
+TEST_F(TestHydrolibBusApplication, ReadNoDataTest) {
   unsigned address = 0;
   unsigned length = 1;
 
   std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
 
   master.Read(buffer.data(), address, length);
-  stream.MakeAllbytesAvailable();
-  slave.Process();
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::NO_DATA);
 
   stream.MakeAllbytesAvailable();
-  stream.Clear();
-  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::NO_DATA);
+  slave.Process();
+  stream.MakeAllbytesAvailable();
+
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::OK);
 }
 
 TEST_F(TestHydrolibBusApplication, WrongReadLenght) {
