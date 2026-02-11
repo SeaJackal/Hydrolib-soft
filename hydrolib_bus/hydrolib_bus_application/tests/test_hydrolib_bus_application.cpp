@@ -172,14 +172,22 @@ TEST_F(TestHydrolibBusApplication, ReadAlmostTimeoutTest) {
   }
 }
 
-TEST_F(TestHydrolibBusApplication, ProcessEmptyBuffer) {
+TEST_P(TestHydrolibBusApplication, DataLossTest) {
+  auto test_case = GetParam();
+  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+  ASSERT_LE(test_case.address + test_case.length,
+            TestPublicMemory::kPublicMemoryLength);
+  memcpy(memory.memory.data(), test_data.data(),
+         TestPublicMemory::kPublicMemoryLength);
+  master.Read(buffer.data(), test_case.address, test_case.length);
+  stream.MakeAllbytesAvailable();
   stream.Clear();
   slave.Process();
-
-  EXPECT_TRUE(stream.IsEmpty());
+  stream.MakeAllbytesAvailable();
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::NO_DATA);
 }
 
-TEST_F(TestHydrolibBusApplication, ReadWithError) {
+TEST_F(TestHydrolibBusApplication, MemoryAccessReadError) {
   unsigned address = TestPublicMemory::kPublicMemoryLength;
   unsigned length = 1;
 
@@ -193,7 +201,7 @@ TEST_F(TestHydrolibBusApplication, ReadWithError) {
   EXPECT_EQ(master.Process(), hydrolib::ReturnCode::ERROR);
 }
 
-TEST_F(TestHydrolibBusApplication, WriteWithError) {
+TEST_F(TestHydrolibBusApplication, MemoryAccessWriteError) {
   unsigned address = TestPublicMemory::kPublicMemoryLength;
   unsigned length = 1;
 
@@ -204,10 +212,18 @@ TEST_F(TestHydrolibBusApplication, WriteWithError) {
   slave.Process();
 
   stream.MakeAllbytesAvailable();
-  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::ERROR);
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::FAIL);
 }
 
 TEST_F(TestHydrolibBusApplication, WrongCommandsTest) {
+  unsigned address = 0;
+  unsigned length = 1;
+
+  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+
+  master.Read(buffer.data(), address, length);
+  stream.Clear();
+
   hydrolib::bus::application::MemoryAccessMessageBuffer wrong_command;
 
   wrong_command.header.command = hydrolib::bus::application::Command::ERROR;
@@ -219,65 +235,31 @@ TEST_F(TestHydrolibBusApplication, WrongCommandsTest) {
   stream.MakeAllbytesAvailable();
 
   slave.Process();
+  stream.MakeAllbytesAvailable();
 
-  EXPECT_EQ(stream[0],
-            static_cast<uint8_t>(hydrolib::bus::application::Command::ERROR));
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::ERROR);
 }
 
-TEST_F(TestHydrolibBusApplication, MasterCommandIsEmpty) {
-  hydrolib::bus::application::MemoryAccessMessageBuffer command_without_master;
-
-  command_without_master.header.command =
-      hydrolib::bus::application::Command::WRITE;
-  command_without_master.header.info.address = 0;
-  command_without_master.header.info.length = 1;
-
-  write(stream, &command_without_master,
-        sizeof(hydrolib::bus::application::MemoryAccessHeader) + 1);
-
-  stream.MakeAllbytesAvailable();
-  slave.Process();
-
-  stream.MakeAllbytesAvailable();
-  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::FAIL);
-}
-
-TEST_F(TestHydrolibBusApplication, ReadNoDataTest) {
+TEST_F(TestHydrolibBusApplication, UnexpectedLenghtDataTest) {
   unsigned address = 0;
-  unsigned length = 1;
+  unsigned requested_lenght = 1;
 
   std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
 
-  master.Read(buffer.data(), address, length);
-  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::NO_DATA);
-
-  stream.MakeAllbytesAvailable();
-  slave.Process();
-  stream.MakeAllbytesAvailable();
-
-  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::OK);
-}
-
-TEST_F(TestHydrolibBusApplication, WrongReadLenght) {
-  unsigned address = 0;
-  unsigned length = 1;
-
-  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
-
-  master.Read(buffer.data(), address, length);
+  master.Read(buffer.data(), address, requested_lenght);
   stream.MakeAllbytesAvailable();
   slave.Process();
   stream.MakeAllbytesAvailable();
   stream.Clear();
 
-  hydrolib::bus::application::MemoryAccessMessageBuffer command_without_master;
+  hydrolib::bus::application::MemoryAccessMessageBuffer wrong_data;
 
-  command_without_master.header.command =
+  wrong_data.header.command =
       hydrolib::bus::application::Command::RESPONSE;
-  command_without_master.header.info.address = 0;
-  command_without_master.header.info.length = 2;
+  wrong_data.header.info.address = 0;
+  wrong_data.header.info.length = requested_lenght + 1; // != requested_lenght
 
-  write(stream, &command_without_master,
+  write(stream, &wrong_data,
         sizeof(hydrolib::bus::application::MemoryAccessHeader) + 1);
 
   stream.MakeAllbytesAvailable();
