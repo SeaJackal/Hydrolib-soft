@@ -254,14 +254,37 @@ TEST_F(TestHydrolibBusApplication, UnexpectedLenghtDataTest) {
 
   hydrolib::bus::application::MemoryAccessMessageBuffer wrong_data;
 
-  wrong_data.header.command =
-      hydrolib::bus::application::Command::RESPONSE;
+  wrong_data.header.command = hydrolib::bus::application::Command::RESPONSE;
   wrong_data.header.info.address = 0;
-  wrong_data.header.info.length = requested_lenght + 1; // != requested_lenght
+  wrong_data.header.info.length = requested_lenght + 1;  // != requested_lenght
 
   write(stream, &wrong_data,
         sizeof(hydrolib::bus::application::MemoryAccessHeader) + 1);
 
   stream.MakeAllbytesAvailable();
   EXPECT_EQ(master.Process(), hydrolib::ReturnCode::ERROR);
+}
+
+TEST_F(TestHydrolibBusApplication, ReadAfterTimeoutTest) {
+  auto test_case = kTestCases[0];
+  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+  ASSERT_LE(test_case.address + test_case.length,
+            TestPublicMemory::kPublicMemoryLength);
+  memcpy(memory.memory.data(), test_data.data(),
+         TestPublicMemory::kPublicMemoryLength);
+  auto start_time = std::chrono::steady_clock::now();
+  master.Read(buffer.data(), test_case.address, test_case.length);
+  while (std::chrono::steady_clock::now() - start_time <
+         decltype(master)::kRequestTimeout) {
+  }
+  stream.Clear();
+  EXPECT_EQ(hydrolib::ReturnCode::TIMEOUT, master.Process());
+  master.Read(buffer.data(), test_case.address, test_case.length);
+  stream.MakeAllbytesAvailable();
+  slave.Process();
+  stream.MakeAllbytesAvailable();
+  EXPECT_EQ(hydrolib::ReturnCode::OK, master.Process());
+  for (int i = 0; i < test_case.length; i++) {
+    EXPECT_EQ(buffer[i], memory.memory[test_case.address + i]);
+  }
 }

@@ -34,7 +34,6 @@ class Master {
 
   void *requested_data_ = nullptr;
   int requested_length_ = 0;
-  bool is_write_request_ = false;
 
   ResponseMessageBuffer rx_buffer_{};
   MemoryAccessMessageBuffer tx_buffer_{};
