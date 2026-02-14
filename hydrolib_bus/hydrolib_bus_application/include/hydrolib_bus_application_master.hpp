@@ -49,7 +49,7 @@ template <concepts::stream::ByteFullStreamConcept TxRxStream, typename Logger>
 hydrolib::ReturnCode Master<TxRxStream, Logger>::Process() {
   if (requested_data_ == nullptr) {
     return hydrolib::ReturnCode::FAIL;
-  }
+  }  // TODO fix FAIL after Write https://app.weeek.net/ws/701833/task/1066
 
   if (std::chrono::steady_clock::now() - last_request_time_ > kRequestTimeout) {
     LOG_ERROR(logger_, "Request timeout");
@@ -66,14 +66,14 @@ hydrolib::ReturnCode Master<TxRxStream, Logger>::Process() {
   switch (rx_buffer_.command) {
     case Command::RESPONSE:
       if (requested_length_ + static_cast<int>(sizeof(Command)) !=
-          read_length) {
+          read_length) {  // TODO https://app.weeek.net/ws/701833/task/1067
         return hydrolib::ReturnCode::ERROR;
       }
       memcpy(requested_data_, static_cast<void *>(rx_buffer_.data),
              requested_length_);
       requested_data_ = nullptr;
       return hydrolib::ReturnCode::OK;
-    case Command::ERROR:
+    case Command::ERROR:  // TODO make different reaction for different errors
     case Command::READ:
     case Command::WRITE:
     default:
