@@ -7,26 +7,21 @@ namespace hydrolib::strings {
 template <unsigned CAPACITY>
 class CString {
  public:
+  constexpr CString(std::string_view str);
   constexpr CString(const char *str);
-  constexpr CString(char *str, int length);
+  constexpr CString(const char *str, int length);
   constexpr CString() = default;
-  // constexpr CString(const CString& other);
 
- public:
-  [[deprecated]]
-  constexpr char *GetString();
-  [[deprecated]]
-  constexpr const char *GetConstString() const;
-  constexpr int GetLength() const;
+  [[nodiscard]] constexpr int GetLength() const;
 
-  int Write(const void *data, unsigned length);
+  int Write(const void *data, int length);
 
   constexpr operator const char *() const;
   constexpr operator char *();
   constexpr char &operator[](int index);
 
  private:
-  char string_[CAPACITY] = {};
+  std::array<char, CAPACITY> string_ = {};
   unsigned length_ = 0;
 };
 
@@ -34,31 +29,19 @@ template <unsigned CAPACITY>
 int write(CString<CAPACITY> &str, const void *data, unsigned length);
 
 template <unsigned CAPACITY>
+constexpr CString<CAPACITY>::CString(std::string_view str)
+    : length_(str.size()) {
+  std::copy(str.begin(), str.end(), string_.begin());
+}
+
+template <unsigned CAPACITY>
 constexpr CString<CAPACITY>::CString(const char *str)
-    : length_(std::strlen(str)) {
-  std::copy(str, str + length_, string_);
-}
+    : CString(str, std::strlen(str)) {}
 
 template <unsigned CAPACITY>
-constexpr CString<CAPACITY>::CString(char *str, int length) : length_(length) {
-  std::copy(str, str + length_, string_);
-}
-
-// template <unsigned CAPACITY>
-// constexpr CString<CAPACITY>::CString(const CString& other):
-// length_(other.length_)
-// {
-//     std::copy(other.string_, other.string_+length_, string_);
-// }
-
-template <unsigned CAPACITY>
-constexpr char *CString<CAPACITY>::GetString() {
-  return string_;
-}
-
-template <unsigned CAPACITY>
-constexpr const char *CString<CAPACITY>::GetConstString() const {
-  return string_;
+constexpr CString<CAPACITY>::CString(const char *str, int length)
+    : length_(length) {
+  std::copy(str, str + length_, string_.begin());
 }
 
 template <unsigned CAPACITY>
@@ -67,24 +50,24 @@ constexpr int CString<CAPACITY>::GetLength() const {
 }
 
 template <unsigned CAPACITY>
-int CString<CAPACITY>::Write(const void *data, unsigned length) {
-  unsigned writing_length = length;
-  if (CAPACITY - 1 - length_ < length) [[unlikely]] {
-    writing_length = CAPACITY - 1 - length_;
+int CString<CAPACITY>::Write(const void *data, int length) {
+  int writing_length = length;
+  if (CAPACITY - length_ < length) [[unlikely]] {
+    writing_length = CAPACITY - length_;
   }
-  memcpy(string_ + length_, data, writing_length);
+  memcpy(string_.data() + length_, data, writing_length);
   length_ += writing_length;
   return writing_length;
 }
 
 template <unsigned CAPACITY>
 constexpr CString<CAPACITY>::operator const char *() const {
-  return const_cast<const char *>(string_);
+  return string_.data();
 }
 
 template <unsigned CAPACITY>
 constexpr CString<CAPACITY>::operator char *() {
-  return string_;
+  return string_.data();
 }
 
 template <unsigned CAPACITY>

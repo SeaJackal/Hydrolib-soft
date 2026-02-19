@@ -7,6 +7,10 @@
 #include <cstdint>
 #include <numbers>
 
+#include "hydrolib_convertible_to_bytes.hpp"
+#include "hydrolib_return_codes.hpp"
+#include "hydrolib_stream_concepts.hpp"
+
 namespace hydrolib::math {
 template <int FRACTION_BITS>
 class FixedPoint;
@@ -66,6 +70,9 @@ class FixedPoint {
   explicit operator double() const;
   explicit operator int() const;
 
+  template <concepts::stream::ByteWritableStreamConcept DestType>
+  ReturnCode ToBytes(DestType& buffer) const;
+
   constexpr FixedPoint& operator+=(const FixedPoint& other);
   constexpr FixedPoint& operator-=(const FixedPoint& other);
   constexpr FixedPoint operator-() const;
@@ -85,7 +92,7 @@ class FixedPoint {
 
   [[nodiscard]] constexpr FixedPoint Abs() const;
 
-  [[nodiscard]] constexpr int GetAbsIntPart() const;
+  [[nodiscard]] constexpr int GetAbsIntPart() const;  // TODO(vscode): remove
   [[nodiscard]] constexpr int GetAbsFractionPart() const;
 
  private:
@@ -305,6 +312,49 @@ template <int FRACTION_BITS>
 constexpr FixedPoint<FRACTION_BITS> DegToRad(
     FixedPoint<FRACTION_BITS> value_deg) {
   return value_deg * kPi<FRACTION_BITS> / kDegsInPi;
+}
+
+template <int FRACTION_BITS>
+template <concepts::stream::ByteWritableStreamConcept DestType>
+ReturnCode FixedPoint<FRACTION_BITS>::ToBytes(DestType& buffer) const {
+  if (value_ < 0) {
+    constexpr char minus_symbol = '-';
+    auto minus_res = write(buffer, &minus_symbol, 1);
+    if (minus_res == -1) {
+      return ReturnCode::ERROR;
+    }
+    if (minus_res != 1) {
+      return ReturnCode::OVERFLOW;
+    }
+  }
+
+  auto int_res = strings::IntToBytes(GetAbsIntPart(), buffer);
+  if (int_res != ReturnCode::OK) {
+    return int_res;
+  }
+  constexpr char point = '.';
+  auto point_res = write(buffer, &point, 1);
+  if (point_res == -1) {
+    return ReturnCode::ERROR;
+  }
+  if (point_res != 1) {
+    return ReturnCode::OVERFLOW;
+  }
+  int fractional = (GetAbsFractionPart() * 1000) >> FRACTION_BITS;
+  int nulls_counter = 1000 / 10;
+  while (nulls_counter > fractional) {
+    nulls_counter /= 10;
+    constexpr char null_char = '0';
+    auto null_res = write(buffer, &null_char, 1);
+    if (null_res == -1) {
+      return ReturnCode::ERROR;
+    }
+    if (null_res != 1) {
+      return ReturnCode::OVERFLOW;
+    }
+  }
+  auto frac_res = strings::IntToBytes(fractional, buffer);
+  return frac_res;
 }
 
 }  // namespace hydrolib::math
