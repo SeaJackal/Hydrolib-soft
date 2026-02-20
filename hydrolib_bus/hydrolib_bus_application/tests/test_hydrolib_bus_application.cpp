@@ -5,6 +5,9 @@
 #include <cstring>
 #include <thread>
 
+#include "hydrolib_bus_application_commands.hpp"
+#include "hydrolib_bus_application_master.hpp"
+
 using namespace std::literals::chrono_literals;
 
 constexpr std::array<TestCase, 10> kTestCases = {
@@ -92,6 +95,7 @@ TEST_P(TestHydrolibBusApplication, ReadTest) {
   memcpy(memory.memory.data(), test_data.data(),
          TestPublicMemory::kPublicMemoryLength);
   master.Read(buffer.data(), test_case.address, test_case.length);
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::NO_DATA);
   stream.MakeAllbytesAvailable();
   slave.Process();
   stream.MakeAllbytesAvailable();
@@ -167,4 +171,92 @@ TEST_F(TestHydrolibBusApplication, ReadAlmostTimeoutTest) {
   for (int i = 0; i < test_case.length; i++) {
     EXPECT_EQ(buffer[i], memory.memory[test_case.address + i]);
   }
+}
+
+TEST_F(TestHydrolibBusApplication,
+       MemoryAccessReadError) {  // TODO modernize mock
+                                 // https://app.weeek.net/ws/701833/task/1065
+  unsigned address = TestPublicMemory::kPublicMemoryLength;
+  unsigned length = 1;
+
+  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+
+  master.Read(buffer.data(), address, length);
+  stream.MakeAllbytesAvailable();
+  slave.Process();
+
+  stream.MakeAllbytesAvailable();
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::ERROR);
+}
+
+TEST_F(TestHydrolibBusApplication, MemoryAccessWriteError) {
+  unsigned address = TestPublicMemory::kPublicMemoryLength;
+  unsigned length = 1;
+
+  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+
+  master.Write(buffer.data(), address, length);
+  stream.MakeAllbytesAvailable();
+  slave.Process();
+
+  stream.MakeAllbytesAvailable();
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::FAIL);
+}
+
+TEST_F(TestHydrolibBusApplication, WrongCommandsTest) {  // TODO think about it
+  unsigned address = 0;
+  unsigned length = 1;
+
+  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+
+  master.Read(buffer.data(), address, length);
+  stream.Clear();
+
+  hydrolib::bus::application::MemoryAccessMessageBuffer wrong_command;
+
+  wrong_command.header.command = hydrolib::bus::application::Command::ERROR;
+  wrong_command.header.info.address = 0;
+  wrong_command.header.info.length = 1;
+
+  write(stream, &wrong_command,
+        sizeof(hydrolib::bus::application::MemoryAccessHeader) + 1);
+  stream.MakeAllbytesAvailable();
+
+  slave.Process();
+  stream.MakeAllbytesAvailable();
+
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::ERROR);
+
+  master.Read(buffer.data(), address, length);
+  stream.MakeAllbytesAvailable();
+
+  slave.Process();
+  stream.MakeAllbytesAvailable();
+
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::OK);
+}
+
+TEST_F(TestHydrolibBusApplication, UnexpectedLenghtDataTest) {
+  unsigned address = 0;
+  unsigned requested_lenght = 1;
+
+  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+
+  master.Read(buffer.data(), address, requested_lenght);
+  stream.MakeAllbytesAvailable();
+  slave.Process();
+  stream.MakeAllbytesAvailable();
+  stream.Clear();
+
+  hydrolib::bus::application::MemoryAccessMessageBuffer wrong_data;
+
+  wrong_data.header.command = hydrolib::bus::application::Command::RESPONSE;
+  wrong_data.header.info.address = 0;
+  wrong_data.header.info.length = requested_lenght + 1;
+
+  write(stream, &wrong_data,
+        sizeof(hydrolib::bus::application::MemoryAccessHeader) + 1);
+
+  stream.MakeAllbytesAvailable();
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::ERROR);
 }
