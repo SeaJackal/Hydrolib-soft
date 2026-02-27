@@ -90,9 +90,6 @@ consteval StaticFormatableString<ArgTypes...>::StaticFormatableString(
   if (sizeof...(ArgTypes) != param_count_) {
     Error("Not enough arguments for inserting to formatable string");
   }
-  for (int i = param_count_; i < MAX_PARAMETERS_COUNT; i++) {
-    param_pos_diffs_[i] = 0;
-  }
   if (open_flag) {
     Error("Unclosed parameter in formatable string");
   }

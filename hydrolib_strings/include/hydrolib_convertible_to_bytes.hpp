@@ -13,7 +13,7 @@ concept ConvertibleToBytesConcept =
       { value.ToBytes(buffer) } -> std::convertible_to<ReturnCode>;
     };
 
-template <typename DestType>
+template <concepts::stream::ByteWritableStreamConcept DestType>
 ReturnCode IntToBytes(int param, DestType &buffer) {
   if (param == 0) {
     auto write_res = write(buffer, "0", 1);
