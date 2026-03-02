@@ -31,6 +31,9 @@ class ThrusterMemory {
 
   hydrolib::ReturnCode Read(void *read_buffer, unsigned address,
                             unsigned length) {
+    if (!IsConnectionOkey()) {
+      return hydrolib::ReturnCode::FAIL;
+    }
     if (kThrusterStartAddress + address + length > kMemoryLength) {
       return hydrolib::ReturnCode::FAIL;
     }
@@ -40,6 +43,9 @@ class ThrusterMemory {
 
   hydrolib::ReturnCode Write(const void *write_buffer, unsigned address,
                              unsigned length) {
+    if (!IsConnectionOkey()) {
+      return hydrolib::ReturnCode::FAIL;
+    }
     if (kThrusterStartAddress + address + length > kMemoryLength) {
       return hydrolib::ReturnCode::FAIL;
     }
