@@ -22,6 +22,41 @@ class TestPublicMemory {
   std::array<uint8_t, kPublicMemoryLength> memory{};
 };
 
+class ThrusterMemory {
+ public:
+  static constexpr int kMemoryLength = 34;
+  static constexpr int kConnectStatusAddress = 0;
+  static constexpr int kThrusterStartAddress = 4;
+  static constexpr uint32_t kOkeyStatusCode = 0xABABABAB;
+
+  hydrolib::ReturnCode Read(void *read_buffer, unsigned address,
+                            unsigned length) {
+    if (kThrusterStartAddress + address + length > kMemoryLength) {
+      return hydrolib::ReturnCode::FAIL;
+    }
+    std::memcpy(read_buffer, &memory[kThrusterStartAddress + address], length);
+    return hydrolib::ReturnCode::OK;
+  }
+
+  hydrolib::ReturnCode Write(const void *write_buffer, unsigned address,
+                             unsigned length) {
+    if (kThrusterStartAddress + address + length > kMemoryLength) {
+      return hydrolib::ReturnCode::FAIL;
+    }
+    std::memcpy(&memory[kThrusterStartAddress + address], write_buffer, length);
+    return hydrolib::ReturnCode::OK;
+  }
+
+  bool IsConnectionOkey() {
+    uint32_t connection_status;
+    std::memcpy(&connection_status, &memory[kConnectStatusAddress],
+                sizeof(connection_status));
+    return connection_status == kOkeyStatusCode;
+  }
+
+  std::array<uint8_t, kMemoryLength> memory{};
+};
+
 struct TestCase {
   int address;
   int length;
