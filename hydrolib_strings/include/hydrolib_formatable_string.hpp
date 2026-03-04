@@ -32,7 +32,6 @@ class StaticFormatableString {
   constexpr StaticFormatableString() = default;
   consteval StaticFormatableString(const char *string);
 
-  [[deprecated]] [[nodiscard]] const char *GetString() const;
   [[nodiscard]] unsigned GetLength() const;
 
   template <concepts::stream::ByteWritableStreamConcept DestType>
@@ -57,8 +56,6 @@ class StaticFormatableString {
   template <concepts::stream::ByteWritableStreamConcept DestType>
   ReturnCode ToBytes_(DestType &buffer, int next_param_index,
                       int translated_length) const;
-
-  static consteval int CountParametres_(std::string_view string);
 
   std::string_view string_ = nullptr;
   int param_count_ = 0;
@@ -234,36 +231,7 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
 }
 
 template <typename... ArgTypes>
-const char *StaticFormatableString<ArgTypes...>::GetString() const {
-  return string_.data();
-}
-
-template <typename... ArgTypes>
 unsigned StaticFormatableString<ArgTypes...>::GetLength() const {
   return string_.size();
-}
-
-template <typename... ArgTypes>
-consteval int StaticFormatableString<ArgTypes...>::CountParametres_(
-    std::string_view string) {
-  int param_number = 0;
-  bool open_flag = false;
-  int length = 0;
-  while (string[length] != '\0') {
-    if (string[length] == '{') {
-      if (open_flag) {
-        Error("Unpaired parameter in formatable string");
-      }
-      open_flag = true;
-      param_number++;
-    } else if (string[length] == '}') {
-      open_flag = false;
-    }
-    length++;
-  }
-  if (open_flag) {
-    Error("Unclosed parameter in formatable string");
-  }
-  return param_number;
 }
 }  // namespace hydrolib::strings
