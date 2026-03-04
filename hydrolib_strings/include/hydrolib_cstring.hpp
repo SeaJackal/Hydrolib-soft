@@ -4,7 +4,7 @@
 #include <cstring>
 
 namespace hydrolib::strings {
-template <unsigned CAPACITY>
+template <int CAPACITY>
 class CString {
  public:
   constexpr CString(std::string_view str);
@@ -22,34 +22,34 @@ class CString {
 
  private:
   std::array<char, CAPACITY> string_ = {};
-  unsigned length_ = 0;
+  int length_ = 0;
 };
 
-template <unsigned CAPACITY>
-int write(CString<CAPACITY> &str, const void *data, unsigned length);
+template <int CAPACITY>
+int write(CString<CAPACITY> &str, const void *data, int length);
 
-template <unsigned CAPACITY>
+template <int CAPACITY>
 constexpr CString<CAPACITY>::CString(std::string_view str)
     : length_(str.size()) {
   std::copy(str.begin(), str.end(), string_.begin());
 }
 
-template <unsigned CAPACITY>
+template <int CAPACITY>
 constexpr CString<CAPACITY>::CString(const char *str)
     : CString(str, std::strlen(str)) {}
 
-template <unsigned CAPACITY>
+template <int CAPACITY>
 constexpr CString<CAPACITY>::CString(const char *str, int length)
     : length_(length) {
   std::copy(str, str + length_, string_.begin());
 }
 
-template <unsigned CAPACITY>
+template <int CAPACITY>
 constexpr int CString<CAPACITY>::GetLength() const {
   return length_;
 }
 
-template <unsigned CAPACITY>
+template <int CAPACITY>
 int CString<CAPACITY>::Write(const void *data, int length) {
   int writing_length = length;
   if (CAPACITY - length_ < length) [[unlikely]] {
@@ -60,23 +60,23 @@ int CString<CAPACITY>::Write(const void *data, int length) {
   return writing_length;
 }
 
-template <unsigned CAPACITY>
+template <int CAPACITY>
 constexpr CString<CAPACITY>::operator const char *() const {
   return string_.data();
 }
 
-template <unsigned CAPACITY>
+template <int CAPACITY>
 constexpr CString<CAPACITY>::operator char *() {
   return string_.data();
 }
 
-template <unsigned CAPACITY>
+template <int CAPACITY>
 constexpr char &CString<CAPACITY>::operator[](int index) {
   return string_[index];
 }
 
-template <unsigned CAPACITY>
-int write(CString<CAPACITY> &str, const void *data, unsigned length) {
+template <int CAPACITY>
+int write(CString<CAPACITY> &str, const void *data, int length) {
   return str.Write(data, length);
 }
 

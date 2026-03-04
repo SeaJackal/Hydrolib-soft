@@ -3,9 +3,13 @@
 
 #include <climits>
 #include <cmath>
+#include <iomanip>
+#include <sstream>
+#include <string>
 #include <tuple>
 
 #include "hydrolib_fixed_point.hpp"
+#include "mock_stream.hpp"
 
 using namespace hydrolib::math;
 
@@ -429,16 +433,16 @@ TEST_P(TestFixedPointTrigonometry, Cos) {
 }
 
 constexpr std::array<FixedPointBase, 10> kFixedPointSqrtCases = {
-  0,
-  1,
-  FixedPointBase::kUpperNotIncludedBound - FixedPointBase::kLeastBitValue,
-  FixedPointBase::kLeastBitValue,
-  2.7568,
-  107.11231,
-0.25,
-7304.4209,
-0.0881,
-4.001};
+    0,
+    1,
+    FixedPointBase::kUpperNotIncludedBound - FixedPointBase::kLeastBitValue,
+    FixedPointBase::kLeastBitValue,
+    2.7568,
+    107.11231,
+    0.25,
+    7304.4209,
+    0.0881,
+    4.001};
 
 class TestFixedPointSqrt
     : public ::testing::Test,
@@ -476,55 +480,28 @@ TEST_P(TestFixedPointSqrt, Base) {
   }
 }
 
-TEST(TestHydrolibMath, FixedPointBaseGetAbsIntPart) {
-  FixedPointBase fp1(5.75);
-  EXPECT_EQ(fp1.GetAbsIntPart(), 5);
+class TestFixedPointToBytes
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<FixedPointBase> {};
 
-  FixedPointBase fp2(10.25);
-  EXPECT_EQ(fp2.GetAbsIntPart(), 10);
+INSTANTIATE_TEST_CASE_P(Test, TestFixedPointToBytes,
+                        ::testing::ValuesIn(kFixedPointCases));
 
-  FixedPointBase fp3(0.99);
-  EXPECT_EQ(fp3.GetAbsIntPart(), 0);
+TEST_P(TestFixedPointToBytes, Base) {
+  const auto value = GetParam();
+  std::ostringstream output_stream;
+  output_stream << std::fixed << std::setprecision(3)
+                << static_cast<double>(value);
+  const auto expected_string = output_stream.str();
+  hydrolib::streams::mock::MockByteStream stream;
 
-  FixedPointBase fp4(-5.75);
-  EXPECT_EQ(fp4.GetAbsIntPart(), 5);
+  EXPECT_EQ(value.ToBytes(stream), hydrolib::ReturnCode::OK);
 
-  FixedPointBase fp5(-0.25);
-  EXPECT_EQ(fp5.GetAbsIntPart(), 0);
+  std::string output;
+  output.resize(stream.GetSize());
+  for (size_t i = 0; i < output.size(); ++i) {
+    output[i] = static_cast<char>(stream[i]);
+  }
 
-  FixedPointBase fp6(42);
-  EXPECT_EQ(fp6.GetAbsIntPart(), 42);
-
-  FixedPointBase fp7(-15);
-  EXPECT_EQ(fp7.GetAbsIntPart(), 15);
-
-  FixedPointBase fp8(0);
-  EXPECT_EQ(fp8.GetAbsIntPart(), 0);
-}
-
-TEST(TestHydrolibMath, FixedPointBaseGetAbsFractionPart) {
-  FixedPointBase fp1(5.25);
-  EXPECT_EQ(fp1.GetAbsFractionPart(),
-            0.25 * (1 << FixedPointBase::kFractionBits));
-
-  FixedPointBase fp2(3.5);
-  EXPECT_EQ(fp2.GetAbsFractionPart(),
-            0.5 * (1 << FixedPointBase::kFractionBits));
-
-  FixedPointBase fp3(7.75);
-  EXPECT_EQ(fp3.GetAbsFractionPart(),
-            0.75 * (1 << FixedPointBase::kFractionBits));
-
-  FixedPointBase fp4(10);
-  EXPECT_EQ(fp4.GetAbsFractionPart(), 0);
-
-  FixedPointBase fp5(0);
-  EXPECT_EQ(fp5.GetAbsFractionPart(), 0);
-
-  FixedPointBase fp6(-4);
-  EXPECT_EQ(fp6.GetAbsFractionPart(), 0);
-
-  FixedPointBase fp7(-2.25);
-  EXPECT_EQ(fp7.GetAbsFractionPart(),
-            0.25 * (1 << FixedPointBase::kFractionBits));
+  EXPECT_EQ(output, expected_string);
 }

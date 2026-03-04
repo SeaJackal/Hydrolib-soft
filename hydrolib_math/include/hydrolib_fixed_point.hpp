@@ -1,13 +1,13 @@
 #pragma once
 
 #include <array>
+#include <charconv>
 #include <climits>
 #include <cmath>
 #include <concepts>
 #include <cstdint>
 #include <numbers>
 
-#include "hydrolib_convertible_to_bytes.hpp"
 #include "hydrolib_return_codes.hpp"
 #include "hydrolib_stream_concepts.hpp"
 
@@ -92,10 +92,10 @@ class FixedPoint {
 
   [[nodiscard]] constexpr FixedPoint Abs() const;
 
-  [[nodiscard]] constexpr int GetAbsIntPart() const;  // TODO(vscode): remove
+ private:
+  [[nodiscard]] constexpr int GetAbsIntPart() const;
   [[nodiscard]] constexpr int GetAbsFractionPart() const;
 
- private:
   int value_;
 };
 
@@ -328,9 +328,32 @@ ReturnCode FixedPoint<FRACTION_BITS>::ToBytes(DestType& buffer) const {
     }
   }
 
-  auto int_res = strings::IntToBytes(GetAbsIntPart(), buffer);
-  if (int_res != ReturnCode::OK) {
-    return int_res;
+  int integer_part = GetAbsIntPart();
+
+  int fractional = (GetAbsFractionPart() * 1000) >> FRACTION_BITS;
+  int next_number =
+      ((GetAbsFractionPart() * 10000) >> FRACTION_BITS) - (fractional * 10);
+  if (next_number >= 5) {
+    fractional++;
+  }
+
+  if (fractional >= 1000) {
+    integer_part++;
+    fractional = 0;
+  }
+
+  std::array<char, 12> integer_bytes = {};
+  auto int_convertion_result =
+      std::to_chars(integer_bytes.data(),
+                    integer_bytes.data() + integer_bytes.size(), integer_part);
+  auto int_writing_result =
+      write(buffer, integer_bytes.data(),
+            int_convertion_result.ptr - integer_bytes.data());
+  if (int_writing_result == -1) {
+    return ReturnCode::ERROR;
+  }
+  if (int_writing_result != int_convertion_result.ptr - integer_bytes.data()) {
+    return ReturnCode::OVERFLOW;
   }
   constexpr char point = '.';
   auto point_res = write(buffer, &point, 1);
@@ -340,7 +363,17 @@ ReturnCode FixedPoint<FRACTION_BITS>::ToBytes(DestType& buffer) const {
   if (point_res != 1) {
     return ReturnCode::OVERFLOW;
   }
-  int fractional = (GetAbsFractionPart() * 1000) >> FRACTION_BITS;
+  if (fractional == 0) {
+    constexpr char null_fractional[] = "000";
+    int null_res = write(buffer, null_fractional, 3);
+    if (null_res == -1) {
+      return ReturnCode::ERROR;
+    }
+    if (null_res != 3) {
+      return ReturnCode::OVERFLOW;
+    }
+    return ReturnCode::OK;
+  }
   int nulls_counter = 1000 / 10;
   while (nulls_counter > fractional) {
     nulls_counter /= 10;
@@ -353,8 +386,20 @@ ReturnCode FixedPoint<FRACTION_BITS>::ToBytes(DestType& buffer) const {
       return ReturnCode::OVERFLOW;
     }
   }
-  auto frac_res = strings::IntToBytes(fractional, buffer);
-  return frac_res;
+  auto fract_convertion_result =
+      std::to_chars(integer_bytes.data(),
+                    integer_bytes.data() + integer_bytes.size(), fractional);
+  auto fract_writing_result =
+      write(buffer, integer_bytes.data(),
+            fract_convertion_result.ptr - integer_bytes.data());
+  if (fract_writing_result == -1) {
+    return ReturnCode::ERROR;
+  }
+  if (fract_writing_result !=
+      fract_convertion_result.ptr - integer_bytes.data()) {
+    return ReturnCode::OVERFLOW;
+  }
+  return ReturnCode::OK;
 }
 
 }  // namespace hydrolib::math

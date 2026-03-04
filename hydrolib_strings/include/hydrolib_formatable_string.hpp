@@ -2,11 +2,11 @@
 
 #include <array>
 #include <cassert>
+#include <charconv>
 #include <concepts>
 #include <cstring>
 #include <string_view>
 
-#include "hydrolib_convertible_to_bytes.hpp"
 #include "hydrolib_return_codes.hpp"
 #include "hydrolib_stream_concepts.hpp"
 
@@ -16,6 +16,13 @@ concept StringConsept = requires(T string) {
   { static_cast<const char *>(string) };
   { string.GetLength() } -> std::convertible_to<std::size_t>;
 };
+
+template <typename T, typename DestType>
+concept ConvertibleToBytesConcept =
+    concepts::stream::ByteWritableStreamConcept<DestType> &&
+    requires(T value, DestType &buffer) {
+      { value.ToBytes(buffer) } -> std::convertible_to<ReturnCode>;
+    };
 
 template <typename... ArgTypes>
 class StaticFormatableString {
@@ -51,9 +58,6 @@ class StaticFormatableString {
   ReturnCode ToBytes_(DestType &buffer, int next_param_index,
                       int translated_length) const;
 
-  template <concepts::stream::ByteWritableStreamConcept DestType>
-  static ReturnCode WriteIntegerToBuffer_(DestType &buffer, int param);
-
   static consteval int CountParametres_(std::string_view string);
 
   std::string_view string_ = nullptr;
@@ -74,7 +78,7 @@ consteval StaticFormatableString<ArgTypes...>::StaticFormatableString(
     : string_(string) {
   int last_param = 0;
   bool open_flag = false;
-  for (int i = 0; i < string_.size(); i++) {
+  for (int i = 0; i < static_cast<int>(string_.size()); i++) {
     if (string_[i] == '{') {
       if (open_flag) {
         Error("Unpaired parameter in formatable string");
@@ -117,7 +121,7 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(DestType &buffer,
                                                          Ts... others) const
   requires ConvertibleToBytesConcept<T, DestType>
 {
-  if (translated_length >= string_.size()) {
+  if (translated_length >= static_cast<int>(string_.size())) {
     return ReturnCode::OK;
   }
 
@@ -147,7 +151,7 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(DestType &buffer,
                                                          int translated_length,
                                                          int param,
                                                          Ts... others) const {
-  if (translated_length >= string_.size()) {
+  if (translated_length >= static_cast<int>(string_.size())) {
     return ReturnCode::OK;
   }
 
@@ -162,9 +166,17 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(DestType &buffer,
   translated_length += param_pos_diffs_[next_param_index] + (sizeof("{}") - 1);
   next_param_index++;
 
-  auto write_integer_result = IntToBytes(param, buffer);
-  if (write_integer_result != ReturnCode::OK) {
-    return write_integer_result;
+  std::array<char, 12> integer_bytes = {};
+
+  auto convertion_result = std::to_chars(
+      integer_bytes.data(), integer_bytes.data() + integer_bytes.size(), param);
+  auto writing_result = write(buffer, integer_bytes.data(),
+                              convertion_result.ptr - integer_bytes.data());
+  if (writing_result == -1) {
+    return ReturnCode::ERROR;
+  }
+  if (writing_result != convertion_result.ptr - integer_bytes.data()) {
+    return ReturnCode::OVERFLOW;
   }
 
   return ToBytes_(buffer, next_param_index, translated_length, others...);
@@ -178,7 +190,7 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(DestType &buffer,
                                                          int translated_length,
                                                          String param,
                                                          Ts... others) const {
-  if (translated_length >= string_.size()) {
+  if (translated_length >= static_cast<int>(string_.size())) {
     return ReturnCode::OK;
   }
 
@@ -215,7 +227,7 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
   if (write_res == -1) {
     return ReturnCode::ERROR;
   }
-  if (write_res != string_.size() - translated_length) {
+  if (write_res != static_cast<int>(string_.size() - translated_length)) {
     return ReturnCode::OVERFLOW;
   }
   return ReturnCode::OK;
