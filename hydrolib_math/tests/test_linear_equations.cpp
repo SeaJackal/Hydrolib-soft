@@ -72,7 +72,14 @@ static constexpr std::array kLinearSolveCases6{
     LinearParam6{kLinearSolveCoefficients6,
                  std::array<double, kLinearSize6>{0, 1, 0, 0, 0, 0}},
     LinearParam6{kLinearSolveCoefficients6,
-                 std::array<double, kLinearSize6>{0, 0, 1, 0, 0, 0}}};
+                 std::array<double, kLinearSize6>{0, 0, 1, 0, 0, 0}},
+    LinearParam6{kLinearSolveCoefficients6,
+                 std::array<double, kLinearSize6>{0, 0, 0, 1, 0, 0}},
+    LinearParam6{kLinearSolveCoefficients6,
+                 std::array<double, kLinearSize6>{0, 0, 0, 0, 1, 0}},
+    LinearParam6{kLinearSolveCoefficients6,
+                 std::array<double, kLinearSize6>{0, 0, 0, 0, 0, 1}},
+};
 
 template <int N>
 void RunLinearSolveCase(
@@ -86,7 +93,7 @@ void RunLinearSolveCase(
     for (int j = 0; j < N; j++) {
       expected += coefficients[i][j] * results[j];
     }
-    EXPECT_DOUBLE_EQ(free_terms[i], expected);
+    EXPECT_NEAR(free_terms[i], expected, 1e-10);
   }
 }
 

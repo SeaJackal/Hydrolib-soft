@@ -17,9 +17,9 @@ constexpr void SolveLinear(std::array<std::array<Number, N>, N> coefficients,
     if (coefficients[i][i] == 0) [[unlikely]] {
       bool found = false;
       for (int j = i + 1; j < N; j++) {
-        if (coefficients[i][i] != 0) {
+        if (coefficients[j][i] != 0) {
           for (int k = i; k < N; k++) {
-            coefficients[k][j] += coefficients[k][i] / coefficients[i][i];
+            coefficients[i][k] += coefficients[j][k];
           }
           free_terms[i] += free_terms[j];
           found = true;

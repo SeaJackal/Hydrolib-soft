@@ -8,6 +8,11 @@
 
 namespace hydrolib::controlling {
 
+inline void Error([[maybe_unused]] const char* message) {
+  int param = 0;
+  [[maybe_unused]] int error = 1 / param;
+};
+
 struct Control {
   math::FixedPointBase x_force;
   math::FixedPointBase y_force;
@@ -21,18 +26,19 @@ struct Control {
 template <int THRUSTERS_COUNT, bool ENABLE_SUM_CLAMP = false>
 class ThrustGenerator {
  public:
+  using ThrusterParamsArray = std::array<double, THRUSTERS_COUNT>;
   using ThrustArray = std::array<math::FixedPointBase, THRUSTERS_COUNT>;
 
-  constexpr ThrustGenerator(const ThrustArray& thrust_to_x_rotation,
-                            const ThrustArray& thrust_to_y_rotation,
-                            const ThrustArray& thrust_to_z_rotation,
-                            const ThrustArray& thrust_to_x_linear,
-                            const ThrustArray& thrust_to_y_linear,
-                            const ThrustArray& thrust_to_z_linear,
-                            int single_clamp, int sum_clamp = 0);
+  consteval ThrustGenerator(const ThrusterParamsArray& thrust_to_x_rotation,
+                            const ThrusterParamsArray& thrust_to_y_rotation,
+                            const ThrusterParamsArray& thrust_to_z_rotation,
+                            const ThrusterParamsArray& thrust_to_x_linear,
+                            const ThrusterParamsArray& thrust_to_y_linear,
+                            const ThrusterParamsArray& thrust_to_z_linear,
+                            math::FixedPointBase single_clamp,
+                            math::FixedPointBase sum_clamp = 0);
 
-  void ProcessWithFeedback(Control& control,
-                           std::array<int, THRUSTERS_COUNT>& dest);
+  void ProcessWithFeedback(Control& control, ThrustArray& dest) const;
 
  private:
   ThrustArray x_rotation_to_thrust_;
@@ -43,19 +49,20 @@ class ThrustGenerator {
   ThrustArray y_linear_to_thrust_;
   ThrustArray z_linear_to_thrust_;
 
-  int single_clamp_;
+  math::FixedPointBase single_clamp_;
 
-  int sum_clamp_;
+  math::FixedPointBase sum_clamp_;
 };
 
 template <int THRUSTERS_COUNT, bool ENABLE_SUM_CLAMP>
-constexpr ThrustGenerator<THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::ThrustGenerator(
-    const ThrustArray& thrust_to_x_rotation,
-    const ThrustArray& thrust_to_y_rotation,
-    const ThrustArray& thrust_to_z_rotation,
-    const ThrustArray& thrust_to_x_linear,
-    const ThrustArray& thrust_to_y_linear,
-    const ThrustArray& thrust_to_z_linear, int single_clamp, int sum_clamp)
+consteval ThrustGenerator<THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::ThrustGenerator(
+    const ThrusterParamsArray& thrust_to_x_rotation,
+    const ThrusterParamsArray& thrust_to_y_rotation,
+    const ThrusterParamsArray& thrust_to_z_rotation,
+    const ThrusterParamsArray& thrust_to_x_linear,
+    const ThrusterParamsArray& thrust_to_y_linear,
+    const ThrusterParamsArray& thrust_to_z_linear,
+    math::FixedPointBase single_clamp, math::FixedPointBase sum_clamp)
     : single_clamp_(single_clamp), sum_clamp_(sum_clamp) {
   constexpr int kXRotationIndex = 0;
   constexpr int kYRotationIndex = 1;
@@ -64,51 +71,128 @@ constexpr ThrustGenerator<THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::ThrustGenerator(
   constexpr int kYLinearIndex = 4;
   constexpr int kZLinearIndex = 5;
 
-  ThrustArray pure_x_rotation = {};
+  bool error_flag = true;
+
+  ThrusterParamsArray pure_x_rotation = {};
+  ThrusterParamsArray x_rotation_to_thrust = {};
   pure_x_rotation[kXRotationIndex] = 1;
-  math::SolveLinear<math::FixedPointBase, THRUSTERS_COUNT>(
+  math::SolveLinear<double, THRUSTERS_COUNT>(
       std::array{thrust_to_x_rotation, thrust_to_y_rotation,
                  thrust_to_z_rotation, thrust_to_x_linear, thrust_to_y_linear,
                  thrust_to_z_linear},
-      pure_x_rotation, x_rotation_to_thrust_);
-  ThrustArray pure_y_rotation = {};
+      pure_x_rotation, x_rotation_to_thrust);
+  for (int i = 0; i < THRUSTERS_COUNT; i++) {
+    if (x_rotation_to_thrust[i] != 0) {
+      error_flag = false;
+    }
+    x_rotation_to_thrust_[i] = x_rotation_to_thrust[i];
+  }
+  if (error_flag) {
+    Error("No solution");
+  }
+  error_flag = true;
+
+  ThrusterParamsArray pure_y_rotation = {};
+  ThrusterParamsArray y_rotation_to_thrust = {};
   pure_y_rotation[kYRotationIndex] = 1;
-  math::SolveLinear<math::FixedPointBase, THRUSTERS_COUNT>(std::array{thrust_to_x_rotation, thrust_to_y_rotation,
-                               thrust_to_z_rotation, thrust_to_x_linear,
-                               thrust_to_y_linear, thrust_to_z_linear},
-                    pure_y_rotation, y_rotation_to_thrust_);
-  ThrustArray pure_z_rotation = {};
-  pure_z_rotation[kZRotationIndex] = 1;
-  math::SolveLinear<math::FixedPointBase, THRUSTERS_COUNT>(std::array{thrust_to_x_rotation, thrust_to_y_rotation,
-                               thrust_to_z_rotation, thrust_to_x_linear,
-                               thrust_to_y_linear, thrust_to_z_linear},
-                    pure_z_rotation, z_rotation_to_thrust_);
-  ThrustArray pure_x_linear = {};
-  pure_x_linear[kXLinearIndex] = 1;
-  math::SolveLinear<math::FixedPointBase, THRUSTERS_COUNT>(std::array{thrust_to_x_rotation, thrust_to_y_rotation,
-                               thrust_to_z_rotation, thrust_to_x_linear,
-                               thrust_to_y_linear, thrust_to_z_linear},
-                    pure_x_linear, x_linear_to_thrust_);
-  ThrustArray pure_y_linear = {};
-  pure_y_linear[kYLinearIndex] = 1;
-  math::SolveLinear<math::FixedPointBase, THRUSTERS_COUNT>(std::array{thrust_to_x_rotation, thrust_to_y_rotation,
-                               thrust_to_z_rotation, thrust_to_x_linear,
-                               thrust_to_y_linear, thrust_to_z_linear},
-                    pure_y_linear, y_linear_to_thrust_);
-  ThrustArray pure_z_linear = {};
-  pure_z_linear[kZLinearIndex] = 1;
-  math::SolveLinear<math::FixedPointBase, THRUSTERS_COUNT>(
+  math::SolveLinear<double, THRUSTERS_COUNT>(
       std::array{thrust_to_x_rotation, thrust_to_y_rotation,
-                                 thrust_to_z_rotation, thrust_to_x_linear,
-                                 thrust_to_y_linear, thrust_to_z_linear},
-      pure_z_linear, z_linear_to_thrust_);
+                 thrust_to_z_rotation, thrust_to_x_linear, thrust_to_y_linear,
+                 thrust_to_z_linear},
+      pure_y_rotation, y_rotation_to_thrust);
+  for (int i = 0; i < THRUSTERS_COUNT; i++) {
+    if (y_rotation_to_thrust[i] != 0) {
+      error_flag = false;
+    }
+    y_rotation_to_thrust_[i] = y_rotation_to_thrust[i];
+  }
+  if (error_flag) {
+    Error("No solution");
+  }
+  error_flag = true;
+
+  ThrusterParamsArray pure_z_rotation = {};
+  ThrusterParamsArray z_rotation_to_thrust = {};
+  pure_z_rotation[kZRotationIndex] = 1;
+  math::SolveLinear<double, THRUSTERS_COUNT>(
+      std::array{thrust_to_x_rotation, thrust_to_y_rotation,
+                 thrust_to_z_rotation, thrust_to_x_linear, thrust_to_y_linear,
+                 thrust_to_z_linear},
+      pure_z_rotation, z_rotation_to_thrust);
+  for (int i = 0; i < THRUSTERS_COUNT; i++) {
+    if (z_rotation_to_thrust[i] != 0) {
+      error_flag = false;
+    }
+    z_rotation_to_thrust_[i] = z_rotation_to_thrust[i];
+  }
+  if (error_flag) {
+    Error("No solution");
+  }
+  error_flag = true;
+
+  ThrusterParamsArray pure_x_linear = {};
+  ThrusterParamsArray x_linear_to_thrust = {};
+  pure_x_linear[kXLinearIndex] = 1;
+  math::SolveLinear<double, THRUSTERS_COUNT>(
+      std::array{thrust_to_x_rotation, thrust_to_y_rotation,
+                 thrust_to_z_rotation, thrust_to_x_linear, thrust_to_y_linear,
+                 thrust_to_z_linear},
+      pure_x_linear, x_linear_to_thrust);
+  for (int i = 0; i < THRUSTERS_COUNT; i++) {
+    if (x_linear_to_thrust[i] != 0) {
+      error_flag = false;
+    }
+    x_linear_to_thrust_[i] = x_linear_to_thrust[i];
+  }
+  if (error_flag) {
+    Error("No solution");
+  }
+  error_flag = true;
+
+  ThrusterParamsArray pure_y_linear = {};
+  ThrusterParamsArray y_linear_to_thrust = {};
+  pure_y_linear[kYLinearIndex] = 1;
+  math::SolveLinear<double, THRUSTERS_COUNT>(
+      std::array{thrust_to_x_rotation, thrust_to_y_rotation,
+                 thrust_to_z_rotation, thrust_to_x_linear, thrust_to_y_linear,
+                 thrust_to_z_linear},
+      pure_y_linear, y_linear_to_thrust);
+  for (int i = 0; i < THRUSTERS_COUNT; i++) {
+    if (y_linear_to_thrust[i] != 0) {
+      error_flag = false;
+    }
+    y_linear_to_thrust_[i] = y_linear_to_thrust[i];
+  }
+  if (error_flag) {
+    Error("No solution");
+  }
+  error_flag = true;
+
+  ThrusterParamsArray pure_z_linear = {};
+  ThrusterParamsArray z_linear_to_thrust = {};
+  pure_z_linear[kZLinearIndex] = 1;
+  math::SolveLinear<double, THRUSTERS_COUNT>(
+      std::array{thrust_to_x_rotation, thrust_to_y_rotation,
+                 thrust_to_z_rotation, thrust_to_x_linear, thrust_to_y_linear,
+                 thrust_to_z_linear},
+      pure_z_linear, z_linear_to_thrust);
+  for (int i = 0; i < THRUSTERS_COUNT; i++) {
+    if (z_linear_to_thrust[i] != 0) {
+      error_flag = false;
+    }
+    z_linear_to_thrust_[i] = z_linear_to_thrust[i];
+  }
+  if (error_flag) {
+    Error("No solution");
+  }
+  error_flag = true;
 }
 
 template <int THRUSTERS_COUNT, bool ENABLE_SUM_CLAMP>
 void ThrustGenerator<THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::ProcessWithFeedback(
-    Control& control, std::array<int, THRUSTERS_COUNT>& dest) {
-  int max = 0;
-  int sum = 0;
+    Control& control, ThrustArray& dest) const {
+  math::FixedPointBase max = 0;
+  math::FixedPointBase sum = 0;
   for (int i = 0; i < THRUSTERS_COUNT; i++) {
     dest[i] = static_cast<int>((x_rotation_to_thrust_[i] * control.x_torque) +
                                (x_linear_to_thrust_[i] * control.x_force) +
@@ -116,7 +200,8 @@ void ThrustGenerator<THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::ProcessWithFeedback(
                                (y_linear_to_thrust_[i] * control.y_force) +
                                (z_rotation_to_thrust_[i] * control.z_torque) +
                                (z_linear_to_thrust_[i] * control.z_force));
-    int dest_abs = dest[i] >= 0 ? dest[i] : -dest[i];
+    math::FixedPointBase dest_abs =
+        (dest[i] >= static_cast<math::FixedPointBase>(0)) ? dest[i] : -dest[i];
 
     max = std::max(dest_abs, max);
 
@@ -125,8 +210,8 @@ void ThrustGenerator<THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::ProcessWithFeedback(
     }
   }
 
-  int enumerator = 1;
-  int denumerator = 1;
+  math::FixedPointBase enumerator = 1;
+  math::FixedPointBase denumerator = 1;
 
   if (max > single_clamp_) {
     enumerator = single_clamp_;
