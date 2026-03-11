@@ -131,15 +131,16 @@ inline void ThrusterShell::ParseMultiplyPull(int argc, char *argv[]) {
             break;
           }
         }
-        if (optind < argc && thruster_device != nullptr) {
-          thrust_percent = std::atoi(argv[optind]);
+        if (thruster_device != nullptr) {
+          thrust_percent = std::atoi(optarg);
           thruster_device->SetSpeed((thrust_percent / 100) * 1000);
           thruster_device = nullptr;
 
-          optind++;
+          char percent_buffer[4];
+          snprintf(percent_buffer, sizeof(percent_buffer), "%d",
+                   thrust_percent);
 
-          cout << "Thruster " << thruster_num << " (" << device << ") set to "
-               << thrust_percent << "%\r\n";
+          cout << device << "set to " << thrust_percent << "%\r\n";
         }
       default:
         cout << "Invalid option: " << static_cast<char>(optopt);
@@ -154,6 +155,22 @@ inline void ThrusterShell::ParseMultiplyPull(int argc, char *argv[]) {
 inline void ThrusterShell::ParseStop() {
   for (int i = 0; i++; i < 6) {
     const char *device = NumToDeviceName(i);
+    device::Device *finded_device = (*device::g_device_manager)[device];
+    if (finded_device == nullptr) {
+      cout << "Device not found: " << device;
+      g_is_running = false;
+      return_code_ = -1;
+      return;
+      break;
+    }
+    thruster_device = finded_device->Upcast<device::IThruster>();
+    if (thruster_device == nullptr) {
+      cout << "Device is not a thruster: " << device;
+      g_is_running = false;
+      return_code_ = -1;
+      return;
+      break;
+    }
     thruster_device->SetSpeed(0);
   }
 }
