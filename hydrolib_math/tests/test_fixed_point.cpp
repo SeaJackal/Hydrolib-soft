@@ -1,6 +1,7 @@
 #include <gtest/gtest-param-test.h>
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <climits>
 #include <cmath>
 #include <iomanip>
@@ -110,6 +111,22 @@ TEST_P(TestFixedPointConstructorDouble, ToInt) {
   auto test_case = GetParam();
   EXPECT_EQ(static_cast<int>(test_case.fixed_point),
             static_cast<int>(test_case.value));
+}
+
+class TestFixedPointConstructorDuration
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<double> {};
+
+INSTANTIATE_TEST_CASE_P(Test, TestFixedPointConstructorDuration,
+                        ::testing::Values(0.0, 1.0, 0.5, 0.25, 0.75, 1.25));
+
+TEST_P(TestFixedPointConstructorDuration, Basic) {
+  auto duration_seconds = GetParam();
+  auto duration_chrono = std::chrono::duration<double>(duration_seconds);
+  FixedPointBase fixed_point(
+      std::chrono::duration_cast<std::chrono::steady_clock::duration>(duration_chrono));
+  EXPECT_NEAR(static_cast<double>(fixed_point), duration_seconds,
+              FixedPointBase::kLeastBitValue);
 }
 
 TEST(TestHydrolibMath, FixedPointBaseConstructorWithLiteral) {
