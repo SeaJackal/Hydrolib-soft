@@ -131,9 +131,11 @@ inline void ThrusterShell::ParseMultiplyPull(int argc, char *argv[]) {
             break;
           }
         }
-        if (optind < argc) {
+        if (optind < argc && thruster_device != nullptr) {
           thrust_percent = std::atoi(argv[optind]);
           thruster_device->SetSpeed((thrust_percent / 100) * 1000);
+          thruster_device = nullptr;
+
           optind++;
 
           cout << "Thruster " << thruster_num << " (" << device << ") set to "
