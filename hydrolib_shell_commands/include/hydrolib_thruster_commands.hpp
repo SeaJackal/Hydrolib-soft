@@ -142,7 +142,7 @@ inline void ThrusterShell::ParseMultiplyPull(int argc, char *argv[]) {
           char percent_buffer[4];
           snprintf(percent_buffer, sizeof(percent_buffer), "%d",
                    thrust_percent);
-          cout << device << " set to " << percent_buffer << "%\r\n";
+          cout << device << " set to " << percent_buffer << "%";
 
           thruster_device = nullptr;
         }
@@ -172,6 +172,7 @@ inline void ThrusterShell::ParseStop() {
   }
   g_is_running = true;
   return_code_ = 0;
+  cout << "All thrusters are stopped";
 }
 
 inline void ThrusterShell::ParseSetSpeed(int argc, char *argv[]) {
