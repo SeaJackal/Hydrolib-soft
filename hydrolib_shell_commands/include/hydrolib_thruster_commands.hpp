@@ -51,6 +51,7 @@ inline ThrusterShell::ThrusterShell(int argc, char *argv[])
       command_type_(CommandType::None),
       return_code_(0) {
   int opt = getopt(argc, argv, "-:h");
+  optind = 1;
   while (opt != -1) {
     switch (opt) {
       case 'h':
@@ -97,7 +98,6 @@ inline ThrusterShell::ThrusterShell(int argc, char *argv[])
 }
 
 inline void ThrusterShell::ParseMultiplyPull(int argc, char *argv[]) {
-  optind = 1;
   device::Device *finded_device = nullptr;
   const char *device = nullptr;
   int opt = getopt(argc, argv, "-:t:h");
@@ -177,7 +177,6 @@ inline void ThrusterShell::ParseStop() {
 }
 
 inline void ThrusterShell::ParseSetSpeed(int argc, char *argv[]) {
-  optind = 1;
   device::Device *finded_device = nullptr;
   int opt = getopt(argc, argv, "-:hn");
   while (opt != -1) {
@@ -248,7 +247,6 @@ inline void ThrusterShell::ParseSetSpeed(int argc, char *argv[]) {
 }
 
 inline void ThrusterShell::ParseGetSpeed(int argc, char *argv[]) {
-  optind = 1;
   device::Device *finded_device = nullptr;
   int opt = getopt(argc, argv, "-:h");
   while (opt != -1) {
