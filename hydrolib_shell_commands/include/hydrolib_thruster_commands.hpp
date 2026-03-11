@@ -161,6 +161,13 @@ inline void ThrusterShell::ParseStop() {
   for (int i = 0; i < 6; i++) {
     const char *device = NumToDeviceName(i);
     device::Device *finded_device = (*device::g_device_manager)[device];
+    if (finded_device == nullptr) {
+      continue;
+    }
+    thruster_device = finded_device->Upcast<device::IThruster>();
+    if (thruster_device == nullptr) {
+      continue;
+    }
     thruster_device->SetSpeed(0);
   }
   g_is_running = true;
