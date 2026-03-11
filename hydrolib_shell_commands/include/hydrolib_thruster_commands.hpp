@@ -60,7 +60,7 @@ inline ThrusterShell::ThrusterShell(int argc, char *argv[])
         cout << "Usage: thr getsp [DEVICE_NAME] - to get thrusters speed\r\n";
         cout << "Usage: thr multi -t [THRUSTER_NUM] [PERCENT] - to set "
                 "thrusters pull multipliers\r\n";
-        cout << "Usage: thr stop - to stop all thrusters\r\n";
+        cout << "Usage: thr stop - to stop all thrusters";
         g_is_running = false;
         return;
       case 1:
@@ -108,7 +108,7 @@ inline void ThrusterShell::ParseMultiplyPull(int argc, char *argv[]) {
                 "thrusters pull multipliers\r\n";
         cout << "For many engines usage: thr multi -t [THRUSTER_NUM] [PERCENT] "
                 "-t [...] [...] ...\r\n";
-        cout << "Example: thr multi -t 1 50 -t 2 75 -t 3 30\r\n";
+        cout << "Example: thr multi -t 1 50 -t 2 75 -t 3 30";
         g_is_running = false;
         return;
       case 't':
@@ -161,15 +161,6 @@ inline void ThrusterShell::ParseStop() {
   for (int i = 0; i < 6; i++) {
     const char *device = NumToDeviceName(i);
     device::Device *finded_device = (*device::g_device_manager)[device];
-    if (finded_device == nullptr) {
-      cout << "Device not found: " << device;
-      continue;
-    }
-    thruster_device = finded_device->Upcast<device::IThruster>();
-    if (thruster_device == nullptr) {
-      cout << "Device is not a thruster: " << device;
-      continue;
-    }
     thruster_device->SetSpeed(0);
   }
   g_is_running = true;
