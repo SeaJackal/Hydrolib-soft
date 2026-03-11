@@ -2,6 +2,7 @@
 
 #include <array>
 #include <charconv>
+#include <chrono>
 #include <climits>
 #include <cmath>
 #include <concepts>
@@ -63,9 +64,10 @@ class FixedPoint {
   constexpr FixedPoint();
   constexpr FixedPoint(int value);  // NOLINT
   constexpr FixedPoint(int value, int divider);
-  consteval FixedPoint(float value);        // NOLINT
-  consteval FixedPoint(double value);       // NOLINT
-  consteval FixedPoint(long double value);  // NOLINT
+  consteval FixedPoint(float value);                                   // NOLINT
+  consteval FixedPoint(double value);                                  // NOLINT
+  consteval FixedPoint(long double value);                             // NOLINT
+  constexpr FixedPoint(std::chrono::steady_clock::duration duration);  // NOLINT
 
   explicit operator double() const;
   explicit operator int() const;
@@ -160,6 +162,13 @@ consteval FixedPoint<FRACTION_BITS>::FixedPoint(double value)
 template <int FRACTION_BITS>
 consteval FixedPoint<FRACTION_BITS>::FixedPoint(long double value)
     : value_(static_cast<int>(value * (1 << FRACTION_BITS))) {}
+
+template <int FRACTION_BITS>
+constexpr FixedPoint<FRACTION_BITS>::FixedPoint(
+    std::chrono::steady_clock::duration duration)
+    : FixedPoint<FRACTION_BITS>(static_cast<int>(duration.count()) *
+                                    std::chrono::steady_clock::period::num,
+                                std::chrono::steady_clock::period::den) {}
 
 template <int FRACTION_BITS>
 constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::Abs() const {
