@@ -97,6 +97,7 @@ inline ThrusterShell::ThrusterShell(int argc, char *argv[])
 }
 
 inline void ThrusterShell::ParseMultiplyPull(int argc, char *argv[]) {
+  optind = 1;
   device::Device *finded_device = nullptr;
   const char *device = nullptr;
   int opt = getopt(argc, argv, "-:t:h");
@@ -152,7 +153,7 @@ inline void ThrusterShell::ParseMultiplyPull(int argc, char *argv[]) {
         return_code_ = -1;
         return;
     }
-    int opt = getopt(argc, argv, "-:t:h");
+    opt = getopt(argc, argv, "-:t:h");
   }
 }
 
@@ -162,16 +163,21 @@ inline void ThrusterShell::ParseStop() {
     device::Device *finded_device = (*device::g_device_manager)[device];
     if (finded_device == nullptr) {
       cout << "Device not found: " << device;
+      continue;
     }
     thruster_device = finded_device->Upcast<device::IThruster>();
     if (thruster_device == nullptr) {
       cout << "Device is not a thruster: " << device;
+      continue;
     }
     thruster_device->SetSpeed(0);
   }
+  g_is_running = true;
+  return_code_ = 0;
 }
 
 inline void ThrusterShell::ParseSetSpeed(int argc, char *argv[]) {
+  optind = 1;
   device::Device *finded_device = nullptr;
   int opt = getopt(argc, argv, "-:hn");
   while (opt != -1) {
@@ -242,6 +248,7 @@ inline void ThrusterShell::ParseSetSpeed(int argc, char *argv[]) {
 }
 
 inline void ThrusterShell::ParseGetSpeed(int argc, char *argv[]) {
+  optind = 1;
   device::Device *finded_device = nullptr;
   int opt = getopt(argc, argv, "-:h");
   while (opt != -1) {
@@ -317,6 +324,7 @@ inline int ThrusterShell::Run() {
       break;
     }
     case CommandType::MultiplyPull: {
+      return_code_ = 0;
       break;
     }
     case CommandType::None:
