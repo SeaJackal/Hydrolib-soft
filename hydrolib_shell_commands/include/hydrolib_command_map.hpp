@@ -21,7 +21,7 @@ class CommandMap {
       return hydrolib::shell::Cat;
     } else if (command == "thr") {
       return hydrolib::shell::ThrusterCommands;
-    } else if (command == "bfs") {
+    } else if (command == "thrgen") {
       return hydrolib::shell::ThrusterGeneratorCommands;
     }
     return std::nullopt;
