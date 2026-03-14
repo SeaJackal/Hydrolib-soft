@@ -12,7 +12,7 @@ class IControlSystem : public Device {
   IControlSystem(std::string_view name) : Device(name, kSelfType) {}
 
  public:
-  virtual void ControlProccess(void* control, void* dest) const = 0;
+  virtual void ControlProccess(controlling::Control* control) const = 0;
 };
 
 template <int THRUSTERS_COUNT>
@@ -24,7 +24,7 @@ class ThrustGeneratorDevice : public IControlSystem {
 
   using ThrustArray = std::array<math::FixedPointBase, THRUSTERS_COUNT>;
 
-  void ControlProccess(void* control, void* dest) const override;
+  void ControlProccess(controlling::Control* control) const override;
 
  private:
   controlling::ThrustGenerator<THRUSTERS_COUNT>& thrust_generator_;
@@ -37,11 +37,9 @@ ThrustGeneratorDevice<THRUSTERS_COUNT>::ThrustGeneratorDevice(
     : IControlSystem(name), thrust_generator_(thrust_generator) {}
 
 template <int THRUSTERS_COUNT>
-void ThrustGeneratorDevice<THRUSTERS_COUNT>::ControlProccess(void* control,
-                                                             void* dest) const {
-  auto* typed_control = static_cast<controlling::Control*>(control);
-  auto* typed_dest = static_cast<ThrustArray*>(dest);
-  return ProcessWithFeedback(*typed_control, *typed_dest);
+void ThrustGeneratorDevice<THRUSTERS_COUNT>::ControlProccess(
+    controlling::Control* control) const {
+  return ProcessWithFeedback(control);
 }
 
 }  // namespace hydrolib::device
