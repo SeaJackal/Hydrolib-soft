@@ -1,48 +1,47 @@
 #pragma once
 
 #include "hydrolib_device.hpp"
+#include "hydrolib_thrust_generator.hpp"
 
 namespace hydrolib::device {
-class IThrustGenerator : public Device {
+class IControlSystem : public Device {
  public:
   static constexpr DeviceType kSelfType = DeviceType::THRUSTGENERATOR;
 
  public:
-  IThrustGenerator(std::string_view name) : Device(name, kSelfType) {}
+  IControlSystem(std::string_view name) : Device(name, kSelfType) {}
 
  public:
-  virtual void ProcessWithFeedback(void* control, void* dest) const = 0;
+  virtual void ControlProccess(void* control, void* dest) const = 0;
 };
 
-template <typename ThrustGenerator, typename Control, typename ThrustArray>
-class ThrustGeneratorDevice : public IThrustGenerator {
+template <int THRUSTERS_COUNT>
+class ThrustGeneratorDevice : public IControlSystem {
  public:
-  ThrustGeneratorDevice(std::string_view name,
-                        ThrustGenerator& thrust_generator);
+  ThrustGeneratorDevice(
+      std::string_view name,
+      controlling::ThrustGenerator<THRUSTERS_COUNT>& thrust_generator);
 
-  void ProcessWithFeedback(void* control, void* dest) const override {
-    auto* typed_control = static_cast<Control*>(control);
-    auto* typed_dest = static_cast<ThrustArray*>(dest);
-    ProcessWithFeedback(*typed_control, *typed_dest);
-  }
-  void ProcessWithFeedback(Control& control, ThrustArray& dest) const;
+  using ThrustArray = std::array<math::FixedPointBase, THRUSTERS_COUNT>;
+
+  void ControlProccess(void* control, void* dest) const override;
 
  private:
-  ThrustGenerator& thrust_generator_;
+  controlling::ThrustGenerator<THRUSTERS_COUNT>& thrust_generator_;
 };
 
-template <typename ThrustGenerator, typename Control, typename ThrustArray>
-ThrustGeneratorDevice<ThrustGenerator, Control,
-                      ThrustArray>::ThrustGeneratorDevice(std::string_view name,
-                                                          ThrustGenerator&
-                                                              thrust_generator)
-    : IThrustGenerator(name), thrust_generator_(thrust_generator) {}
+template <int THRUSTERS_COUNT>
+ThrustGeneratorDevice<THRUSTERS_COUNT>::ThrustGeneratorDevice(
+    std::string_view name,
+    controlling::ThrustGenerator<THRUSTERS_COUNT>& thrust_generator)
+    : IControlSystem(name), thrust_generator_(thrust_generator) {}
 
-template <typename ThrustGenerator, typename Control, typename ThrustArray>
-void ThrustGeneratorDevice<ThrustGenerator, Control,
-                           ThrustArray>::ProcessWithFeedback(Control& control,
-                                                             ThrustArray& dest)
-    const {
-  return thrust_generator_.ProcessWithFeedback(control, dest);
+template <int THRUSTERS_COUNT>
+void ThrustGeneratorDevice<THRUSTERS_COUNT>::ControlProccess(void* control,
+                                                             void* dest) const {
+  auto* typed_control = static_cast<controlling::Control*>(control);
+  auto* typed_dest = static_cast<ThrustArray*>(dest);
+  return ProcessWithFeedback(*typed_control, *typed_dest);
 }
+
 }  // namespace hydrolib::device

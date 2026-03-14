@@ -18,15 +18,6 @@
 #define THRUST_COUNT 6
 
 namespace hydrolib::shell {
-struct Control {
-  math::FixedPointBase x_force;
-  math::FixedPointBase y_force;
-  math::FixedPointBase z_force;
-
-  math::FixedPointBase x_torque;
-  math::FixedPointBase y_torque;
-  math::FixedPointBase z_torque;
-};
 class ThrusterGeneratorShell {
  public:
   ThrusterGeneratorShell(int argc, char *argv[]);
@@ -40,16 +31,8 @@ class ThrusterGeneratorShell {
     SetMultipliers,
   };
 
-  device::IThrustGenerator *thruster_generator_device;
-  Control control_;
-  struct ControlOutput {
-    char x_force[16];
-    char y_force[16];
-    char z_force[16];
-    char x_torque[16];
-    char y_torque[16];
-    char z_torque[16];
-  } control_output;
+  device::IControlSystem *thruster_generator_device;
+  controlling::Control control_;
   std::array<hydrolib::math::FixedPointBase, THRUST_COUNT> thrusts{};
   CommandType command_type_;
   int return_code_;
@@ -60,7 +43,6 @@ int ThrusterGeneratorCommands(int argc, char *argv[]);
 inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
     : thruster_generator_device(nullptr),
       control_(),
-      control_output(),
       command_type_(CommandType::None),
       return_code_(0) {
   control_.x_force = math::FixedPointBase(0);
@@ -70,13 +52,6 @@ inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
   control_.y_torque = math::FixedPointBase(0);
   control_.z_torque = math::FixedPointBase(0);
 
-  snprintf(control_output.x_force, sizeof(control_output.x_force), "%d", 0);
-  snprintf(control_output.y_force, sizeof(control_output.y_force), "%d", 0);
-  snprintf(control_output.z_force, sizeof(control_output.z_force), "%d", 0);
-  snprintf(control_output.x_torque, sizeof(control_output.x_torque), "%d", 0);
-  snprintf(control_output.y_torque, sizeof(control_output.y_torque), "%d", 0);
-  snprintf(control_output.z_torque, sizeof(control_output.z_torque), "%d", 0);
-
   device::Device *finded_device = nullptr;
   optind = 0;
   int opt = getopt(argc, argv, "-:x:y:z:X:Y:Z:h");
@@ -84,7 +59,7 @@ inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
     switch (opt) {
       case 'h':
         cout << "Usage: thrgen <device_name> [-x <x_force>] [-y <y_force>] "
-                "[-z <z_force>] [-Z <x_torque>] [-Y <y_torque>] [-Z "
+                "[-z <z_force>] [-X <x_torque>] [-Y <y_torque>] [-Z "
                 "<z_torque>]";
         g_is_running = false;
         return;
@@ -99,7 +74,7 @@ inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
             break;
           }
           thruster_generator_device =
-              finded_device->Upcast<device::IThrustGenerator>();
+              finded_device->Upcast<device::IControlSystem>();
           if (thruster_generator_device == nullptr) {
             cout << "Device is not a thruster generator: " << optarg;
             g_is_running = false;
@@ -124,8 +99,6 @@ inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
           return;
         }
         control_.x_force = math::FixedPointBase(value);
-        snprintf(control_output.x_force, sizeof(control_output.x_force), "%d",
-                 value);
         break;
       }
       case 'y': {
@@ -138,8 +111,6 @@ inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
           return;
         }
         control_.y_force = math::FixedPointBase(value);
-        snprintf(control_output.y_force, sizeof(control_output.y_force), "%d",
-                 value);
         break;
       }
       case 'z': {
@@ -152,8 +123,6 @@ inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
           return;
         }
         control_.z_force = math::FixedPointBase(value);
-        snprintf(control_output.z_force, sizeof(control_output.z_force), "%d",
-                 value);
         break;
       }
       case 'X': {
@@ -166,8 +135,6 @@ inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
           return;
         }
         control_.x_torque = math::FixedPointBase(value);
-        snprintf(control_output.x_torque, sizeof(control_output.x_torque), "%d",
-                 value);
         break;
       }
       case 'Y': {
@@ -180,8 +147,6 @@ inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
           return;
         }
         control_.y_torque = math::FixedPointBase(value);
-        snprintf(control_output.y_torque, sizeof(control_output.y_torque), "%d",
-                 value);
         break;
       }
       case 'Z': {
@@ -194,8 +159,6 @@ inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
           return;
         }
         control_.z_torque = math::FixedPointBase(value);
-        snprintf(control_output.z_torque, sizeof(control_output.z_torque), "%d",
-                 value);
         break;
       }
 
@@ -222,14 +185,7 @@ inline int ThrusterGeneratorShell::Run() {
   }
   switch (command_type_) {
     case CommandType::SetMultipliers: {
-      thruster_generator_device->ProcessWithFeedback(&control_, &thrusts);
-      cout << "Controls: "
-           << "Fx = " << control_output.x_force << "; "
-           << "Fy = " << control_output.y_force << "; "
-           << "Fz = " << control_output.z_force << " | "
-           << "Mx = " << control_output.x_torque << "; "
-           << "My = " << control_output.y_torque << "; "
-           << "Mz = " << control_output.z_torque;
+      thruster_generator_device->ControlProccess(&control_, &thrusts);
       break;
     }
     case CommandType::None:
