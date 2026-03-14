@@ -29,6 +29,9 @@ class ThrustGeneratorParamTest
     : public ::testing::TestWithParam<hydrolib::controlling::Control> {};
 
 constinit std::array<TestThruster, THRUST_COUNT> thrusters_storage = {};
+constexpr std::array<TestThruster*, THRUST_COUNT> thruster_pointers = {
+    &thrusters_storage[0], &thrusters_storage[1], &thrusters_storage[2],
+    &thrusters_storage[3], &thrusters_storage[4], &thrusters_storage[5]};
 
 constexpr ThrustGenerator<TestThruster, THRUST_COUNT>::ThrusterParamsArray
     thrust_to_x_rotation = {+0.0983, +0.0000, +0.0983,
@@ -47,7 +50,7 @@ constexpr Generator::ThrusterParamsArray thrust_to_z_linearss = {
 constinit Generator generator(thrust_to_x_rotation, thrust_to_y_rotation,
                               thrust_to_z_rotation, thrust_to_x_linearss,
                               thrust_to_y_linearss, thrust_to_z_linearss,
-                              thrusters_storage, THRUST_LIMIT);
+                              thruster_pointers, THRUST_LIMIT);
 
 TEST_P(ThrustGeneratorParamTest, GenerationThrust) {
   auto control = GetParam();

@@ -37,15 +37,15 @@ class ThrustGenerator {
   using ThrusterParamsArray = std::array<double, THRUSTERS_COUNT>;
   using ThrustArray = std::array<math::FixedPointBase, THRUSTERS_COUNT>;
 
-  consteval ThrustGenerator(const ThrusterParamsArray& thrust_to_x_rotation,
-                            const ThrusterParamsArray& thrust_to_y_rotation,
-                            const ThrusterParamsArray& thrust_to_z_rotation,
-                            const ThrusterParamsArray& thrust_to_x_linear,
-                            const ThrusterParamsArray& thrust_to_y_linear,
-                            const ThrusterParamsArray& thrust_to_z_linear,
-                            std::array<Thruster, THRUSTERS_COUNT>& thrusters,
-                            math::FixedPointBase single_clamp,
-                            math::FixedPointBase sum_clamp = 0);
+  consteval ThrustGenerator(
+      const ThrusterParamsArray& thrust_to_x_rotation,
+      const ThrusterParamsArray& thrust_to_y_rotation,
+      const ThrusterParamsArray& thrust_to_z_rotation,
+      const ThrusterParamsArray& thrust_to_x_linear,
+      const ThrusterParamsArray& thrust_to_y_linear,
+      const ThrusterParamsArray& thrust_to_z_linear,
+      const std::array<Thruster*, THRUSTERS_COUNT>& thrusters,
+      math::FixedPointBase single_clamp, math::FixedPointBase sum_clamp = 0);
 
   void ProcessWithFeedback(Control& control) const;
 
@@ -58,7 +58,7 @@ class ThrustGenerator {
   ThrustArray y_linear_to_thrust_;
   ThrustArray z_linear_to_thrust_;
 
-  std::array<Thruster, THRUSTERS_COUNT>& thrusters_;
+  std::array<Thruster*, THRUSTERS_COUNT> thrusters_;
 
   math::FixedPointBase single_clamp_;
 
@@ -73,7 +73,7 @@ consteval ThrustGenerator<Thruster, THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::
                     const ThrusterParamsArray& thrust_to_x_linear,
                     const ThrusterParamsArray& thrust_to_y_linear,
                     const ThrusterParamsArray& thrust_to_z_linear,
-                    std::array<Thruster, THRUSTERS_COUNT>& thrusters,
+                    const std::array<Thruster*, THRUSTERS_COUNT>& thrusters,
                     math::FixedPointBase single_clamp,
                     math::FixedPointBase sum_clamp)
     : thrusters_(thrusters),
@@ -246,7 +246,7 @@ void ThrustGenerator<Thruster, THRUSTERS_COUNT,
 
   if (enumerator == denumerator) {
     for (int i = 0; i < THRUSTERS_COUNT; i++) {
-      thrusters_[i].SetSpeed(
+      thrusters_[i]->SetSpeed(
           static_cast<int>(dest[i] * enumerator / denumerator));
     }
     control.x_torque = control.x_torque * enumerator / denumerator;
