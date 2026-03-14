@@ -6,6 +6,7 @@
 #include "hydrolib_cat.hpp"
 #include "hydrolib_echo.hpp"
 #include "hydrolib_thruster_commands.hpp"
+#include "hydrolib_thruster_generator_commands.hpp"
 
 namespace hydrolib::shell {
 class CommandMap {
@@ -20,6 +21,8 @@ class CommandMap {
       return hydrolib::shell::Cat;
     } else if (command == "thr") {
       return hydrolib::shell::ThrusterCommands;
+    } else if (command == "ctrl") {
+      return hydrolib::shell::ThrusterGeneratorCommands;
     }
     return std::nullopt;
   }
