@@ -184,7 +184,7 @@ inline int ThrusterGeneratorShell::Run() {
   }
   switch (command_type_) {
     case CommandType::SetMultipliers: {
-      thruster_generator_device->ControlProccess(&control_);
+      thruster_generator_device->ControlProccess(control_);
       break;
     }
     case CommandType::None:
