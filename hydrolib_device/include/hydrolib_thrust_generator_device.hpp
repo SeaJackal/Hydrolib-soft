@@ -15,31 +15,32 @@ class IControlSystem : public Device {
   virtual void ControlProccess(controlling::Control* control) const = 0;
 };
 
-template <int THRUSTERS_COUNT>
+template <controlling::ThrusterConcept Thruster, int THRUSTERS_COUNT>
 class ThrustGeneratorDevice : public IControlSystem {
  public:
-  ThrustGeneratorDevice(
-      std::string_view name,
-      controlling::ThrustGenerator<THRUSTERS_COUNT>& thrust_generator);
+  ThrustGeneratorDevice(std::string_view name,
+                        controlling::ThrustGenerator<Thruster, THRUSTERS_COUNT>&
+                            thrust_generator);
 
   using ThrustArray = std::array<math::FixedPointBase, THRUSTERS_COUNT>;
 
   void ControlProccess(controlling::Control* control) const override;
 
  private:
-  controlling::ThrustGenerator<THRUSTERS_COUNT>& thrust_generator_;
+  controlling::ThrustGenerator<Thruster, THRUSTERS_COUNT>& thrust_generator_;
 };
 
-template <int THRUSTERS_COUNT>
-ThrustGeneratorDevice<THRUSTERS_COUNT>::ThrustGeneratorDevice(
+template <controlling::ThrusterConcept Thruster, int THRUSTERS_COUNT>
+ThrustGeneratorDevice<Thruster, THRUSTERS_COUNT>::ThrustGeneratorDevice(
     std::string_view name,
-    controlling::ThrustGenerator<THRUSTERS_COUNT>& thrust_generator)
+    controlling::ThrustGenerator<Thruster, THRUSTERS_COUNT>& thrust_generator)
     : IControlSystem(name), thrust_generator_(thrust_generator) {}
 
-template <int THRUSTERS_COUNT>
-void ThrustGeneratorDevice<THRUSTERS_COUNT>::ControlProccess(
+template <controlling::ThrusterConcept Thruster, int THRUSTERS_COUNT>
+void ThrustGeneratorDevice<Thruster, THRUSTERS_COUNT>::ControlProccess(
     controlling::Control* control) const {
-  return ProcessWithFeedback(control);
+  return controlling::ThrustGenerator<
+      Thruster, THRUSTERS_COUNT>::ProcessWithFeedback(control);
 }
 
 }  // namespace hydrolib::device
