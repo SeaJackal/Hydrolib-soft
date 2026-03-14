@@ -118,51 +118,148 @@ TEST(TestHydrolibMath, FixedPointBaseConstructorWithLiteral) {
   EXPECT_DOUBLE_EQ(static_cast<double>(fixed_point), 3.5);
 }
 
-constexpr std::array<FixedPointBase, 10> kFixedPointCases = {
+template <int FRACTION_BITS>
+constexpr std::array<FixedPoint<FRACTION_BITS>, 10> kFixedPointCases = {
     0,
     1,
     -1,
-    FixedPointBase::kUpperNotIncludedBound - FixedPointBase::kLeastBitValue,
-    FixedPointBase::kLowerNotIncludedBound + FixedPointBase::kLeastBitValue,
-    FixedPointBase::kLeastBitValue,
-    -FixedPointBase::kLeastBitValue,
+    FixedPoint<FRACTION_BITS>::kUpperNotIncludedBound -
+        FixedPoint<FRACTION_BITS>::kLeastBitValue,
+    FixedPoint<FRACTION_BITS>::kLowerNotIncludedBound +
+        FixedPoint<FRACTION_BITS>::kLeastBitValue,
+    FixedPoint<FRACTION_BITS>::kLeastBitValue,
+    -FixedPoint<FRACTION_BITS>::kLeastBitValue,
     2.7568,
     -7.891,
     107.11231};
 
+template <int FRACTION_BITS>
 class TestFixedPointBinaryOperations
     : public ::testing::Test,
       public ::testing::WithParamInterface<
-          std::tuple<FixedPointBase, FixedPointBase>> {};
+          std::tuple<FixedPointBase, FixedPoint<FRACTION_BITS>>> {
+ public:
+  static void RunMultiplicationTest() {
+    auto values = ::testing::WithParamInterface<
+        std::tuple<FixedPointBase, FixedPoint<FRACTION_BITS>>>::GetParam();
+    auto first = std::get<0>(values);
+    auto second = std::get<1>(values);
+
+    double expected = static_cast<double>(first) * static_cast<double>(second);
+    if (expected < FixedPointBase::kUpperNotIncludedBound &&
+        expected > FixedPointBase::kLowerNotIncludedBound) {
+      auto result = first * second;
+      EXPECT_NEAR(static_cast<double>(result), expected,
+                  FixedPointBase::kLeastBitValue);
+    }
+  }
+
+  static void RunMultiplicationAssignmentTest() {
+    auto values = ::testing::WithParamInterface<
+        std::tuple<FixedPointBase, FixedPoint<FRACTION_BITS>>>::GetParam();
+    auto first = std::get<0>(values);
+    auto second = std::get<1>(values);
+
+    double expected = static_cast<double>(first) * static_cast<double>(second);
+    if (expected < FixedPointBase::kUpperNotIncludedBound &&
+        expected > FixedPointBase::kLowerNotIncludedBound) {
+      first *= second;
+      EXPECT_NEAR(static_cast<double>(first), expected,
+                  FixedPointBase::kLeastBitValue);
+    }
+  }
+
+  static void RunDivisionTest() {
+    auto values = ::testing::WithParamInterface<
+        std::tuple<FixedPointBase, FixedPoint<FRACTION_BITS>>>::GetParam();
+    auto first = std::get<0>(values);
+    auto second = std::get<1>(values);
+
+    if (second != 0) {
+      double expected =
+          static_cast<double>(first) / static_cast<double>(second);
+      if (expected < FixedPointBase::kUpperNotIncludedBound &&
+          expected > FixedPointBase::kLowerNotIncludedBound) {
+        auto result = first / second;
+        EXPECT_NEAR(static_cast<double>(result), expected,
+                    FixedPointBase::kLeastBitValue);
+      }
+    }
+  }
+
+  static void RunDivisionAssignmentTest() {
+    auto values = ::testing::WithParamInterface<
+        std::tuple<FixedPointBase, FixedPoint<FRACTION_BITS>>>::GetParam();
+    auto first = std::get<0>(values);
+    auto second = std::get<1>(values);
+
+    if (second != 0) {
+      double expected =
+          static_cast<double>(first) / static_cast<double>(second);
+      if (expected < FixedPointBase::kUpperNotIncludedBound &&
+          expected > FixedPointBase::kLowerNotIncludedBound) {
+        first /= second;
+        EXPECT_NEAR(static_cast<double>(first), expected,
+                    FixedPointBase::kLeastBitValue);
+      }
+    }
+  }
+
+  static std::string FormNameForBinaryOperationsTest(
+      const testing::TestParamInfo<
+          typename TestFixedPointBinaryOperations<FRACTION_BITS>::ParamType>&
+          info) {
+    static const auto sanitize = [](const std::string& input) {
+      std::string out;
+      out.reserve(input.size() * 5);
+      for (char chr : input) {
+        if (chr == '.') {
+          out += "point";
+        } else if (chr == '-') {
+          out += "minus";
+        } else {
+          out += chr;
+        }
+      }
+      return out;
+    };
+    auto values = info.param;
+    auto first = std::get<0>(values);
+    auto second = std::get<1>(values);
+    return sanitize(std::to_string(static_cast<double>(first))) + "_" +
+           sanitize(std::to_string(static_cast<double>(second)));
+  }
+
+  static inline auto cases = ::testing::Combine(
+      ::testing::ValuesIn(kFixedPointCases<FixedPointBase::kFractionBits>),
+      ::testing::ValuesIn(kFixedPointCases<FRACTION_BITS>));
+};
+
+using TestFixedPointBinaryOperationsBase =
+    TestFixedPointBinaryOperations<FixedPointBase::kFractionBits>;
 
 INSTANTIATE_TEST_CASE_P(
-    Test, TestFixedPointBinaryOperations,
-    ::testing::Combine(::testing::ValuesIn(kFixedPointCases),
-                       ::testing::ValuesIn(kFixedPointCases)),
-    [](const testing::TestParamInfo<TestFixedPointBinaryOperations::ParamType>&
-           info) {
-      static const auto sanitize = [](const std::string& input) -> std::string {
-        std::string out;
-        out.reserve(input.size() * 5);
-        for (char chr : input) {
-          if (chr == '.') {
-            out += "point";
-          } else if (chr == '-') {
-            out += "minus";
-          } else {
-            out += chr;
-          }
-        }
-        return out;
-      };
-      auto values = info.param;
-      auto first = std::get<0>(values);
-      auto second = std::get<1>(values);
-      return sanitize(std::to_string(static_cast<double>(first))) + "_" +
-             sanitize(std::to_string(static_cast<double>(second)));
-    });
+    Test, TestFixedPointBinaryOperationsBase,
+    TestFixedPointBinaryOperationsBase::cases,
+    TestFixedPointBinaryOperationsBase::FormNameForBinaryOperationsTest);
 
-TEST_P(TestFixedPointBinaryOperations, Addition) {
+using TestFixedPointBinaryOperationsMoreFraction =
+    TestFixedPointBinaryOperations<FixedPointBase::kFractionBits + 4>;
+
+INSTANTIATE_TEST_CASE_P(Test, TestFixedPointBinaryOperationsMoreFraction,
+                        TestFixedPointBinaryOperationsMoreFraction::cases,
+                        TestFixedPointBinaryOperationsMoreFraction::
+                            FormNameForBinaryOperationsTest);
+
+using TestFixedPointBinaryOperationsLessFraction =
+    TestFixedPointBinaryOperations<FixedPointBase::kFractionBits - 4>;
+
+INSTANTIATE_TEST_CASE_P(Test, TestFixedPointBinaryOperationsLessFraction,
+                        TestFixedPointBinaryOperationsLessFraction::cases,
+                        TestFixedPointBinaryOperationsLessFraction::
+                            FormNameForBinaryOperationsTest);
+
+TEST_P(TestFixedPointBinaryOperationsBase, Addition) {
   auto values = GetParam();
   auto first = std::get<0>(values);
   auto second = std::get<1>(values);
@@ -176,7 +273,7 @@ TEST_P(TestFixedPointBinaryOperations, Addition) {
   }
 }
 
-TEST_P(TestFixedPointBinaryOperations, AdditionAssignment) {
+TEST_P(TestFixedPointBinaryOperationsBase, AdditionAssignment) {
   auto values = GetParam();
   auto first = std::get<0>(values);
   auto second = std::get<1>(values);
@@ -189,7 +286,7 @@ TEST_P(TestFixedPointBinaryOperations, AdditionAssignment) {
   }
 }
 
-TEST_P(TestFixedPointBinaryOperations, Subtraction) {
+TEST_P(TestFixedPointBinaryOperationsBase, Subtraction) {
   auto values = GetParam();
   auto first = std::get<0>(values);
   auto second = std::get<1>(values);
@@ -202,7 +299,7 @@ TEST_P(TestFixedPointBinaryOperations, Subtraction) {
   }
 }
 
-TEST_P(TestFixedPointBinaryOperations, SubtractionAssignment) {
+TEST_P(TestFixedPointBinaryOperationsBase, SubtractionAssignment) {
   auto values = GetParam();
   auto first = std::get<0>(values);
   auto second = std::get<1>(values);
@@ -215,64 +312,52 @@ TEST_P(TestFixedPointBinaryOperations, SubtractionAssignment) {
   }
 }
 
-TEST_P(TestFixedPointBinaryOperations, Multiplication) {
-  auto values = GetParam();
-  auto first = std::get<0>(values);
-  auto second = std::get<1>(values);
-
-  double expected = static_cast<double>(first) * static_cast<double>(second);
-  if (expected < FixedPointBase::kUpperNotIncludedBound &&
-      expected > FixedPointBase::kLowerNotIncludedBound) {
-    auto result = first * second;
-    EXPECT_NEAR(static_cast<double>(result), expected,
-                FixedPointBase::kLeastBitValue);
-  }
+TEST_P(TestFixedPointBinaryOperationsBase, Multiplication) {
+  TestFixedPointBinaryOperationsBase::RunMultiplicationTest();
 }
 
-TEST_P(TestFixedPointBinaryOperations, MultiplicationAssignment) {
-  auto values = GetParam();
-  auto first = std::get<0>(values);
-  auto second = std::get<1>(values);
-
-  double expected = static_cast<double>(first) * static_cast<double>(second);
-  if (expected < FixedPointBase::kUpperNotIncludedBound &&
-      expected > FixedPointBase::kLowerNotIncludedBound) {
-    first *= second;
-    EXPECT_NEAR(static_cast<double>(first), expected,
-                FixedPointBase::kLeastBitValue);
-  }
+TEST_P(TestFixedPointBinaryOperationsBase, MultiplicationAssignment) {
+  TestFixedPointBinaryOperationsBase::RunMultiplicationAssignmentTest();
 }
 
-TEST_P(TestFixedPointBinaryOperations, Division) {
-  auto values = GetParam();
-  auto first = std::get<0>(values);
-  auto second = std::get<1>(values);
-
-  if (second != 0) {
-    double expected = static_cast<double>(first) / static_cast<double>(second);
-    if (expected < FixedPointBase::kUpperNotIncludedBound &&
-        expected > FixedPointBase::kLowerNotIncludedBound) {
-      auto result = first / second;
-      EXPECT_NEAR(static_cast<double>(result), expected,
-                  FixedPointBase::kLeastBitValue);
-    }
-  }
+TEST_P(TestFixedPointBinaryOperationsBase, Division) {
+  TestFixedPointBinaryOperationsBase::RunDivisionTest();
 }
 
-TEST_P(TestFixedPointBinaryOperations, DivisionAssignment) {
-  auto values = GetParam();
-  auto first = std::get<0>(values);
-  auto second = std::get<1>(values);
+TEST_P(TestFixedPointBinaryOperationsBase, DivisionAssignment) {
+  TestFixedPointBinaryOperationsBase::RunDivisionAssignmentTest();
+}
 
-  if (second != 0) {
-    double expected = static_cast<double>(first) / static_cast<double>(second);
-    if (expected < FixedPointBase::kUpperNotIncludedBound &&
-        expected > FixedPointBase::kLowerNotIncludedBound) {
-      first /= second;
-      EXPECT_NEAR(static_cast<double>(first), expected,
-                  FixedPointBase::kLeastBitValue);
-    }
-  }
+TEST_P(TestFixedPointBinaryOperationsMoreFraction, Multiplication) {
+  TestFixedPointBinaryOperationsMoreFraction::RunMultiplicationTest();
+}
+
+TEST_P(TestFixedPointBinaryOperationsMoreFraction, MultiplicationAssignment) {
+  TestFixedPointBinaryOperationsMoreFraction::RunMultiplicationAssignmentTest();
+}
+
+TEST_P(TestFixedPointBinaryOperationsMoreFraction, Division) {
+  TestFixedPointBinaryOperationsMoreFraction::RunDivisionTest();
+}
+
+TEST_P(TestFixedPointBinaryOperationsMoreFraction, DivisionAssignment) {
+  TestFixedPointBinaryOperationsMoreFraction::RunDivisionAssignmentTest();
+}
+
+TEST_P(TestFixedPointBinaryOperationsLessFraction, Multiplication) {
+  TestFixedPointBinaryOperationsLessFraction::RunMultiplicationTest();
+}
+
+TEST_P(TestFixedPointBinaryOperationsLessFraction, MultiplicationAssignment) {
+  TestFixedPointBinaryOperationsLessFraction::RunMultiplicationAssignmentTest();
+}
+
+TEST_P(TestFixedPointBinaryOperationsLessFraction, Division) {
+  TestFixedPointBinaryOperationsLessFraction::RunDivisionTest();
+}
+
+TEST_P(TestFixedPointBinaryOperationsLessFraction, DivisionAssignment) {
+  TestFixedPointBinaryOperationsLessFraction::RunDivisionAssignmentTest();
 }
 
 TEST(TestHydrolibMath, FixedPointBaseChainOperations) {
@@ -287,7 +372,7 @@ TEST(TestHydrolibMath, FixedPointBaseChainOperations) {
   EXPECT_DOUBLE_EQ(static_cast<double>(result2), 48.0);
 }
 
-TEST_P(TestFixedPointBinaryOperations, Equal) {
+TEST_P(TestFixedPointBinaryOperationsBase, Equal) {
   auto values = GetParam();
   auto first = std::get<0>(values);
   auto second = std::get<1>(values);
@@ -298,7 +383,7 @@ TEST_P(TestFixedPointBinaryOperations, Equal) {
   }
 }
 
-TEST_P(TestFixedPointBinaryOperations, NonEqual) {
+TEST_P(TestFixedPointBinaryOperationsBase, NonEqual) {
   auto values = GetParam();
   auto first = std::get<0>(values);
   auto second = std::get<1>(values);
@@ -309,7 +394,7 @@ TEST_P(TestFixedPointBinaryOperations, NonEqual) {
   }
 }
 
-TEST_P(TestFixedPointBinaryOperations, Less) {
+TEST_P(TestFixedPointBinaryOperationsBase, Less) {
   auto values = GetParam();
   auto first = std::get<0>(values);
   auto second = std::get<1>(values);
@@ -320,7 +405,7 @@ TEST_P(TestFixedPointBinaryOperations, Less) {
   }
 }
 
-TEST_P(TestFixedPointBinaryOperations, LessOrEqual) {
+TEST_P(TestFixedPointBinaryOperationsBase, LessOrEqual) {
   auto values = GetParam();
   auto first = std::get<0>(values);
   auto second = std::get<1>(values);
@@ -331,7 +416,7 @@ TEST_P(TestFixedPointBinaryOperations, LessOrEqual) {
   }
 }
 
-TEST_P(TestFixedPointBinaryOperations, Greater) {
+TEST_P(TestFixedPointBinaryOperationsBase, Greater) {
   auto values = GetParam();
   auto first = std::get<0>(values);
   auto second = std::get<1>(values);
@@ -342,7 +427,7 @@ TEST_P(TestFixedPointBinaryOperations, Greater) {
   }
 }
 
-TEST_P(TestFixedPointBinaryOperations, GreaterOrEqual) {
+TEST_P(TestFixedPointBinaryOperationsBase, GreaterOrEqual) {
   auto values = GetParam();
   auto first = std::get<0>(values);
   auto second = std::get<1>(values);
@@ -484,8 +569,9 @@ class TestFixedPointToBytes
     : public ::testing::Test,
       public ::testing::WithParamInterface<FixedPointBase> {};
 
-INSTANTIATE_TEST_CASE_P(Test, TestFixedPointToBytes,
-                        ::testing::ValuesIn(kFixedPointCases));
+INSTANTIATE_TEST_CASE_P(
+    Test, TestFixedPointToBytes,
+    ::testing::ValuesIn(kFixedPointCases<FixedPointBase::kFractionBits>));
 
 TEST_P(TestFixedPointToBytes, Base) {
   const auto value = GetParam();
