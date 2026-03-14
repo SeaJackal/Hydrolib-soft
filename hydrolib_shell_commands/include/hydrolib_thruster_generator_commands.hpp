@@ -8,11 +8,11 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "hydrolib_control_system_device.hpp"
 #include "hydrolib_device.hpp"
 #include "hydrolib_device_manager.hpp"
 #include "hydrolib_fixed_point.hpp"
 #include "hydrolib_shell.hpp"
-#include "hydrolib_thrust_generator_device.hpp"
 #include "hydrolib_thruster_device.hpp"
 
 #define THRUST_COUNT 6
@@ -57,9 +57,10 @@ inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
   while (opt != -1) {
     switch (opt) {
       case 'h':
-        cout << "Usage: thrgen <device_name> [-x <x_force>] [-y <y_force>] "
+        cout << "Usage: ctrl <device_name> [-x <x_force>] [-y <y_force>] "
                 "[-z <z_force>] [-X <x_torque>] [-Y <y_torque>] [-Z "
-                "<z_torque>]";
+                "<z_torque>]\r\n";
+        cout << "Usage: ctrl <device_name> stop - for all 0 values";
         g_is_running = false;
         return;
       case 1:
@@ -81,6 +82,16 @@ inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
             return;
             break;
           }
+        } else if (strcmp(optarg, "stop") == 0) {
+          control_.x_force = math::FixedPointBase(0);
+          control_.y_force = math::FixedPointBase(0);
+          control_.z_force = math::FixedPointBase(0);
+          control_.x_torque = math::FixedPointBase(0);
+          control_.y_torque = math::FixedPointBase(0);
+          control_.z_torque = math::FixedPointBase(0);
+          thruster_generator_device->ControlProccess(control_);
+          return;
+          break;
         } else {
           cout << "Invalid command: " << optarg;
           g_is_running = false;
