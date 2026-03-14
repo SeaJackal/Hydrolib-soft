@@ -33,7 +33,6 @@ class ThrusterGeneratorShell {
 
   device::IControlSystem *thruster_generator_device;
   controlling::Control control_;
-  std::array<hydrolib::math::FixedPointBase, THRUST_COUNT> thrusts{};
   CommandType command_type_;
   int return_code_;
 };
@@ -185,7 +184,7 @@ inline int ThrusterGeneratorShell::Run() {
   }
   switch (command_type_) {
     case CommandType::SetMultipliers: {
-      thruster_generator_device->ControlProccess(&control_, &thrusts);
+      thruster_generator_device->ControlProccess(&control_);
       break;
     }
     case CommandType::None:
