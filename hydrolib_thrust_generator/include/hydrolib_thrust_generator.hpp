@@ -2,11 +2,18 @@
 
 #include <algorithm>
 #include <array>
+#include <concepts>
 
 #include "hydrolib_fixed_point.hpp"
 #include "hydrolib_linear_equations.hpp"
+#include "hydrolib_return_codes.hpp"
 
 namespace hydrolib::controlling {
+
+template <typename T>
+concept ThrusterConcept = requires(T thruster, int speed) {
+  { thruster.SetSpeed(speed) } -> std::same_as<ReturnCode>;
+};
 
 inline void Error([[maybe_unused]] const char* message) {
   int param = 0;
@@ -23,7 +30,8 @@ struct Control {
   math::FixedPointBase z_torque;
 };
 
-template <int THRUSTERS_COUNT, bool ENABLE_SUM_CLAMP = false>
+template <ThrusterConcept Thruster, int THRUSTERS_COUNT,
+          bool ENABLE_SUM_CLAMP = false>
 class ThrustGenerator {
  public:
   using ThrusterParamsArray = std::array<double, THRUSTERS_COUNT>;
@@ -35,10 +43,11 @@ class ThrustGenerator {
                             const ThrusterParamsArray& thrust_to_x_linear,
                             const ThrusterParamsArray& thrust_to_y_linear,
                             const ThrusterParamsArray& thrust_to_z_linear,
+                            std::array<Thruster, THRUSTERS_COUNT>& thrusters,
                             math::FixedPointBase single_clamp,
                             math::FixedPointBase sum_clamp = 0);
 
-  void ProcessWithFeedback(Control& control, ThrustArray& dest) const;
+  void ProcessWithFeedback(Control& control) const;
 
  private:
   ThrustArray x_rotation_to_thrust_;
@@ -49,21 +58,27 @@ class ThrustGenerator {
   ThrustArray y_linear_to_thrust_;
   ThrustArray z_linear_to_thrust_;
 
+  std::array<Thruster, THRUSTERS_COUNT>& thrusters_;
+
   math::FixedPointBase single_clamp_;
 
   math::FixedPointBase sum_clamp_;
 };
 
-template <int THRUSTERS_COUNT, bool ENABLE_SUM_CLAMP>
-consteval ThrustGenerator<THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::ThrustGenerator(
-    const ThrusterParamsArray& thrust_to_x_rotation,
-    const ThrusterParamsArray& thrust_to_y_rotation,
-    const ThrusterParamsArray& thrust_to_z_rotation,
-    const ThrusterParamsArray& thrust_to_x_linear,
-    const ThrusterParamsArray& thrust_to_y_linear,
-    const ThrusterParamsArray& thrust_to_z_linear,
-    math::FixedPointBase single_clamp, math::FixedPointBase sum_clamp)
-    : single_clamp_(single_clamp), sum_clamp_(sum_clamp) {
+template <ThrusterConcept Thruster, int THRUSTERS_COUNT, bool ENABLE_SUM_CLAMP>
+consteval ThrustGenerator<Thruster, THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::
+    ThrustGenerator(const ThrusterParamsArray& thrust_to_x_rotation,
+                    const ThrusterParamsArray& thrust_to_y_rotation,
+                    const ThrusterParamsArray& thrust_to_z_rotation,
+                    const ThrusterParamsArray& thrust_to_x_linear,
+                    const ThrusterParamsArray& thrust_to_y_linear,
+                    const ThrusterParamsArray& thrust_to_z_linear,
+                    std::array<Thruster, THRUSTERS_COUNT>& thrusters,
+                    math::FixedPointBase single_clamp,
+                    math::FixedPointBase sum_clamp)
+    : thrusters_(thrusters),
+      single_clamp_(single_clamp),
+      sum_clamp_(sum_clamp) {
   constexpr int kXRotationIndex = 0;
   constexpr int kYRotationIndex = 1;
   constexpr int kZRotationIndex = 2;
@@ -188,9 +203,11 @@ consteval ThrustGenerator<THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::ThrustGenerator(
   error_flag = true;
 }
 
-template <int THRUSTERS_COUNT, bool ENABLE_SUM_CLAMP>
-void ThrustGenerator<THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::ProcessWithFeedback(
-    Control& control, ThrustArray& dest) const {
+template <ThrusterConcept Thruster, int THRUSTERS_COUNT, bool ENABLE_SUM_CLAMP>
+void ThrustGenerator<Thruster, THRUSTERS_COUNT,
+                     ENABLE_SUM_CLAMP>::ProcessWithFeedback(Control& control)
+    const {
+  ThrustArray dest;
   math::FixedPointBase max = 0;
   math::FixedPointBase sum = 0;
   for (int i = 0; i < THRUSTERS_COUNT; i++) {
@@ -229,7 +246,8 @@ void ThrustGenerator<THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::ProcessWithFeedback(
 
   if (enumerator == denumerator) {
     for (int i = 0; i < THRUSTERS_COUNT; i++) {
-      dest[i] = dest[i] * enumerator / denumerator;
+      thrusters_[i].SetSpeed(
+          static_cast<int>(dest[i] * enumerator / denumerator));
     }
     control.x_torque = control.x_torque * enumerator / denumerator;
     control.y_torque = control.y_torque * enumerator / denumerator;
