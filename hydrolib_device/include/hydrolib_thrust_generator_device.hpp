@@ -40,7 +40,7 @@ template <controlling::ThrusterConcept Thruster, int THRUSTERS_COUNT>
 void ThrustGeneratorDevice<Thruster, THRUSTERS_COUNT>::ControlProccess(
     controlling::Control& control) const {
   return controlling::ThrustGenerator<
-      Thruster, THRUSTERS_COUNT>::ProcessWithFeedback(&control);
+      Thruster, THRUSTERS_COUNT>::ProcessWithFeedback(control);
 }
 
 }  // namespace hydrolib::device
