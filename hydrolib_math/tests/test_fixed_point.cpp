@@ -134,6 +134,72 @@ constexpr std::array<FixedPoint<FRACTION_BITS>, 10> kFixedPointCases = {
     107.11231};
 
 template <int FRACTION_BITS>
+class TestFixedPointConstructorFixedPoint
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<FixedPoint<FRACTION_BITS>> {
+ public:
+  static void RunTest() {
+    auto value =
+        ::testing::WithParamInterface<FixedPoint<FRACTION_BITS>>::GetParam();
+
+    if (static_cast<double>(value) < FixedPointBase::kUpperNotIncludedBound &&
+        static_cast<double>(value) > FixedPointBase::kLowerNotIncludedBound) {
+      auto result = FixedPointBase(value);
+      EXPECT_NEAR(static_cast<double>(result), static_cast<double>(value),
+                  FixedPointBase::kLeastBitValue);
+    }
+  }
+
+  static std::string FormNameForTest(
+      const testing::TestParamInfo<typename TestFixedPointConstructorFixedPoint<
+          FRACTION_BITS>::ParamType>& info) {
+    static const auto sanitize = [](const std::string& input) {
+      std::string out;
+      out.reserve(input.size() * 5);
+      for (char chr : input) {
+        if (chr == '.') {
+          out += "point";
+        } else if (chr == '-') {
+          out += "minus";
+        } else {
+          out += chr;
+        }
+      }
+      return out;
+    };
+    auto value = info.param;
+    return sanitize(std::to_string(static_cast<double>(value)));
+  }
+
+  static inline auto cases =
+      ::testing::ValuesIn(kFixedPointCases<FRACTION_BITS>);
+};
+
+using TestFixedPointConstructorFixedPointLessFraction =
+    TestFixedPointConstructorFixedPoint<FixedPointBase::kFractionBits - 4>;
+
+INSTANTIATE_TEST_CASE_P(
+    Test, TestFixedPointConstructorFixedPointLessFraction,
+    TestFixedPointConstructorFixedPointLessFraction::cases,
+    TestFixedPointConstructorFixedPointLessFraction::FormNameForTest);
+
+TEST_P(TestFixedPointConstructorFixedPointLessFraction, Basic) {
+  TestFixedPointConstructorFixedPointLessFraction::RunTest();
+}
+
+using TestFixedPointConstructorFixedPointMoreFraction =
+    TestFixedPointConstructorFixedPoint<FixedPointBase::kFractionBits + 4>;
+
+INSTANTIATE_TEST_CASE_P(
+    Test, TestFixedPointConstructorFixedPointMoreFraction,
+    TestFixedPointConstructorFixedPointMoreFraction::cases,
+    TestFixedPointConstructorFixedPointMoreFraction::FormNameForTest);
+
+TEST_P(TestFixedPointConstructorFixedPointMoreFraction, Basic) {
+  TestFixedPointConstructorFixedPointMoreFraction::RunTest();
+}
+
+template <int FRACTION_BITS>
 class TestFixedPointBinaryOperations
     : public ::testing::Test,
       public ::testing::WithParamInterface<

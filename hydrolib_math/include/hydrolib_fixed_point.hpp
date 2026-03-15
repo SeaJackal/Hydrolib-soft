@@ -79,9 +79,8 @@ class FixedPoint {
   consteval FixedPoint(float value);        // NOLINT
   consteval FixedPoint(double value);       // NOLINT
   consteval FixedPoint(long double value);  // NOLINT
-
-  template <int T>
-  constexpr explicit FixedPoint(FixedPoint<T> value);
+  template <int OTHER_FRACTION_BITS>
+  constexpr explicit FixedPoint(FixedPoint<OTHER_FRACTION_BITS> value);
 
   explicit operator double() const;
   explicit operator int() const;
@@ -193,6 +192,18 @@ consteval FixedPoint<FRACTION_BITS>::FixedPoint(double value)
 template <int FRACTION_BITS>
 consteval FixedPoint<FRACTION_BITS>::FixedPoint(long double value)
     : value_(static_cast<int>(value * (1 << FRACTION_BITS))) {}
+
+template <int FRACTION_BITS>
+template <int OTHER_FRACTION_BITS>
+constexpr FixedPoint<FRACTION_BITS>::FixedPoint(
+    FixedPoint<OTHER_FRACTION_BITS> value)
+    : value_(0) {
+  if constexpr (FRACTION_BITS > OTHER_FRACTION_BITS) {
+    value_ = value.value_ << (FRACTION_BITS - OTHER_FRACTION_BITS);
+  } else {
+    value_ = value.value_ >> (OTHER_FRACTION_BITS - FRACTION_BITS);
+  }
+}
 
 template <int FRACTION_BITS>
 constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::Abs() const {
