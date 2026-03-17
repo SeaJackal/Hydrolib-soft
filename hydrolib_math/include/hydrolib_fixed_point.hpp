@@ -115,6 +115,9 @@ class FixedPoint {
 
   [[nodiscard]] constexpr FixedPoint Abs() const;
 
+  [[nodiscard]] int32_t Serialize() const;
+  static FixedPoint Deserialize(int32_t value);
+
  private:
   [[nodiscard]] constexpr int GetAbsIntPart() const;
   [[nodiscard]] constexpr int GetAbsFractionPart() const;
@@ -209,6 +212,19 @@ template <int FRACTION_BITS>
 constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::Abs() const {
   FixedPoint<FRACTION_BITS> result;
   result.value_ = value_ < 0 ? -value_ : value_;
+  return result;
+}
+
+template <int FRACTION_BITS>
+[[nodiscard]] int32_t FixedPoint<FRACTION_BITS>::Serialize() const {
+  return static_cast<int32_t>(value_);
+}
+
+template <int FRACTION_BITS>
+FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::Deserialize(
+    int32_t value) {
+  FixedPoint<FRACTION_BITS> result;
+  result.value_ = static_cast<int>(value);
   return result;
 }
 

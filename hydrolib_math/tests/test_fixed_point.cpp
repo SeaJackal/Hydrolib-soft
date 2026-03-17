@@ -657,3 +657,19 @@ TEST_P(TestFixedPointToBytes, Base) {
 
   EXPECT_EQ(output, expected_string);
 }
+
+class TestFixedPointSerialize
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<FixedPointBase> {};
+
+INSTANTIATE_TEST_CASE_P(
+    Test, TestFixedPointSerialize,
+    ::testing::ValuesIn(kFixedPointCases<FixedPointBase::kFractionBits>));
+
+TEST_P(TestFixedPointSerialize, Base) {
+  const auto value = GetParam();
+  auto serialized_value = value.Serialize();
+  auto deserialized_value = FixedPointBase::Deserialize(serialized_value);
+
+  EXPECT_EQ(value, deserialized_value);
+}
