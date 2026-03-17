@@ -54,6 +54,19 @@ class FixedPoint {
   friend FixedPoint sin<FRACTION_BITS>(FixedPoint value_rad);
   friend FixedPoint cos<FRACTION_BITS>(FixedPoint value_rad);
 
+  template <int>
+  friend constexpr int operator*(int first, FixedPoint<FRACTION_BITS> second);
+  template <int>
+  friend constexpr int operator/(int first, FixedPoint<FRACTION_BITS> second);
+  template <int>
+  friend constexpr int& operator/=(int& first,
+                                   FixedPoint<FRACTION_BITS> second);
+  template <int>
+  friend constexpr int& operator*=(int& first,
+                                   FixedPoint<FRACTION_BITS> second);
+  template <int>
+  friend class FixedPoint;
+
  public:
   static constexpr int kFractionBits = FRACTION_BITS;
   static constexpr int kUpperNotIncludedBound = (INT_MAX >> FRACTION_BITS) + 1;
@@ -66,6 +79,8 @@ class FixedPoint {
   consteval FixedPoint(float value);        // NOLINT
   consteval FixedPoint(double value);       // NOLINT
   consteval FixedPoint(long double value);  // NOLINT
+  template <int OTHER_FRACTION_BITS>
+  constexpr explicit FixedPoint(FixedPoint<OTHER_FRACTION_BITS> value);
 
   explicit operator double() const;
   explicit operator int() const;
@@ -78,10 +93,18 @@ class FixedPoint {
   constexpr FixedPoint operator-() const;
   constexpr FixedPoint operator+(const FixedPoint& other) const;
   constexpr FixedPoint operator-(const FixedPoint& other) const;
-  constexpr FixedPoint operator*(const FixedPoint& other) const;
-  constexpr FixedPoint operator/(const FixedPoint& other) const;
-  constexpr FixedPoint& operator*=(const FixedPoint& other);
-  constexpr FixedPoint& operator/=(const FixedPoint& other);
+  template <int T>
+  constexpr FixedPoint operator*(FixedPoint<T> other) const;
+  template <int T>
+  constexpr FixedPoint operator/(FixedPoint<T> other) const;
+  template <int T>
+  constexpr FixedPoint& operator*=(FixedPoint<T> other);
+  template <int T>
+  constexpr FixedPoint& operator/=(FixedPoint<T> other);
+  constexpr FixedPoint operator*(int other) const;
+  constexpr FixedPoint operator/(int other) const;
+  constexpr FixedPoint& operator*=(int other);
+  constexpr FixedPoint& operator/=(int other);
 
   constexpr bool operator==(const FixedPoint& other) const;
   constexpr bool operator!=(const FixedPoint& other) const;
@@ -92,12 +115,24 @@ class FixedPoint {
 
   [[nodiscard]] constexpr FixedPoint Abs() const;
 
+  [[nodiscard]] int32_t Serialize() const;
+  static FixedPoint Deserialize(int32_t value);
+
  private:
   [[nodiscard]] constexpr int GetAbsIntPart() const;
   [[nodiscard]] constexpr int GetAbsFractionPart() const;
 
   int value_;
 };
+
+template <int FRACTION_BITS>
+constexpr int operator*(int first, FixedPoint<FRACTION_BITS> second);
+template <int FRACTION_BITS>
+constexpr int operator/(int first, FixedPoint<FRACTION_BITS> second);
+template <int FRACTION_BITS>
+constexpr int& operator/=(int& first, FixedPoint<FRACTION_BITS> second);
+template <int FRACTION_BITS>
+constexpr int& operator*=(int& first, FixedPoint<FRACTION_BITS> second);
 
 class CORDICSupporter {
   friend class CORDICConstants;
@@ -162,9 +197,34 @@ consteval FixedPoint<FRACTION_BITS>::FixedPoint(long double value)
     : value_(static_cast<int>(value * (1 << FRACTION_BITS))) {}
 
 template <int FRACTION_BITS>
+template <int OTHER_FRACTION_BITS>
+constexpr FixedPoint<FRACTION_BITS>::FixedPoint(
+    FixedPoint<OTHER_FRACTION_BITS> value)
+    : value_(0) {
+  if constexpr (FRACTION_BITS > OTHER_FRACTION_BITS) {
+    value_ = value.value_ << (FRACTION_BITS - OTHER_FRACTION_BITS);
+  } else {
+    value_ = value.value_ >> (OTHER_FRACTION_BITS - FRACTION_BITS);
+  }
+}
+
+template <int FRACTION_BITS>
 constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::Abs() const {
   FixedPoint<FRACTION_BITS> result;
   result.value_ = value_ < 0 ? -value_ : value_;
+  return result;
+}
+
+template <int FRACTION_BITS>
+[[nodiscard]] int32_t FixedPoint<FRACTION_BITS>::Serialize() const {
+  return static_cast<int32_t>(value_);
+}
+
+template <int FRACTION_BITS>
+FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::Deserialize(
+    int32_t value) {
+  FixedPoint<FRACTION_BITS> result;
+  result.value_ = static_cast<int>(value);
   return result;
 }
 
@@ -233,37 +293,82 @@ constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator-(
 }
 
 template <int FRACTION_BITS>
+template <int OTHER_FRACTION_BITS>
 constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator*(
-    const FixedPoint<FRACTION_BITS>& other) const {
+    FixedPoint<OTHER_FRACTION_BITS> other) const {
   FixedPoint<FRACTION_BITS> result = *this;
-  int64_t result_value =
-      (static_cast<int64_t>(result.value_) * other.value_) >> FRACTION_BITS;
+  int64_t result_value = (static_cast<int64_t>(result.value_) * other.value_) >>
+                         OTHER_FRACTION_BITS;
   result.value_ = static_cast<int>(result_value);
   return result;
 }
 
 template <int FRACTION_BITS>
+template <int OTHER_FRACTION_BITS>
 constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator/(
-    const FixedPoint<FRACTION_BITS>& other) const {
+    FixedPoint<OTHER_FRACTION_BITS> other) const {
   FixedPoint<FRACTION_BITS> result = *this;
   int64_t result_value =
-      (static_cast<int64_t>(result.value_) << FRACTION_BITS) / other.value_;
+      (static_cast<int64_t>(result.value_) << OTHER_FRACTION_BITS) /
+      other.value_;
   result.value_ = static_cast<int>(result_value);
   return result;
 }
 
 template <int FRACTION_BITS>
+template <int OTHER_FRACTION_BITS>
 constexpr FixedPoint<FRACTION_BITS>& FixedPoint<FRACTION_BITS>::operator*=(
-    const FixedPoint<FRACTION_BITS>& other) {
+    FixedPoint<OTHER_FRACTION_BITS> other) {
   *this = *this * other;
   return *this;
 }
 
 template <int FRACTION_BITS>
+template <int OTHER_FRACTION_BITS>
 constexpr FixedPoint<FRACTION_BITS>& FixedPoint<FRACTION_BITS>::operator/=(
-    const FixedPoint<FRACTION_BITS>& other) {
+    FixedPoint<OTHER_FRACTION_BITS> other) {
   *this = *this / other;
   return *this;
+}
+
+template <int FRACTION_BITS>
+constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator*(
+    int other) const {
+  FixedPoint<FRACTION_BITS> result = *this;
+  result.value_ = result.value_ * other;
+  return result;
+}
+
+template <int FRACTION_BITS>
+constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator/(
+    int other) const {
+  FixedPoint<FRACTION_BITS> result = *this;
+  result.value_ = result.value_ / other;
+  return result;
+}
+
+template <int FRACTION_BITS>
+constexpr int operator*(int first, FixedPoint<FRACTION_BITS> second) {
+  return static_cast<int>((static_cast<int64_t>(first) * second.value_) >>
+                          FRACTION_BITS);
+}
+
+template <int FRACTION_BITS>
+constexpr int operator/(int first, FixedPoint<FRACTION_BITS> second) {
+  return static_cast<int>((static_cast<int64_t>(first) << FRACTION_BITS) /
+                          second.value_);
+}
+
+template <int FRACTION_BITS>
+constexpr int& operator*=(int& first, FixedPoint<FRACTION_BITS> second) {
+  first = first * second;
+  return first;
+}
+
+template <int FRACTION_BITS>
+constexpr int& operator/=(int& first, FixedPoint<FRACTION_BITS> second) {
+  first = first / second;
+  return first;
 }
 
 template <int FRACTION_BITS>
