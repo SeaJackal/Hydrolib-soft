@@ -15,12 +15,10 @@
 #include "hydrolib_shell.hpp"
 #include "hydrolib_thruster_device.hpp"
 
-#define THRUST_COUNT 6
-
 namespace hydrolib::shell {
-class ThrusterGeneratorShell {
+class ControlSystemShell {
  public:
-  ThrusterGeneratorShell(int argc, char *argv[]);
+  ControlSystemShell(int argc, char *argv[]);
 
  public:
   int Run();
@@ -31,26 +29,19 @@ class ThrusterGeneratorShell {
     SetMultipliers,
   };
 
-  device::IControlSystem *thruster_generator_device;
+  device::IControlSystem *control_system_device;
   controlling::Control control_;
   CommandType command_type_;
   int return_code_;
 };
 
-int ThrusterGeneratorCommands(int argc, char *argv[]);
+int ControlSystemCommands(int argc, char *argv[]);
 
-inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
-    : thruster_generator_device(nullptr),
+inline ControlSystemShell::ControlSystemShell(int argc, char *argv[])
+    : control_system_device(nullptr),
       control_(),
       command_type_(CommandType::None),
       return_code_(0) {
-  control_.x_force = math::FixedPointBase(0);
-  control_.y_force = math::FixedPointBase(0);
-  control_.z_force = math::FixedPointBase(0);
-  control_.x_torque = math::FixedPointBase(0);
-  control_.y_torque = math::FixedPointBase(0);
-  control_.z_torque = math::FixedPointBase(0);
-
   device::Device *finded_device = nullptr;
   optind = 0;
   int opt = getopt(argc, argv, "-:x:y:z:X:Y:Z:h");
@@ -64,7 +55,7 @@ inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
         g_is_running = false;
         return;
       case 1:
-        if (thruster_generator_device == nullptr) {
+        if (control_system_device == nullptr) {
           finded_device = (*device::g_device_manager)[optarg];
           if (finded_device == nullptr) {
             cout << "Device not found: " << optarg;
@@ -73,10 +64,10 @@ inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
             return;
             break;
           }
-          thruster_generator_device =
+          control_system_device =
               finded_device->Upcast<device::IControlSystem>();
-          if (thruster_generator_device == nullptr) {
-            cout << "Device is not a thruster generator: " << optarg;
+          if (control_system_device == nullptr) {
+            cout << "Device is not a system control: " << optarg;
             g_is_running = false;
             return_code_ = -1;
             return;
@@ -89,7 +80,7 @@ inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
           control_.x_torque = math::FixedPointBase(0);
           control_.y_torque = math::FixedPointBase(0);
           control_.z_torque = math::FixedPointBase(0);
-          thruster_generator_device->ControlProccess(control_);
+          control_system_device->ControlProccess(control_);
           return;
           break;
         } else {
@@ -180,22 +171,22 @@ inline ThrusterGeneratorShell::ThrusterGeneratorShell(int argc, char *argv[])
     }
     opt = getopt(argc, argv, "-:x:y:z:X:Y:Z:h");
   }
-  if (thruster_generator_device != nullptr && g_is_running) {
+  if (control_system_device != nullptr && g_is_running) {
     command_type_ = CommandType::SetMultipliers;
-  } else if (thruster_generator_device == nullptr && g_is_running) {
+  } else if (control_system_device == nullptr && g_is_running) {
     cout << "No thruster generator device specified";
     g_is_running = false;
     return_code_ = -1;
   }
 }
 
-inline int ThrusterGeneratorShell::Run() {
+inline int ControlSystemShell::Run() {
   if (!g_is_running) {
     return return_code_;
   }
   switch (command_type_) {
     case CommandType::SetMultipliers: {
-      thruster_generator_device->ControlProccess(control_);
+      control_system_device->ControlProccess(control_);
       break;
     }
     case CommandType::None:
@@ -204,8 +195,8 @@ inline int ThrusterGeneratorShell::Run() {
   return return_code_;
 }
 
-inline int ThrusterGeneratorCommands(int argc, char *argv[]) {
-  ThrusterGeneratorShell handler(argc, argv);
+inline int ControlSystemCommands(int argc, char *argv[]) {
+  ControlSystemShell handler(argc, argv);
   return handler.Run();
 }
 }  // namespace hydrolib::shell
