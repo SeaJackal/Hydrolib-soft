@@ -79,7 +79,7 @@ class MockControlSystem : public IControlSystem {
 
  public:
   Control control_;
-  void ControlProccess(Control &control) override {
+  void ControlProcess(Control &control) override {
     control_.x_force = control.x_force;
     control_.y_force = control.y_force;
     control_.z_force = control.z_force;

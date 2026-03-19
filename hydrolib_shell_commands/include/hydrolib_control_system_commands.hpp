@@ -80,7 +80,7 @@ inline ControlSystemShell::ControlSystemShell(int argc, char *argv[])
           control_.x_torque = math::FixedPointBase(0);
           control_.y_torque = math::FixedPointBase(0);
           control_.z_torque = math::FixedPointBase(0);
-          control_system_device->ControlProccess(control_);
+          control_system_device->ControlProcess(control_);
           return;
           break;
         } else {
@@ -186,7 +186,7 @@ inline int ControlSystemShell::Run() {
   }
   switch (command_type_) {
     case CommandType::SetMultipliers: {
-      control_system_device->ControlProccess(control_);
+      control_system_device->ControlProcess(control_);
       break;
     }
     case CommandType::None:
