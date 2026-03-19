@@ -4,6 +4,7 @@
 #include <string_view>
 
 #include "hydrolib_cat.hpp"
+#include "hydrolib_control_system_commands.hpp"
 #include "hydrolib_echo.hpp"
 #include "hydrolib_thruster_commands.hpp"
 
@@ -20,6 +21,8 @@ class CommandMap {
       return hydrolib::shell::Cat;
     } else if (command == "thr") {
       return hydrolib::shell::ThrusterCommands;
+    } else if (command == "ctrl") {
+      return hydrolib::shell::ControlSystemCommands;
     }
     return std::nullopt;
   }
