@@ -135,7 +135,7 @@ inline void ThrusterShell::ParseSetSpeed(int argc, char *argv[]) {
     }
     opt = getopt(argc, argv, ":s:h");
   }
-  if (thruster_device == nullptr) {
+  if (finded_device == nullptr) {
     cout << "No thruster device specified";
     g_is_running = false;
     return_code_ = -1;
