@@ -86,7 +86,7 @@ inline void ThrusterShell::ParseSetSpeed(int argc, char *argv[]) {
         cout << "Usage: thr setsp -d [DEVICE_NAME] -s [SPEED]";
         g_is_running = false;
         return;
-      case 1:
+      case 'd':
         if (thruster_device == nullptr) {
           finded_device = (*device::g_device_manager)[optarg];
           if (finded_device == nullptr) {
