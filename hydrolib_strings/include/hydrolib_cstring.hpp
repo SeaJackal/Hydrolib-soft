@@ -1,7 +1,9 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cstring>
+#include <string_view>
 
 namespace hydrolib::strings {
 template <int CAPACITY>
