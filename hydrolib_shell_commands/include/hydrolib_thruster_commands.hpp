@@ -47,7 +47,7 @@ inline ThrusterShell::ThrusterShell(int argc, char *argv[])
   while (opt != -1) {
     switch (opt) {
       case 'h':
-        cout << "Usage: thr {setsp [DEVICE_NAME] -s [SPEED] | getsp "
+        cout << "Usage: thr {setsp -d [DEVICE_NAME] -s [SPEED] | getsp "
                 "[DEVICE_NAME]}";
         g_is_running = false;
         return;
@@ -79,14 +79,14 @@ inline ThrusterShell::ThrusterShell(int argc, char *argv[])
 
 inline void ThrusterShell::ParseSetSpeed(int argc, char *argv[]) {
   device::Device *finded_device = nullptr;
-  int opt = getopt(argc, argv, ":s:h");
+  int opt = getopt(argc, argv, ":d:s:h");
   while (opt != -1) {
     switch (opt) {
       case 'h':
-        cout << "Usage: thr setsp [DEVICE_NAME] -s [SPEED]";
+        cout << "Usage: thr setsp -d [DEVICE_NAME] -s [SPEED]";
         g_is_running = false;
         return;
-      case 1:
+      case 'd':
         if (thruster_device == nullptr) {
           finded_device = (*device::g_device_manager)[optarg];
           if (finded_device == nullptr) {
@@ -133,9 +133,9 @@ inline void ThrusterShell::ParseSetSpeed(int argc, char *argv[]) {
         return_code_ = -1;
         return;
     }
-    opt = getopt(argc, argv, ":s:h");
+    opt = getopt(argc, argv, ":d:s:h");
   }
-  if (thruster_device == nullptr && g_is_running) {
+  if (thruster_device == nullptr) {
     cout << "No thruster device specified";
     g_is_running = false;
     return_code_ = -1;

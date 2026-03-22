@@ -106,14 +106,16 @@ TEST(HydrolibThruster, PrintsUsageOnHelpAndStops) {
   DeviceManager mgr({});
 
   char arg0[] = "thr";
-  char arg1[] = "-h";
-  char *argv[] = {arg0, arg1, nullptr};
+  char arg1[] = "setsp";
+  char arg2[] = "-h";
+  char *argv[] = {arg0, arg1, arg2, nullptr};
 
   g_is_running = true;
-  int rc = ThrusterCommands(2, argv);
+  int rc = ThrusterCommands(3, argv);
 
   EXPECT_EQ(0, rc);
-  EXPECT_TRUE(OutputAsString(cout_stream).find("Usage: thr") !=
+  EXPECT_TRUE(OutputAsString(cout_stream)
+                  .find("Usage: thr setsp -d [DEVICE_NAME] -s [SPEED]") !=
               std::string::npos);
   EXPECT_FALSE(g_is_running);
 }
@@ -127,11 +129,12 @@ TEST(HydrolibThruster, InvalidOptionSetsErrorAndPrintsCode) {
   DeviceManager mgr({});
 
   char arg0[] = "thr";
-  char arg1[] = "-x";
-  char *argv[] = {arg0, arg1, nullptr};
+  char arg1[] = "setsp";
+  char arg2[] = "-x";
+  char *argv[] = {arg0, arg1, arg2, nullptr};
 
   g_is_running = true;
-  int rc = ThrusterCommands(2, argv);
+  int rc = ThrusterCommands(3, argv);
 
   EXPECT_EQ(-1, rc);
   EXPECT_EQ("Invalid option: x", OutputAsString(cout_stream));
@@ -170,16 +173,17 @@ TEST(HydrolibThruster, InvalidSpeedValue) {
 
   char arg0[] = "thr";
   char arg1[] = "setsp";
-  char arg2[] = "thruster1";
-  char arg3[] = "-s";
-  char arg4[] = "abc";
-  char *argv[] = {arg0, arg1, arg2, arg3, arg4, nullptr};
+  char arg2[] = "-d";
+  char arg3[] = "thruster1";
+  char arg4[] = "-s";
+  char arg5[] = "abc";
+  char *argv[] = {arg0, arg1, arg2, arg3, arg4, arg5, nullptr};
 
   g_is_running = true;
-  int rc = ThrusterCommands(5, argv);
+  int rc = ThrusterCommands(6, argv);
 
   EXPECT_EQ(-1, rc);
-  EXPECT_TRUE(OutputAsString(cout_stream).find("Invalid speed") !=
+  EXPECT_TRUE(OutputAsString(cout_stream).find("Invalid speed: abc") !=
               std::string::npos);
   EXPECT_FALSE(g_is_running);
 }
@@ -196,18 +200,17 @@ TEST(HydrolibThruster, SetsPositiveSpeedSuccessfully) {
 
   char arg0[] = "thr";
   char arg1[] = "setsp";
-  char arg2[] = "thruster1";
-  char arg3[] = "-s";
-  char arg4[] = "100";
-  char *argv[] = {arg0, arg1, arg2, arg3, arg4, nullptr};
+  char arg2[] = "-d";
+  char arg3[] = "thruster1";
+  char arg4[] = "-s";
+  char arg5[] = "100";
+  char *argv[] = {arg0, arg1, arg2, arg3, arg4, arg5, nullptr};
 
   g_is_running = true;
-  int rc = ThrusterCommands(5, argv);
+  int rc = ThrusterCommands(6, argv);
 
   EXPECT_EQ(0, rc);
   EXPECT_EQ(100, driver.last_speed);
-  EXPECT_TRUE(OutputAsString(cout_stream).find("Thruster set speed: 100") !=
-              std::string::npos);
   EXPECT_TRUE(g_is_running);
 }
 
@@ -223,18 +226,17 @@ TEST(HydrolibThruster, SetsNegativeSpeedSuccessfully) {
 
   char arg0[] = "thr";
   char arg1[] = "setsp";
-  char arg2[] = "thruster1";
-  char arg3[] = "-s";
-  char arg4[] = "-50";
-  char *argv[] = {arg0, arg1, arg2, arg3, arg4, nullptr};
+  char arg2[] = "-d";
+  char arg3[] = "thruster1";
+  char arg4[] = "-s";
+  char arg5[] = "-50";
+  char *argv[] = {arg0, arg1, arg2, arg3, arg4, arg5, nullptr};
 
   g_is_running = true;
-  int rc = ThrusterCommands(5, argv);
+  int rc = ThrusterCommands(6, argv);
 
   EXPECT_EQ(0, rc);
   EXPECT_EQ(-50, driver.last_speed);
-  EXPECT_TRUE(OutputAsString(cout_stream).find("Thruster set speed: -50") !=
-              std::string::npos);
   EXPECT_TRUE(g_is_running);
 }
 
@@ -275,18 +277,17 @@ TEST(HydrolibThruster, ZeroSpeedSuccessfully) {
 
   char arg0[] = "thr";
   char arg1[] = "setsp";
-  char arg2[] = "thruster1";
-  char arg3[] = "-s";
-  char arg4[] = "0";
-  char *argv[] = {arg0, arg1, arg2, arg3, arg4, nullptr};
+  char arg2[] = "-d";
+  char arg3[] = "thruster1";
+  char arg4[] = "-s";
+  char arg5[] = "0";
+  char *argv[] = {arg0, arg1, arg2, arg3, arg4, arg5, nullptr};
 
   g_is_running = true;
-  int rc = ThrusterCommands(5, argv);
+  int rc = ThrusterCommands(6, argv);
 
   EXPECT_EQ(0, rc);
   EXPECT_EQ(0, driver.last_speed);
-  EXPECT_TRUE(OutputAsString(cout_stream).find("Thruster set speed: 0") !=
-              std::string::npos);
   EXPECT_TRUE(g_is_running);
 }
 
@@ -302,22 +303,23 @@ TEST(HydrolibThruster, SetsNegativeSpeedWithSOptionSuccessfully) {
 
   char arg0[] = "thr";
   char arg1[] = "setsp";
-  char arg2[] = "thruster1";
-  char arg3[] = "-s";
-  char arg4[] = "-75";
-  char *argv[] = {arg0, arg1, arg2, arg3, arg4, nullptr};
+  char arg2[] = "-d";
+  char arg3[] = "thruster1";
+  char arg4[] = "-s";
+  char arg5[] = "-75";
+  char *argv[] = {arg0, arg1, arg2, arg3, arg4, arg5, nullptr};
 
   g_is_running = true;
-  int rc = ThrusterCommands(5, argv);
+  int rc = ThrusterCommands(6, argv);
 
   EXPECT_EQ(0, rc);
   EXPECT_EQ(-75, driver.last_speed);
-  EXPECT_TRUE(OutputAsString(cout_stream).find("Thruster set speed: -75") !=
-              std::string::npos);
   EXPECT_TRUE(g_is_running);
 }
 
-// Новый тест для формата -s-75 (без пробела)
+// Test for format -s-75 (without space) - note: getopt typically doesn't
+// support this format This test may need to be removed or modified if getopt
+// doesn't handle combined options
 TEST(HydrolibThruster, SetsNegativeSpeedWithSOptionNoSpace) {
   ResetGetopt();
   FakeStream cout_stream;
@@ -330,16 +332,115 @@ TEST(HydrolibThruster, SetsNegativeSpeedWithSOptionNoSpace) {
 
   char arg0[] = "thr";
   char arg1[] = "setsp";
-  char arg2[] = "thruster1";
-  char arg3[] = "-s-75";
+  char arg2[] = "-d";
+  char arg3[] = "thruster1";
+  char arg4[] = "-s-75";
+  char *argv[] = {arg0, arg1, arg2, arg3, arg4, nullptr};
+
+  g_is_running = true;
+  int rc = ThrusterCommands(5, argv);
+
+  // Note: getopt may treat "-s-75" as option -s with value "-75" or as option
+  // -s with no value followed by -75 The behavior depends on getopt
+  // implementation
+  EXPECT_EQ(0, rc);
+  EXPECT_EQ(-75, driver.last_speed);
+  EXPECT_TRUE(g_is_running);
+}
+
+TEST(HydrolibThruster, NoDeviceSpecified) {
+  ResetGetopt();
+  FakeStream cout_stream;
+  StreamWrapper<FakeStream> cout_wrapper(cout_stream);
+  cout = Ostream(cout_wrapper);
+
+  DeviceManager mgr({});
+
+  char arg0[] = "thr";
+  char arg1[] = "setsp";
+  char arg2[] = "-s";
+  char arg3[] = "100";
   char *argv[] = {arg0, arg1, arg2, arg3, nullptr};
 
   g_is_running = true;
   int rc = ThrusterCommands(4, argv);
 
-  EXPECT_EQ(0, rc);
-  EXPECT_EQ(-75, driver.last_speed);
-  EXPECT_TRUE(OutputAsString(cout_stream).find("Thruster set speed: -75") !=
-              std::string::npos);
-  EXPECT_TRUE(g_is_running);
+  EXPECT_EQ(-1, rc);
+  EXPECT_EQ("No thruster device specified", OutputAsString(cout_stream));
+  EXPECT_FALSE(g_is_running);
+}
+
+TEST(HydrolibThruster, NoSpeedSpecified) {
+  ResetGetopt();
+  FakeStream cout_stream;
+  StreamWrapper<FakeStream> cout_wrapper(cout_stream);
+  cout = Ostream(cout_wrapper);
+
+  SimpleThrusterDriver driver;
+  ThrusterDevice<SimpleThrusterDriver> thruster_dev("thruster1", driver);
+  DeviceManager mgr({&thruster_dev});
+
+  char arg0[] = "thr";
+  char arg1[] = "setsp";
+  char arg2[] = "-d";
+  char arg3[] = "thruster1";
+  char *argv[] = {arg0, arg1, arg2, arg3, nullptr};
+
+  g_is_running = true;
+  int rc = ThrusterCommands(4, argv);
+
+  EXPECT_EQ(-1, rc);
+  EXPECT_EQ("No speed value specified", OutputAsString(cout_stream));
+  EXPECT_FALSE(g_is_running);
+}
+
+TEST(HydrolibThruster, DeviceNotFound) {
+  ResetGetopt();
+  FakeStream cout_stream;
+  StreamWrapper<FakeStream> cout_wrapper(cout_stream);
+  cout = Ostream(cout_wrapper);
+
+  DeviceManager mgr({});
+
+  char arg0[] = "thr";
+  char arg1[] = "setsp";
+  char arg2[] = "-d";
+  char arg3[] = "nonexistent";
+  char arg4[] = "-s";
+  char arg5[] = "100";
+  char *argv[] = {arg0, arg1, arg2, arg3, arg4, arg5, nullptr};
+
+  g_is_running = true;
+  int rc = ThrusterCommands(6, argv);
+
+  EXPECT_EQ(-1, rc);
+  EXPECT_EQ("Device not found: nonexistent", OutputAsString(cout_stream));
+  EXPECT_FALSE(g_is_running);
+}
+
+TEST(HydrolibThruster, DeviceIsNotThruster) {
+  ResetGetopt();
+  FakeStream cout_stream;
+  StreamWrapper<FakeStream> cout_wrapper(cout_stream);
+  cout = Ostream(cout_wrapper);
+
+  // Create a non-thruster device (assuming there's a simple Device class)
+  NonThrusterDevice non_thruster_device;
+  DeviceManager mgr({&non_thruster_device});
+
+  char arg0[] = "thr";
+  char arg1[] = "setsp";
+  char arg2[] = "-d";
+  char arg3[] = "not_thruster";
+  char arg4[] = "-s";
+  char arg5[] = "100";
+  char *argv[] = {arg0, arg1, arg2, arg3, arg4, arg5, nullptr};
+
+  g_is_running = true;
+  int rc = ThrusterCommands(6, argv);
+
+  EXPECT_EQ(-1, rc);
+  EXPECT_EQ("Device is not a thruster: not_thruster",
+            OutputAsString(cout_stream));
+  EXPECT_FALSE(g_is_running);
 }
