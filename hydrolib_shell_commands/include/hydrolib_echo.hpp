@@ -27,6 +27,7 @@ int Echo(int argc, char *argv[]);
 
 inline EchoCommand::EchoCommand(int argc, char *argv[])
     : device_(nullptr), message_(nullptr), return_code_(0) {
+  optind = 0;
   int opt = getopt(argc, argv, "-:h");
   while (opt != -1) {
     device::Device *finded_device = nullptr;
