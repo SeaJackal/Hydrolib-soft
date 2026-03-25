@@ -94,7 +94,6 @@ inline void ThrusterShell::ParseSetSpeed(int argc, char *argv[]) {
             g_is_running = false;
             return_code_ = -1;
             return;
-            break;
           }
           thruster_device = finded_device->Upcast<device::IThruster>();
           if (thruster_device == nullptr) {
@@ -102,7 +101,6 @@ inline void ThrusterShell::ParseSetSpeed(int argc, char *argv[]) {
             g_is_running = false;
             return_code_ = -1;
             return;
-            break;
           }
         } else {
           cout << "Too many arguments";

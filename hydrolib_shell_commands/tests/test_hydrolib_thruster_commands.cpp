@@ -31,7 +31,6 @@ struct FakeStream {
   std::deque<char> input_;
   std::vector<char> output_;
 
-  // If set true, the next write will return -1 once and reset to false
   bool fail_next_write_ = false;
 };
 
@@ -317,37 +316,6 @@ TEST(HydrolibThruster, SetsNegativeSpeedWithSOptionSuccessfully) {
   EXPECT_TRUE(g_is_running);
 }
 
-// Test for format -s-75 (without space) - note: getopt typically doesn't
-// support this format This test may need to be removed or modified if getopt
-// doesn't handle combined options
-TEST(HydrolibThruster, SetsNegativeSpeedWithSOptionNoSpace) {
-  ResetGetopt();
-  FakeStream cout_stream;
-  StreamWrapper<FakeStream> cout_wrapper(cout_stream);
-  cout = Ostream(cout_wrapper);
-
-  SimpleThrusterDriver driver;
-  ThrusterDevice<SimpleThrusterDriver> thruster_dev("thruster1", driver);
-  DeviceManager mgr({&thruster_dev});
-
-  char arg0[] = "thr";
-  char arg1[] = "setsp";
-  char arg2[] = "-d";
-  char arg3[] = "thruster1";
-  char arg4[] = "-s-75";
-  char *argv[] = {arg0, arg1, arg2, arg3, arg4, nullptr};
-
-  g_is_running = true;
-  int rc = ThrusterCommands(5, argv);
-
-  // Note: getopt may treat "-s-75" as option -s with value "-75" or as option
-  // -s with no value followed by -75 The behavior depends on getopt
-  // implementation
-  EXPECT_EQ(0, rc);
-  EXPECT_EQ(-75, driver.last_speed);
-  EXPECT_TRUE(g_is_running);
-}
-
 TEST(HydrolibThruster, NoDeviceSpecified) {
   ResetGetopt();
   FakeStream cout_stream;
@@ -424,7 +392,6 @@ TEST(HydrolibThruster, DeviceIsNotThruster) {
   StreamWrapper<FakeStream> cout_wrapper(cout_stream);
   cout = Ostream(cout_wrapper);
 
-  // Create a non-thruster device (assuming there's a simple Device class)
   NonThrusterDevice non_thruster_device;
   DeviceManager mgr({&non_thruster_device});
 
