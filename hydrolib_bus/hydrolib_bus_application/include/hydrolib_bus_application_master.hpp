@@ -7,6 +7,7 @@
 
 #include "hydrolib_bus_application_commands.hpp"
 #include "hydrolib_log_macro.hpp"
+#include "hydrolib_return_codes.hpp"
 #include "hydrolib_stream_concepts.hpp"
 
 namespace hydrolib::bus::application {
