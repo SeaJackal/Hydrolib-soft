@@ -113,7 +113,7 @@ ReturnCode Deserializer<RxStream, Logger>::Process() {
     } else {
       lost_bytes_ += current_processed_length_;
       LOG_WARNING(logger_, "COBS error, lost {} bytes",
-          current_processed_length_);
+                  current_processed_length_);
       current_processed_length_ = 0;
     }
   }
@@ -153,20 +153,17 @@ template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
 ReturnCode Deserializer<RxStream, Logger>::COBSDecoding(uint8_t magic_byte,
                                                         uint8_t *data,
                                                         unsigned data_length) {
-  unsigned current_appearance = data[0];
-  if (current_appearance == 0) {
-    return ReturnCode::OK;
-  }
-  data[0] = 0;
+  unsigned current_appearance = 0;
   while (data[current_appearance] != 0) {
     unsigned next_appearance = current_appearance + data[current_appearance];
     data[current_appearance] = magic_byte;
     current_appearance = next_appearance;
-    if (current_appearance > data_length) {
+    if (current_appearance >= data_length) {
       return ReturnCode::ERROR;
     }
   }
   data[current_appearance] = magic_byte;
+  data[0] = 0;
   return ReturnCode::OK;
 }
 
@@ -221,8 +218,8 @@ bool Deserializer<RxStream, Logger>::CheckCRC_() {
                                        sizeof(MessageHeader) - kCRCLength];
 
   if (target_crc != current_crc) {
-    LOG_WARNING(logger_, "Wrong CRC: expected {}, got {}",
-        target_crc, current_crc);
+    LOG_WARNING(logger_, "Wrong CRC: expected {}, got {}", target_crc,
+                current_crc);
     return false;
   }
   return true;
