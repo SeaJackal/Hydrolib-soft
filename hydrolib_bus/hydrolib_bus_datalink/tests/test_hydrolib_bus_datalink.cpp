@@ -128,6 +128,26 @@ TEST_P(TestHydrolibBusDatalinkParametrized, ChangeOneByteTest) {
   EXPECT_EQ(lost_bytes_after_valid_message, 0);
 }
 
+TEST_F(TestHydrolibBusDatalinkParametrized, MagicByteEqualsMessageLengthTest) {
+  write(tx_stream, test_data, sizeof(test_data));
+
+  stream[offsetof(hydrolib::bus::datalink::MessageBuffer, header.cobs_length)] =
+      kTestMessageLength + hydrolib::bus::datalink::kCRCLength + 1;
+
+  stream.MakeAllbytesAvailable();
+
+  int stream_size = static_cast<int>(stream.GetSize());
+
+  receiver_manager.Process();
+
+  uint8_t buffer[kTestDataLength];
+  unsigned corrupted_length = read(rx_stream, buffer, kTestMessageLength);
+  EXPECT_EQ(corrupted_length, 0);
+
+  int lost_bytes = receiver_manager.GetLostBytes();
+  EXPECT_EQ(lost_bytes, stream_size);
+}
+
 TEST_F(TestHydrolibBusDatalink, ChangeLengthTest) {
   constexpr uint8_t kTestByte = 0xAA;
 
