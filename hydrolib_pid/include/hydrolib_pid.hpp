@@ -13,6 +13,7 @@ class PID {
   void SetD(Number d_coeff);
 
   Number Process(Number input);
+  void RefineOutput(Number output);
 
  private:
   static constexpr Number kPeriod = 1.0 / FREQ_HZ;
@@ -72,6 +73,11 @@ Number PID<FREQ_HZ, Number>::Process(Number input) {
   output_[0] = current_output;
 
   return current_output;
+}
+
+template <int FREQ_HZ, typename Number>
+void PID<FREQ_HZ, Number>::RefineOutput(Number output) {
+  output_[0] = output;
 }
 
 template <int FREQ_HZ, typename Number>

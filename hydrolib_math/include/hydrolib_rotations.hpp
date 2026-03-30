@@ -18,6 +18,7 @@ class Rotation {
   Rotation ExtractZComponent();
   [[nodiscard]] Vector3D<Number> Rotate(const Vector3D<Number>& vector) const;
   [[nodiscard]] Vector3D<Number> GetAxis() const;
+  [[nodiscard]] Vector3D<Number> GetVectorPart() const;
   Rotation operator+(const Rotation& other) const;
   Rotation& operator+=(const Rotation& other);
   Rotation operator-(const Rotation& other) const;
@@ -136,6 +137,13 @@ inline Vector3D<Number> Rotation<Number>::GetAxis() const {
   Vector3D<Number> result{
       .x = quaternion_.x, .y = quaternion_.y, .z = quaternion_.z};
   Vector3D<Number>::Normalize(result);
+  return result;
+}
+
+template <ArithmeticConcept Number>
+inline Vector3D<Number> Rotation<Number>::GetVectorPart() const {
+  Vector3D<Number> result{
+      .x = quaternion_.x, .y = quaternion_.y, .z = quaternion_.z};
   return result;
 }
 
