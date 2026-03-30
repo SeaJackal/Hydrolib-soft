@@ -26,7 +26,8 @@ using Generator = ThrustGenerator<TestThruster, THRUST_COUNT>;
 using ThrusterRefsArray = std::array<TestThruster, THRUST_COUNT>;
 
 class ThrustGeneratorParamTest
-    : public ::testing::TestWithParam<hydrolib::controlling::Control> {};
+    : public ::testing::TestWithParam<
+          hydrolib::controlling::Control<hydrolib::math::FixedPointBase>> {};
 
 constinit std::array<TestThruster, THRUST_COUNT> thrusters_storage = {};
 constexpr std::array<TestThruster*, THRUST_COUNT> thruster_pointers = {
@@ -103,39 +104,46 @@ TEST_P(ThrustGeneratorParamTest, GenerationThrust) {
 
 INSTANTIATE_TEST_SUITE_P(
     ControlCases, ThrustGeneratorParamTest,
-    ::testing::Values(hydrolib::controlling::Control{.x_force = 10,
-                                                     .y_force = 0,
-                                                     .z_force = 0,
-                                                     .x_torque = 0,
-                                                     .y_torque = 0,
-                                                     .z_torque = 0},
-                      hydrolib::controlling::Control{.x_force = 0,
-                                                     .y_force = 10,
-                                                     .z_force = 0,
-                                                     .x_torque = 0,
-                                                     .y_torque = 0,
-                                                     .z_torque = 0},
-                      hydrolib::controlling::Control{.x_force = 0,
-                                                     .y_force = 0,
-                                                     .z_force = 10,
-                                                     .x_torque = 0,
-                                                     .y_torque = 0,
-                                                     .z_torque = 0},
-                      hydrolib::controlling::Control{.x_force = 0,
-                                                     .y_force = 0,
-                                                     .z_force = 0,
-                                                     .x_torque = 10,
-                                                     .y_torque = 0,
-                                                     .z_torque = 0},
-                      hydrolib::controlling::Control{.x_force = 0,
-                                                     .y_force = 0,
-                                                     .z_force = 0,
-                                                     .x_torque = 0,
-                                                     .y_torque = 10,
-                                                     .z_torque = 0},
-                      hydrolib::controlling::Control{.x_force = 0,
-                                                     .y_force = 0,
-                                                     .z_force = 0,
-                                                     .x_torque = 0,
-                                                     .y_torque = 0,
-                                                     .z_torque = 10}));
+    ::testing::Values(
+        hydrolib::controlling::Control<hydrolib::math::FixedPointBase>{
+            .x_force = 10,
+            .y_force = 0,
+            .z_force = 0,
+            .x_torque = 0,
+            .y_torque = 0,
+            .z_torque = 0},
+        hydrolib::controlling::Control<hydrolib::math::FixedPointBase>{
+            .x_force = 0,
+            .y_force = 10,
+            .z_force = 0,
+            .x_torque = 0,
+            .y_torque = 0,
+            .z_torque = 0},
+        hydrolib::controlling::Control<hydrolib::math::FixedPointBase>{
+            .x_force = 0,
+            .y_force = 0,
+            .z_force = 10,
+            .x_torque = 0,
+            .y_torque = 0,
+            .z_torque = 0},
+        hydrolib::controlling::Control<hydrolib::math::FixedPointBase>{
+            .x_force = 0,
+            .y_force = 0,
+            .z_force = 0,
+            .x_torque = 10,
+            .y_torque = 0,
+            .z_torque = 0},
+        hydrolib::controlling::Control<hydrolib::math::FixedPointBase>{
+            .x_force = 0,
+            .y_force = 0,
+            .z_force = 0,
+            .x_torque = 0,
+            .y_torque = 10,
+            .z_torque = 0},
+        hydrolib::controlling::Control<hydrolib::math::FixedPointBase>{
+            .x_force = 0,
+            .y_force = 0,
+            .z_force = 0,
+            .x_torque = 0,
+            .y_torque = 0,
+            .z_torque = 10}));

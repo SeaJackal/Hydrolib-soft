@@ -30,7 +30,7 @@ class ControlSystemShell {
   };
 
   device::IControlSystem *control_system_device;
-  controlling::Control control_;
+  controlling::Control<math::FixedPointBase> control_;
   CommandType command_type_;
   int return_code_;
 };

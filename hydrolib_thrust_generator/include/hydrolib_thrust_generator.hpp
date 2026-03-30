@@ -20,14 +20,15 @@ inline void Error([[maybe_unused]] const char* message) {
   [[maybe_unused]] int error = 1 / param;
 };
 
+template <typename Number>
 struct Control {
-  math::FixedPointBase x_force;
-  math::FixedPointBase y_force;
-  math::FixedPointBase z_force;
+  Number x_force;
+  Number y_force;
+  Number z_force;
 
-  math::FixedPointBase x_torque;
-  math::FixedPointBase y_torque;
-  math::FixedPointBase z_torque;
+  Number x_torque;
+  Number y_torque;
+  Number z_torque;
 };
 
 template <ThrusterConcept Thruster, int THRUSTERS_COUNT,
@@ -47,7 +48,7 @@ class ThrustGenerator {
       const std::array<Thruster*, THRUSTERS_COUNT>& thrusters,
       math::FixedPointBase single_clamp, math::FixedPointBase sum_clamp = 0);
 
-  void ProcessWithFeedback(Control& control) const;
+  void ProcessWithFeedback(Control<math::FixedPointBase>& control) const;
 
  private:
   ThrustArray x_rotation_to_thrust_;
@@ -204,9 +205,8 @@ consteval ThrustGenerator<Thruster, THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::
 }
 
 template <ThrusterConcept Thruster, int THRUSTERS_COUNT, bool ENABLE_SUM_CLAMP>
-void ThrustGenerator<Thruster, THRUSTERS_COUNT,
-                     ENABLE_SUM_CLAMP>::ProcessWithFeedback(Control& control)
-    const {
+void ThrustGenerator<Thruster, THRUSTERS_COUNT, ENABLE_SUM_CLAMP>::
+    ProcessWithFeedback(Control<math::FixedPointBase>& control) const {
   ThrustArray dest;
   math::FixedPointBase max = 0;
   math::FixedPointBase sum = 0;

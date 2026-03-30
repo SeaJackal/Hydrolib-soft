@@ -78,8 +78,9 @@ class MockControlSystem : public IControlSystem {
   MockControlSystem(std::string_view name) : IControlSystem(name) {}
 
  public:
-  Control control_;
-  void ControlProcess(Control &control) override {
+  Control<hydrolib::math::FixedPointBase> control_;
+  void ControlProcess(
+      Control<hydrolib::math::FixedPointBase> &control) override {
     control_.x_force = control.x_force;
     control_.y_force = control.y_force;
     control_.z_force = control.z_force;

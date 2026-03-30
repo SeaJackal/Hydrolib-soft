@@ -12,7 +12,7 @@ class IControlSystem : public Device {
   IControlSystem(std::string_view name) : Device(name, kSelfType) {}
 
  public:
-  virtual void ControlProcess(controlling::Control& control) = 0;
+  virtual void ControlProcess(controlling::Control<math::FixedPointBase>& control) = 0;
 };
 
 template <controlling::ThrusterConcept Thruster, int THRUSTERS_COUNT>
@@ -24,7 +24,7 @@ class ThrustGeneratorDevice : public IControlSystem {
 
   using ThrustArray = std::array<math::FixedPointBase, THRUSTERS_COUNT>;
 
-  void ControlProcess(controlling::Control& control) override;
+  void ControlProcess(controlling::Control<math::FixedPointBase>& control) override;
 
  private:
   controlling::ThrustGenerator<Thruster, THRUSTERS_COUNT>& thrust_generator_;
@@ -38,7 +38,7 @@ ThrustGeneratorDevice<Thruster, THRUSTERS_COUNT>::ThrustGeneratorDevice(
 
 template <controlling::ThrusterConcept Thruster, int THRUSTERS_COUNT>
 void ThrustGeneratorDevice<Thruster, THRUSTERS_COUNT>::ControlProcess(
-    controlling::Control& control) {
+    controlling::Control<math::FixedPointBase>& control) {
   return thrust_generator_.ProcessWithFeedback(control);
 }
 
