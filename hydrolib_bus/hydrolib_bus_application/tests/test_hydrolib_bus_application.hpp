@@ -2,7 +2,6 @@
 
 #include <gtest/gtest.h>
 
-#include "hydrolib_bus_application_commands.hpp"
 #include "hydrolib_bus_application_master.hpp"
 #include "hydrolib_bus_application_slave.hpp"
 #include "hydrolib_logger_mock.hpp"
@@ -13,13 +12,12 @@ class TestPublicMemory {
  public:
   static constexpr int kPublicMemoryLength = 30;
 
-  hydrolib::ReturnCode Read(void *read_buffer, unsigned address,
-                            unsigned length);
+  hydrolib::ReturnCode Read(std::span<std::byte> read_buffer, int address);
 
-  hydrolib::ReturnCode Write(const void *write_buffer, unsigned address,
-                             unsigned length);
+  hydrolib::ReturnCode Write(std::span<const std::byte> write_buffer,
+                             int address);
 
-  std::array<uint8_t, kPublicMemoryLength> memory{};
+  std::array<std::byte, kPublicMemoryLength> memory{};
 };
 
 struct TestCase {
@@ -33,7 +31,7 @@ class TestHydrolibBusApplication
  protected:
   TestHydrolibBusApplication();
 
-  hydrolib::streams::mock::MockByteStream stream{};
+  hydrolib::streams::mock::MockByteStream stream;
   TestPublicMemory memory{};
 
   hydrolib::bus::application::Master<hydrolib::streams::mock::MockByteStream,
@@ -43,5 +41,5 @@ class TestHydrolibBusApplication
                                     decltype(hydrolib::logger::mock_logger),
                                     hydrolib::streams::mock::MockByteStream>
       slave;
-  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> test_data{};
+  std::array<std::byte, TestPublicMemory::kPublicMemoryLength> test_data{};
 };
