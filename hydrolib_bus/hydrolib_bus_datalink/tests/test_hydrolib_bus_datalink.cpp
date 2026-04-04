@@ -6,19 +6,14 @@
 
 #include "hydrolib_bus_datalink_message.hpp"
 
-TestHydrolibBusDatalink::TestHydrolibBusDatalink()
-    : sender_manager(SERIALIZER_ADDRESS, stream, hydrolib::logger::mock_logger),
-      receiver_manager(DESERIALIZER_ADDRESS, stream,
-                       hydrolib::logger::mock_logger),
-      tx_stream(sender_manager, DESERIALIZER_ADDRESS),
-      rx_stream(receiver_manager, SERIALIZER_ADDRESS) {
+TestHydrolibBusDatalink::TestHydrolibBusDatalink() {
   hydrolib::logger::mock_distributor.SetAllFilters(
       0, hydrolib::logger::LogLevel::DEBUG);
-  for (uint8_t i = 0; i < kTestDataLength; i++) {
+  for (int i = 0; i < kTestDataLength; i++) {
     if (i % 3 == 0) {
       test_data[i] = hydrolib::bus::datalink::kMagicByte;
     } else {
-      test_data[i] = i;
+      test_data[i] = static_cast<std::byte>(i);
     }
   }
 }
@@ -29,7 +24,7 @@ TestHydrolibBusDatalinkStreamInterface::
 }
 
 void TestHydrolibBusDatalinkStreamInterface::Send() {
-  write(tx_stream, test_data, kTestMessageLength);
+  write(tx_stream, test_data.data(), kTestMessageLength);
   stream.MakeAllbytesAvailable();
   int lost_bytes = receiver_manager.GetLostBytes();
   receiver_manager.Process();
@@ -44,7 +39,7 @@ INSTANTIATE_TEST_CASE_P(
                       sizeof(hydrolib::bus::datalink::MessageHeader) +
                           TestHydrolibBusDatalink::kTestDataLength - 1),
     [](const testing::TestParamInfo<
-        TestHydrolibBusDatalinkParametrized::ParamType> &info) {
+        TestHydrolibBusDatalinkParametrized::ParamType>& info) {
       if (info.param == 0) {
         return std::string("MagicByte");
       } else if (static_cast<unsigned>(info.param) >
@@ -58,7 +53,7 @@ INSTANTIATE_TEST_CASE_P(
     });
 
 TEST_F(TestHydrolibBusDatalink, MessageLengthTest) {
-  int written_bytes = write(tx_stream, test_data, kTestMessageLength);
+  int written_bytes = write(tx_stream, test_data.data(), kTestMessageLength);
 
   EXPECT_EQ(written_bytes, kTestMessageLength);
   EXPECT_EQ(stream.GetSize(),
@@ -76,14 +71,14 @@ TEST_F(TestHydrolibBusDatalink, ExchangeTest) {
   for (unsigned j = 0; j < sizeof(test_cases) / sizeof(test_cases[0]); j++) {
     ASSERT_LE(test_cases[j].length + test_cases[j].offset, kTestDataLength);
 
-    int written_bytes = write(tx_stream, test_data + test_cases[j].offset,
+    int written_bytes = write(tx_stream, test_data.data() + test_cases[j].offset,
                               test_cases[j].length);
     stream.MakeAllbytesAvailable();
     EXPECT_EQ(written_bytes, test_cases[j].length);
 
     receiver_manager.Process();
 
-    uint8_t buffer[kTestDataLength];
+    std::byte buffer[kTestDataLength];
     unsigned length = read(rx_stream, buffer, test_cases[j].length);
 
     EXPECT_EQ(length, test_cases[j].length);
@@ -97,7 +92,7 @@ TEST_F(TestHydrolibBusDatalink, ExchangeTest) {
 TEST_P(TestHydrolibBusDatalinkParametrized, ChangeOneByteTest) {
   int corrupted_byte_index = GetParam();
 
-  write(tx_stream, test_data, kTestMessageLength);
+  write(tx_stream, test_data.data(), kTestMessageLength);
   stream.MakeAllbytesAvailable();
 
   stream[corrupted_byte_index]++;
@@ -105,7 +100,7 @@ TEST_P(TestHydrolibBusDatalinkParametrized, ChangeOneByteTest) {
 
   receiver_manager.Process();
 
-  uint8_t buffer[kTestDataLength];
+  std::byte buffer[kTestDataLength];
 
   unsigned corrupted_length = read(rx_stream, buffer, kTestMessageLength);
   unsigned lost_bytes_after_corrupted_message = receiver_manager.GetLostBytes();
@@ -113,7 +108,7 @@ TEST_P(TestHydrolibBusDatalinkParametrized, ChangeOneByteTest) {
   EXPECT_EQ(corrupted_length, 0);
   EXPECT_EQ(lost_bytes_after_corrupted_message, lost_bytes);
 
-  write(tx_stream, test_data, kTestMessageLength);
+  write(tx_stream, test_data.data(), kTestMessageLength);
   stream.MakeAllbytesAvailable();
   receiver_manager.Process();
 
@@ -129,7 +124,7 @@ TEST_P(TestHydrolibBusDatalinkParametrized, ChangeOneByteTest) {
 }
 
 TEST_F(TestHydrolibBusDatalinkParametrized, MagicByteEqualsMessageLengthTest) {
-  write(tx_stream, test_data, sizeof(test_data));
+  write(tx_stream, test_data.data(), sizeof(test_data));
 
   stream[offsetof(hydrolib::bus::datalink::MessageBuffer, header.cobs_length)] =
       kTestMessageLength + hydrolib::bus::datalink::kCRCLength + 1;
@@ -140,7 +135,7 @@ TEST_F(TestHydrolibBusDatalinkParametrized, MagicByteEqualsMessageLengthTest) {
 
   receiver_manager.Process();
 
-  uint8_t buffer[kTestDataLength];
+  std::byte buffer[kTestDataLength];
   unsigned corrupted_length = read(rx_stream, buffer, kTestMessageLength);
   EXPECT_EQ(corrupted_length, 0);
 
@@ -149,7 +144,7 @@ TEST_F(TestHydrolibBusDatalinkParametrized, MagicByteEqualsMessageLengthTest) {
 }
 
 TEST_F(TestHydrolibBusDatalink, ChangeLengthTest) {
-  constexpr uint8_t kTestByte = 0xAA;
+  constexpr std::byte kTestByte = std::byte(0xAA);
 
   write(tx_stream, &kTestByte, sizeof(kTestByte));
   stream.MakeAllbytesAvailable();
@@ -161,7 +156,7 @@ TEST_F(TestHydrolibBusDatalink, ChangeLengthTest) {
 
   receiver_manager.Process();
 
-  uint8_t buffer[kTestDataLength];
+  std::byte buffer[kTestDataLength];
 
   unsigned corrupted_length = read(rx_stream, buffer, kTestMessageLength);
 
@@ -182,7 +177,7 @@ TEST_F(TestHydrolibBusDatalink, ChangeLengthTest) {
     EXPECT_EQ(corrupted_length, 0);
   }
 
-  write(tx_stream, test_data, kTestMessageLength);
+  write(tx_stream, test_data.data(), kTestMessageLength);
   stream.MakeAllbytesAvailable();
   receiver_manager.Process();
 
@@ -197,10 +192,10 @@ TEST_F(TestHydrolibBusDatalink, ChangeLengthTest) {
 }
 
 TEST_F(TestHydrolibBusDatalink, ProgressiveTransmissionTest) {
-  int written_bytes = write(tx_stream, test_data, kTestMessageLength);
+  int written_bytes = write(tx_stream, test_data.data(), kTestMessageLength);
   EXPECT_EQ(written_bytes, kTestMessageLength);
 
-  uint8_t buffer[kTestMessageLength];
+  std::byte buffer[kTestMessageLength];
   int bytes_to_read = static_cast<int>(stream.GetSize());
   for (int i = 0; i < bytes_to_read; i++) {
     receiver_manager.Process();
@@ -219,7 +214,7 @@ TEST_F(TestHydrolibBusDatalink, ProgressiveTransmissionTest) {
 }
 
 TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadSome) {
-  uint8_t buffer[kTestMessageLength] = {};
+  std::byte buffer[kTestMessageLength] = {};
   int read_numbers[] = {2, 1, 5, 15, 7, 12};
   int sum = 0;
   for (int i = 0; i < sizeof(read_numbers) / sizeof(read_numbers[0]); i++) {
@@ -238,7 +233,7 @@ TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadSome) {
 }
 
 TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadByBytes) {
-  uint8_t buffer = 0;
+  std::byte buffer = std::byte(0);
   int length = 0;
   for (int i = 0; i < kTestMessageLength; i++) {
     length = read(rx_stream, &buffer, 1);
@@ -259,7 +254,7 @@ TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadByBytes) {
 }
 
 TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadMoreThanAvailable) {
-  uint8_t buffer[kTestMessageLength] = {};
+  std::byte buffer[kTestMessageLength] = {};
   int length = read(rx_stream, &buffer, kTestMessageLength + 1);
   EXPECT_EQ(length, kTestMessageLength);
   for (int i = 0; i < kTestMessageLength; i++) {
@@ -268,7 +263,7 @@ TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadMoreThanAvailable) {
 }
 
 TEST_F(TestHydrolibBusDatalinkStreamInterface, ReadFullAndNext) {
-  uint8_t buffer[kTestMessageLength] = {};
+  std::byte buffer[kTestMessageLength] = {};
   int length = read(rx_stream, buffer, kTestMessageLength);
   EXPECT_EQ(length, kTestMessageLength);
   for (int i = 0; i < kTestMessageLength; i++) {

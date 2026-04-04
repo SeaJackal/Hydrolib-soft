@@ -103,7 +103,7 @@ TEST_P(ThrustGeneratorParamTest, GenerationThrust) {
 
 INSTANTIATE_TEST_SUITE_P(
     ControlCases, ThrustGeneratorParamTest,
-    ::testing::Values(hydrolib::controlling::Control{.x_force = 10,
+    ::testing::Values(hydrolib::controlling::Control{.x_force = 1000,
                                                      .y_force = 0,
                                                      .z_force = 0,
                                                      .x_torque = 0,

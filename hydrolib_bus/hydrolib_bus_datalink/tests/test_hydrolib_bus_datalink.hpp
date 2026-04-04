@@ -2,14 +2,10 @@
 
 #include <gtest/gtest.h>
 
-#include <deque>
-
+#include "hydrolib_bus_datalink_message.hpp"
 #include "hydrolib_bus_datalink_stream.hpp"
 #include "hydrolib_logger_mock.hpp"
 #include "mock_stream.hpp"
-
-#define SERIALIZER_ADDRESS 3
-#define DESERIALIZER_ADDRESS 4
 
 class TestHydrolibBusDatalink : public ::testing::Test {
  public:
@@ -17,6 +13,11 @@ class TestHydrolibBusDatalink : public ::testing::Test {
       hydrolib::bus::datalink::kMaxDataLength;
   static constexpr int kTestDataLength =
       hydrolib::bus::datalink::kMaxDataLength;
+
+  static constexpr hydrolib::bus::datalink::AddressType kSerializerAddress =
+      std::byte(3);
+  static constexpr hydrolib::bus::datalink::AddressType kDeserializerAddress =
+      std::byte(4);
 
  protected:
   TestHydrolibBusDatalink();
@@ -26,20 +27,21 @@ class TestHydrolibBusDatalink : public ::testing::Test {
   hydrolib::bus::datalink::StreamManager<
       hydrolib::streams::mock::MockByteStream,
       decltype(hydrolib::logger::mock_logger)>
-      sender_manager;
+      sender_manager{kSerializerAddress, stream, hydrolib::logger::mock_logger};
   hydrolib::bus::datalink::StreamManager<
       hydrolib::streams::mock::MockByteStream,
       decltype(hydrolib::logger::mock_logger)>
-      receiver_manager;
+      receiver_manager{kDeserializerAddress, stream,
+                       hydrolib::logger::mock_logger};
 
   hydrolib::bus::datalink::Stream<hydrolib::streams::mock::MockByteStream,
                                   decltype(hydrolib::logger::mock_logger)>
-      tx_stream;
+      tx_stream{sender_manager, kDeserializerAddress};
   hydrolib::bus::datalink::Stream<hydrolib::streams::mock::MockByteStream,
                                   decltype(hydrolib::logger::mock_logger)>
-      rx_stream;
+      rx_stream{receiver_manager, kSerializerAddress};
 
-  uint8_t test_data[kTestDataLength];
+  std::array<std::byte, kTestDataLength> test_data{};
 };
 
 class TestHydrolibBusDatalinkStreamInterface : public TestHydrolibBusDatalink {

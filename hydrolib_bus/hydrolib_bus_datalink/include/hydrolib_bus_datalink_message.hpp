@@ -1,28 +1,29 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 namespace hydrolib::bus::datalink {
 
-using AddressType = uint8_t;
+using AddressType = std::byte;
 
 struct MessageHeader {
-  uint8_t magic_byte;
+  std::byte magic_byte;
   AddressType dest_address;
   AddressType src_address;
   uint8_t length;
   uint8_t cobs_length;
 } __attribute__((__packed__));
 
-constexpr uint8_t kMagicByte = 0xAA;
-constexpr unsigned kCRCLength = 1;
-constexpr unsigned kMaxMessageLength = UINT8_MAX;
-constexpr unsigned kMaxDataLength =
+constexpr std::byte kMagicByte = std::byte(0xAA);
+constexpr int kCRCLength = 1;
+constexpr int kMaxMessageLength = UINT8_MAX;
+constexpr int kMaxDataLength =
     kMaxMessageLength - sizeof(MessageHeader) - kCRCLength;
 
 struct MessageBuffer {
   MessageHeader header;
-  uint8_t data_and_crc[kMaxDataLength + kCRCLength]; //NOLINT
+  std::byte data_and_crc[kMaxDataLength + kCRCLength];  // NOLINT
 } __attribute__((__packed__));
 
 }  // namespace hydrolib::bus::datalink
