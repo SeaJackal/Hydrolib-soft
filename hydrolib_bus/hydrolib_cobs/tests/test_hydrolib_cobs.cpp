@@ -71,12 +71,13 @@ TEST_P(TestCOBS, EncodeDecode) {
   const auto& data = GetParam();
 
   auto serialized_data = data;
-  hydrolib::cobs::Encode<std::byte(kMagicByte)>(
+  int encoded_length = hydrolib::cobs::Encode<std::byte(kMagicByte)>(
       std::as_writable_bytes(std::span(serialized_data)));
   EXPECT_TRUE(std::ranges::find(serialized_data, kMagicByte) ==
               serialized_data.end());
 
-  hydrolib::cobs::Decode<std::byte(kMagicByte)>(
-      std::as_writable_bytes(std::span(serialized_data)));
+  auto result = hydrolib::cobs::Decode<std::byte(kMagicByte)>(
+      encoded_length, std::as_writable_bytes(std::span(serialized_data)));
+  EXPECT_EQ(result, hydrolib::ReturnCode::OK);
   EXPECT_EQ(serialized_data, data);
 }
