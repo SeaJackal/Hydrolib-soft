@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.10)
-
 set(LIBRARY_NAME HydrolibAllocator)
 
 add_library(${LIBRARY_NAME} INTERFACE)
