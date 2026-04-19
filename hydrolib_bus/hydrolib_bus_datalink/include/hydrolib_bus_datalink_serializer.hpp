@@ -37,7 +37,7 @@ constexpr Serializer<TxStream, Logger>::Serializer(AddressType address,
                                                    TxStream& tx_stream,
                                                    Logger& logger)
     : address_(address), tx_stream_(tx_stream), logger_(logger) {
-  current_message_.header.magic_byte = kMagicByte;
+  current_message_.magic_byte = kMagicByte;
   current_message_.header.cobs_length = 0;
 }
 
@@ -47,19 +47,20 @@ ReturnCode Serializer<TxStream, Logger>::Process(
   current_message_.header.dest_address = dest_address;
   current_message_.header.src_address = address_;
   current_message_.header.cobs_length = 0;
-  current_message_.header.length =
-      static_cast<uint8_t>(sizeof(MessageHeader) + data.size() + kCRCLength);
+  current_message_.header.length = static_cast<uint8_t>(
+      sizeof(kMagicByte) + sizeof(MessageHeader) + data.size() + kCRCLength);
   std::ranges::copy(data,
                     static_cast<std::byte*>(current_message_.data_and_crc));
-  current_message_.data_and_crc[data.size()] = static_cast<std::byte>(
-      crc::CountCRC8(reinterpret_cast<uint8_t*>(&current_message_),
-                     sizeof(MessageHeader) + data.size()));
+  crc::CRC8 crc8;
+  crc8.Next(std::as_bytes(std::span(&current_message_, 1))
+                .subspan(0, current_message_.header.length - kCRCLength));
+  current_message_.data_and_crc[data.size()] = crc8.Get();
 
-  cobs::Encode<kMagicByte>(
+  current_message_.header.cobs_length = cobs::Encode<kMagicByte>(
       std::as_writable_bytes(std::span(&current_message_, 1))
-          .subspan(offsetof(MessageBuffer, header.cobs_length),
-                   current_message_.header.length - sizeof(MessageHeader) +
-                       sizeof(MessageHeader::cobs_length)));
+          .subspan(offsetof(MessageBuffer, data_and_crc),
+                   current_message_.header.length - sizeof(MessageHeader) -
+                       kCRCLength));
 
   int res =
       write(tx_stream_, &current_message_, current_message_.header.length);

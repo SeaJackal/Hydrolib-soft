@@ -19,19 +19,17 @@ class TestCOBS : public ::testing::Test,
     for (auto& elem : result) {
       elem = kMagicByte;
     }
-    result[0] = 0;
     return result;
   }
 
-  static std::vector<uint8_t> GenerateWithoutMagicBytes(int number) {
+  static std::vector<uint8_t> GenerateWithoutMagicBytes(int number, int base) {
     std::vector<uint8_t> result(number);
     for (int i = 0; i != number; ++i) {
-      result[i] = i;
+      result[i] = (i + base) % UINT8_MAX;
     }
     if (number > kMagicByte) {
       result[kMagicByte] = 0;
     }
-    result[0] = 0;
     return result;
   }
 
@@ -44,20 +42,20 @@ class TestCOBS : public ::testing::Test,
     for (int i = 1; i < number; i += magic_byte_period) {
       result[i] = kMagicByte;
     }
-    result[0] = 0;
     return result;
   }
 
   static inline std::vector<std::vector<uint8_t>> cases{
-      {0, 2, 3, kMagicByte, 4, 5, kMagicByte},
+      {1, 2, 3, kMagicByte, 4, 5, kMagicByte},
       {0, kMagicByte, 31, kMagicByte, 90, kMagicByte},
       {0, 42, kMagicByte, kMagicByte, 0},
       GenerateOnlyMagicBytes(13),
       GenerateOnlyMagicBytes(1),
       GenerateOnlyMagicBytes(UINT8_MAX),
-      GenerateWithoutMagicBytes(17),
-      GenerateWithoutMagicBytes(1),
-      GenerateWithoutMagicBytes(UINT8_MAX),
+      GenerateWithoutMagicBytes(17, 0),
+      GenerateWithoutMagicBytes(14, 5),
+      GenerateWithoutMagicBytes(1, 7),
+      GenerateWithoutMagicBytes(UINT8_MAX, 0),
       GenerateWithMagicBytes(UINT8_MAX, 50),
       GenerateWithMagicBytes(50, 7),
       GenerateWithMagicBytes(12, 2),

@@ -57,7 +57,8 @@ TEST_F(TestHydrolibBusDatalink, MessageLengthTest) {
 
   EXPECT_EQ(written_bytes, kTestMessageLength);
   EXPECT_EQ(stream.GetSize(),
-            kTestDataLength + sizeof(hydrolib::bus::datalink::MessageHeader) +
+            kTestDataLength + sizeof(hydrolib::bus::datalink::kMagicByte) +
+                sizeof(hydrolib::bus::datalink::MessageHeader) +
                 hydrolib::bus::datalink::kCRCLength);
 }
 
@@ -71,8 +72,9 @@ TEST_F(TestHydrolibBusDatalink, ExchangeTest) {
   for (unsigned j = 0; j < sizeof(test_cases) / sizeof(test_cases[0]); j++) {
     ASSERT_LE(test_cases[j].length + test_cases[j].offset, kTestDataLength);
 
-    int written_bytes = write(tx_stream, test_data.data() + test_cases[j].offset,
-                              test_cases[j].length);
+    int written_bytes =
+        write(tx_stream, test_data.data() + test_cases[j].offset,
+              test_cases[j].length);
     stream.MakeAllbytesAvailable();
     EXPECT_EQ(written_bytes, test_cases[j].length);
 
@@ -149,7 +151,7 @@ TEST_F(TestHydrolibBusDatalink, ChangeLengthTest) {
   write(tx_stream, &kTestByte, sizeof(kTestByte));
   stream.MakeAllbytesAvailable();
 
-  stream[offsetof(hydrolib::bus::datalink::MessageHeader, length)] =
+  stream[offsetof(hydrolib::bus::datalink::MessageBuffer, header.length)] =
       hydrolib::bus::datalink::kMaxMessageLength;
   int small_message_length = static_cast<int>(stream.GetSize());
   int lost_bytes = small_message_length;

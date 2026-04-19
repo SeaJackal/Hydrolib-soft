@@ -87,10 +87,11 @@ constexpr StreamManager<RxTxStream, Logger, kMatesCount>::StreamManager(
 template <concepts::stream::ByteFullStreamConcept RxTxStream, typename Logger,
           int kMatesCount>
 void StreamManager<RxTxStream, Logger, kMatesCount>::Process() {
-  ReturnCode result = deserializer_.Process();
+  auto result = deserializer_.Process();
   if (result == ReturnCode::OK) {
-    AddressType message_source_address = deserializer_.GetSourceAddress();
-    auto message_data = deserializer_.GetData();
+    auto message = static_cast<RxInfo>(result);
+    auto message_source_address = message.GetSrcAddress();
+    auto message_data = message.GetData();
 
     for (int i = 0; i < streams_count_; i++) {
       if (streams_[i]->mate_address_ == message_source_address) {

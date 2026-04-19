@@ -8,7 +8,6 @@ namespace hydrolib::bus::datalink {
 using AddressType = std::byte;
 
 struct MessageHeader {
-  std::byte magic_byte;
   AddressType dest_address;
   AddressType src_address;
   uint8_t length;
@@ -19,9 +18,10 @@ constexpr std::byte kMagicByte = std::byte(0xAA);
 constexpr int kCRCLength = 1;
 constexpr int kMaxMessageLength = UINT8_MAX;
 constexpr int kMaxDataLength =
-    kMaxMessageLength - sizeof(MessageHeader) - kCRCLength;
+    kMaxMessageLength - sizeof(MessageHeader) - sizeof(kMagicByte) - kCRCLength;
 
 struct MessageBuffer {
+  std::byte magic_byte;
   MessageHeader header;
   std::byte data_and_crc[kMaxDataLength + kCRCLength];  // NOLINT
 } __attribute__((__packed__));
