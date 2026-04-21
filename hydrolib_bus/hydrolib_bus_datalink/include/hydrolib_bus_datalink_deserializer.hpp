@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <span>
 
 #include "hydrolib_bus_datalink_message.hpp"
@@ -24,22 +25,40 @@ class Deserializer final {
   Deserializer& operator=(Deserializer&&) = delete;
   ~Deserializer() = default;
 
-  Expected<RxInfo> Process();
+  Expected<MessageInfo> Process();
 
-  [[nodiscard]] int GetLostBytes() const;
+  [[nodiscard]] int GetLostPackages() const;
 
  private:
   class RxReader;
   class Synchronizer;
   class MessageReader;
-  enum class State { kSynchronizing, kReadingMessage };
+
+  struct RxInfo {
+    MessageHeader header{};
+    MessageData data;
+    std::byte crc{};
+  };
+
+  enum class State {
+    kSynchronizing,
+    kReadingMessage,
+    kCheckingAddress,
+    kDecodingMessage
+  };
+
+  static bool CheckAddress(MessageHeader header, AddressType self_address);
+  static std::optional<MessageInfo> DecodeMessage(RxInfo info, Logger& logger);
+
+  Logger& logger_;
+  AddressType self_address_;
 
   Synchronizer synchronizer_;
   MessageReader message_reader_;
 
   State current_state_ = State::kSynchronizing;
 
-  int lost_bytes_ = 0;
+  int lost_packages_ = 0;
 };
 
 template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
@@ -81,7 +100,7 @@ class Deserializer<RxStream, Logger>::Synchronizer {
 template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
 class Deserializer<RxStream, Logger>::MessageReader {
  public:
-  explicit MessageReader(RxStream& stream, AddressType address, Logger& logger);
+  explicit MessageReader(RxStream& stream, Logger& logger);
   MessageReader(const MessageReader&) = delete;
   MessageReader(MessageReader&&) = delete;
   MessageReader& operator=(const MessageReader&) = delete;
@@ -91,27 +110,35 @@ class Deserializer<RxStream, Logger>::MessageReader {
   Expected<RxInfo> operator()();
 
  private:
-  enum class State { kReadingHeader, kReadingMessage, kReadingCheckSum };
+  enum class State {
+    kStartReadingHeader,
+    kReadingHeader,
+    kStartReadingMessage,
+    kReadingMessage,
+    kStartReadingCheckSum,
+    kReadingCheckSum
+  };
 
   Logger& logger_;
   RxReader reader_;
-  AddressType address_;
 
-  State current_state_ = State::kReadingHeader;
+  State current_state_ = State::kStartReadingHeader;
   RxInfo current_rx_info_;
-  MessageHeader current_header_{};
-  std::byte current_crc_{};
 };
 
 template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
 constexpr Deserializer<RxStream, Logger>::Deserializer(AddressType address,
                                                        RxStream& rx_stream,
                                                        Logger& logger)
-    : synchronizer_(rx_stream, logger),
-      message_reader_(rx_stream, address, logger) {}
+    : logger_(logger),
+      self_address_(address),
+      synchronizer_(rx_stream, logger),
+      message_reader_(rx_stream, logger) {}
 
 template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-Expected<RxInfo> Deserializer<RxStream, Logger>::Process() {
+Expected<MessageInfo> Deserializer<RxStream, Logger>::Process() {
+  RxInfo info;
+
   while (true) {
     switch (current_state_) {
       case State::kSynchronizing: {
@@ -120,25 +147,72 @@ Expected<RxInfo> Deserializer<RxStream, Logger>::Process() {
           return result;
         }
         current_state_ = State::kReadingMessage;
+        break;
       }
       case State::kReadingMessage: {
         auto result = message_reader_();
-        if (static_cast<ReturnCode>(result) == ReturnCode::OK) {
+        if (static_cast<ReturnCode>(result) != ReturnCode::OK) {
+          return static_cast<ReturnCode>(result);
+        }
+        current_state_ = State::kCheckingAddress;
+        info = result;
+        break;
+      }
+      case State::kCheckingAddress: {
+        auto result = CheckAddress(info.header, self_address_);
+        if (!result) {
           current_state_ = State::kSynchronizing;
-          return result;
+        } else {
+          current_state_ = State::kDecodingMessage;
         }
-        if (static_cast<ReturnCode>(result) != ReturnCode::FAIL) {
-          return result;
-        }
+        break;
+      }
+      case State::kDecodingMessage: {
+        auto result = DecodeMessage(info, logger_);
         current_state_ = State::kSynchronizing;
+        if (!result) {
+          lost_packages_++;
+          break;
+        }
+        return *result;
       }
     }
   }
 }
 
 template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-int Deserializer<RxStream, Logger>::GetLostBytes() const {
-  return lost_bytes_;
+int Deserializer<RxStream, Logger>::GetLostPackages() const {
+  return lost_packages_;
+}
+
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
+std::optional<MessageInfo> Deserializer<RxStream, Logger>::DecodeMessage(
+    RxInfo info, Logger& logger) {
+  ReturnCode res = cobs::Decode<kMagicByte>(info.header.cobs_length, info.data);
+  info.header.cobs_length = 0;
+  if (res != ReturnCode::OK) {
+    LOG_WARNING(logger, "COBS error");
+    return {};
+  }
+
+  crc::CRC8 crc_counter;
+  crc_counter.Next(kMagicByte);
+  crc_counter.Next(std::as_writable_bytes(std::span(&info.header, 1)));
+  crc_counter.Next(info.data);
+  auto target_crc = crc_counter.Get();
+
+  if (target_crc != info.crc) {
+    LOG_WARNING(logger, "Wrong CRC: expected {}, got {}",
+                static_cast<int>(target_crc), static_cast<int>(info.crc));
+    return {};
+  }
+  return MessageInfo{info.header.src_address, info.data};
+}
+
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
+bool Deserializer<RxStream, Logger>::CheckAddress(MessageHeader header,
+                                                  AddressType self_address) {
+  return header.dest_address == self_address;
 }
 
 template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
@@ -164,10 +238,10 @@ hydrolib::ReturnCode Deserializer<RxStream, Logger>::RxReader::operator()() {
   if (read_length < 0) {
     return ReturnCode::ERROR;
   }
+  current_length_ += read_length;
   if (read_length == remaining_length) {
     return ReturnCode::OK;
   }
-  current_length_ += read_length;
   return ReturnCode::NO_DATA;
 }
 
@@ -196,67 +270,60 @@ Deserializer<RxStream, Logger>::Synchronizer::operator()() {
 }
 
 template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-Deserializer<RxStream, Logger>::MessageReader::MessageReader(
-    RxStream& stream, AddressType address, Logger& logger)
-    : logger_(logger), reader_(stream), address_(address) {
-  reader_.Start(std::as_writable_bytes(std::span(&current_header_, 1)));
-}
+Deserializer<RxStream, Logger>::MessageReader::MessageReader(RxStream& stream,
+                                                             Logger& logger)
+    : logger_(logger), reader_(stream) {}
 
 template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-Expected<RxInfo> Deserializer<RxStream, Logger>::MessageReader::operator()() {
+Expected<typename Deserializer<RxStream, Logger>::RxInfo>
+Deserializer<RxStream, Logger>::MessageReader::operator()() {
   while (true) {
     auto result = reader_();
     if (result != ReturnCode::OK) {
       return result;
     }
     switch (current_state_) {
+      case State::kStartReadingHeader: {
+        reader_.Start(
+            std::as_writable_bytes(std::span(&current_rx_info_.header, 1)));
+        current_state_ = State::kReadingHeader;
+        break;
+      }
       case State::kReadingHeader: {
-        if (current_header_.dest_address != address_) {
-          reader_.Start(std::as_writable_bytes(std::span(&current_header_, 1)));
+        if (current_rx_info_.header.length < kMinMessageLength ||
+            current_rx_info_.header.length > kMaxMessageLength) {
+          LOG_WARNING(logger_, "Wrong length: {}",
+                      current_rx_info_.header.length);
+          current_state_ = State::kStartReadingHeader;
           return ReturnCode::FAIL;
         }
-        current_rx_info_ = RxInfo(current_header_.src_address,
-                                  current_header_.length - sizeof(kMagicByte) -
-                                      sizeof(MessageHeader) - kCRCLength);
-        reader_.Start(current_rx_info_.GetData());
+        current_rx_info_.data =
+            MessageData(current_rx_info_.header.length - sizeof(kMagicByte) -
+                        sizeof(MessageHeader) - kCRCLength);
+        current_state_ = State::kStartReadingMessage;
+        break;
+      }
+      case State::kStartReadingMessage: {
+        reader_.Start(current_rx_info_.data);
         current_state_ = State::kReadingMessage;
         break;
       }
       case State::kReadingMessage: {
-        ReturnCode res = cobs::Decode<kMagicByte>(current_header_.cobs_length,
-                                                  current_rx_info_.GetData());
-        current_header_.cobs_length = 0;
-        if (res != ReturnCode::OK) {
-          LOG_WARNING(logger_, "COBS error");
-          current_state_ = State::kReadingHeader;
-          return ReturnCode::FAIL;
-        }
-        reader_.Start(std::span(&current_crc_, 1));
+        current_state_ = State::kStartReadingCheckSum;
+        break;
+      }
+      case State::kStartReadingCheckSum: {
+        reader_.Start(
+            std::as_writable_bytes(std::span(&current_rx_info_.crc, 1)));
         current_state_ = State::kReadingCheckSum;
         break;
       }
       case State::kReadingCheckSum: {
-        crc::CRC8 crc_counter;
-        crc_counter.Next(kMagicByte);
-        crc_counter.Next(
-            std::as_writable_bytes(std::span(&current_header_, 1)));
-        crc_counter.Next(current_rx_info_.GetData());
-        auto target_crc = crc_counter.Get();
-
-        current_state_ = State::kReadingHeader;
-        reader_.Start(std::as_writable_bytes(std::span(&current_header_, 1)));
-        if (target_crc != current_crc_) {
-          LOG_WARNING(logger_, "Wrong CRC: expected {}, got {}",
-                      static_cast<int>(target_crc),
-                      static_cast<int>(current_crc_));
-          return ReturnCode::FAIL;
-        }
+        current_state_ = State::kStartReadingHeader;
         return current_rx_info_;
       }
     }
   }
-
-  return RxInfo(current_header_.src_address, current_header_.length);
 }
 
 }  // namespace hydrolib::bus::datalink

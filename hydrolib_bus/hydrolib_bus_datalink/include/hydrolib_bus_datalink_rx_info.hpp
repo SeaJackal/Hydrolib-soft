@@ -6,27 +6,34 @@
 #include "hydrolib_bus_datalink_message.hpp"
 
 namespace hydrolib::bus::datalink {
-class RxInfo {
- public:
-  RxInfo() = default;
-  RxInfo(AddressType src_address, int length);
 
-  [[nodiscard]] std::span<std::byte> GetData();
-  [[nodiscard]] AddressType GetSrcAddress() const;
+class MessageData {
+ public:
+  MessageData() = default;
+  explicit MessageData(int length);
+
+  operator std::span<std::byte>();
+  operator std::span<const std::byte>() const;
 
  private:
-  AddressType src_address_ = std::byte(0);
   int length_ = 0;
   std::array<std::byte, kMaxDataLength>
       data_{};  // TODO(vscode): make allocation
 };
 
-inline RxInfo::RxInfo(AddressType src_address, int length)
-    : src_address_(src_address), length_(length) {}
+struct MessageInfo {
+  AddressType src_address = std::byte(0);
+  MessageData data;
+};
 
-inline std::span<std::byte> RxInfo::GetData() {
+inline MessageData::MessageData(int length) : length_(length) {}
+
+inline MessageData::operator std::span<std::byte>() {
   return std::span(data_).subspan(0, length_);
 }
 
-inline AddressType RxInfo::GetSrcAddress() const { return src_address_; }
+inline MessageData::operator std::span<const std::byte>() const {
+  return std::span(data_).subspan(0, length_);
+}
+
 }  // namespace hydrolib::bus::datalink

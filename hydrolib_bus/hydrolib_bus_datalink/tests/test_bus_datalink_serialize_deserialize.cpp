@@ -97,9 +97,9 @@ void SerializeDeserialize::SimpleExchange(const std::vector<std::byte>& data) {
   ASSERT_EQ(static_cast<hydrolib::ReturnCode>(result),
             hydrolib::ReturnCode::OK);
 
-  auto message = static_cast<hydrolib::bus::datalink::RxInfo>(result);
-  auto message_data = message.GetData();
-  EXPECT_EQ(message.GetSrcAddress(), kSerializerAddress);
+  auto message = static_cast<hydrolib::bus::datalink::MessageInfo>(result);
+  auto message_data = static_cast<std::span<std::byte>>(message.data);
+  EXPECT_EQ(message.src_address, kSerializerAddress);
   ASSERT_EQ(message_data.size(), data.size());
   for (int i = 0; i != static_cast<int>(message_data.size()); ++i) {
     EXPECT_EQ(message_data[i], data[i]);
@@ -193,9 +193,9 @@ TEST_P(SerializeDeserializeProgressive, ProgressiveExchange) {
   ASSERT_EQ(static_cast<hydrolib::ReturnCode>(result),
             hydrolib::ReturnCode::OK);
 
-  auto message = static_cast<hydrolib::bus::datalink::RxInfo>(result);
-  auto message_data = message.GetData();
-  EXPECT_EQ(message.GetSrcAddress(), kSerializerAddress);
+  auto message = static_cast<hydrolib::bus::datalink::MessageInfo>(result);
+  auto message_data = static_cast<std::span<std::byte>>(message.data);
+  EXPECT_EQ(message.src_address, kSerializerAddress);
   ASSERT_EQ(message_data.size(), data.size());
   for (int i = 0; i != static_cast<int>(message_data.size()); ++i) {
     EXPECT_EQ(message_data[i], data[i]);

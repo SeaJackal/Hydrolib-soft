@@ -58,9 +58,12 @@ ReturnCode Serializer<TxStream, Logger>::Process(
 
   current_message_.header.cobs_length = cobs::Encode<kMagicByte>(
       std::as_writable_bytes(std::span(&current_message_, 1))
-          .subspan(offsetof(MessageBuffer, data_and_crc),
-                   current_message_.header.length - sizeof(MessageHeader) -
-                       kCRCLength));
+          .subspan(
+              offsetof(MessageBuffer, data_and_crc),
+              current_message_.header.length -
+                  offsetof(MessageBuffer, data_and_crc) -
+                  kCRCLength));  // TODO(sea_jackal): need tests for specific
+                                 // crc, crc = kMagicByte for example
 
   int res =
       write(tx_stream_, &current_message_, current_message_.header.length);

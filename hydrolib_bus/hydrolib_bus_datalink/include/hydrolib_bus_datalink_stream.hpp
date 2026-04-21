@@ -31,7 +31,7 @@ class StreamManager {
   ~StreamManager() = default;
 
   void Process();
-  [[nodiscard]] int GetLostBytes() const;
+  [[nodiscard]] int GetLostPackages() const;
 
  private:
   using SerializerType = Serializer<RxTxStream, Logger>;
@@ -89,9 +89,9 @@ template <concepts::stream::ByteFullStreamConcept RxTxStream, typename Logger,
 void StreamManager<RxTxStream, Logger, kMatesCount>::Process() {
   auto result = deserializer_.Process();
   if (result == ReturnCode::OK) {
-    auto message = static_cast<RxInfo>(result);
-    auto message_source_address = message.GetSrcAddress();
-    auto message_data = message.GetData();
+    auto message = static_cast<MessageInfo>(result);
+    auto message_source_address = message.src_address;
+    auto message_data = static_cast<std::span<std::byte>>(message.data);
 
     for (int i = 0; i < streams_count_; i++) {
       if (streams_[i]->mate_address_ == message_source_address) {
@@ -108,8 +108,8 @@ void StreamManager<RxTxStream, Logger, kMatesCount>::Process() {
 
 template <concepts::stream::ByteFullStreamConcept RxTxStream, typename Logger,
           int kMatesCount>
-int StreamManager<RxTxStream, Logger, kMatesCount>::GetLostBytes() const {
-  return deserializer_.GetLostBytes();
+int StreamManager<RxTxStream, Logger, kMatesCount>::GetLostPackages() const {
+  return deserializer_.GetLostPackages();
 }
 
 template <concepts::stream::ByteFullStreamConcept RxTxStream, typename Logger,

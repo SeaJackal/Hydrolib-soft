@@ -16,6 +16,8 @@ struct MessageHeader {
 
 constexpr std::byte kMagicByte = std::byte(0xAA);
 constexpr int kCRCLength = 1;
+constexpr int kMinMessageLength =
+    sizeof(kMagicByte) + sizeof(MessageHeader) + kCRCLength + 1;
 constexpr int kMaxMessageLength = UINT8_MAX;
 constexpr int kMaxDataLength =
     kMaxMessageLength - sizeof(MessageHeader) - sizeof(kMagicByte) - kCRCLength;
