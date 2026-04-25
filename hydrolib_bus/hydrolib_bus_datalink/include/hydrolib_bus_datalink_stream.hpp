@@ -57,12 +57,14 @@ class StreamManager<RxTxStream, Logger, kMateAddresses...>::RxManager {
  private:
   struct RxMailbox {
     AddressType address{};
-    ring_queue::RingQueue<kMaxDataLength> queue; // TODO(sea_jackal): make normal queue with MessageData
+    ring_queue::RingQueue<kMaxDataLength>
+        queue;  // TODO(sea_jackal): make normal queue with MessageData
   };
 
   std::array<RxMailbox, sizeof...(kMateAddresses)> mailboxes_{
       {kMateAddresses, ring_queue::RingQueue<kMaxDataLength>()}...};
-  std::array<std::byte, kMaxDataLength> buffer_{}; // TODO(sea_jackal): remove after queue adding
+  std::array<std::byte, kMaxDataLength>
+      buffer_{};  // TODO(sea_jackal): remove after queue adding
 };
 
 template <concepts::stream::ByteFullStreamConcept RxTxStream, typename Logger,
@@ -137,6 +139,7 @@ StreamManager<RxTxStream, Logger, kMateAddresses...>::RxManager::Pull(
     AddressType address, int length) {
   for (int i = 0; i < sizeof...(kMateAddresses); i++) {
     if (mailboxes_[i].address == address) {
+      length = std::min(length, mailboxes_[i].queue.GetLength());
       mailboxes_[i].queue.Pull(buffer_.data(), length);
       return std::span(buffer_).subspan(0, length);
     }
