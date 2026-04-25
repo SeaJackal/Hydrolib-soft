@@ -13,7 +13,7 @@
 namespace hydrolib::bus::datalink {
 template <concepts::stream::ByteFullStreamConcept RxTxStream, typename Logger,
           AddressType... kMateAddresses>
-class StreamManager {
+class StreamManager final {
  public:
   template <AddressType kMateAddress>
   class Stream;
@@ -42,7 +42,7 @@ class StreamManager {
 
 template <concepts::stream::ByteFullStreamConcept RxTxStream, typename Logger,
           AddressType... kMateAddresses>
-class StreamManager<RxTxStream, Logger, kMateAddresses...>::RxManager {
+class StreamManager<RxTxStream, Logger, kMateAddresses...>::RxManager final {
  public:
   RxManager() = default;
   RxManager(const RxManager&) = delete;
@@ -70,7 +70,7 @@ class StreamManager<RxTxStream, Logger, kMateAddresses...>::RxManager {
 template <concepts::stream::ByteFullStreamConcept RxTxStream, typename Logger,
           AddressType... kMateAddresses>
 template <AddressType kMateAddress>
-class StreamManager<RxTxStream, Logger, kMateAddresses...>::Stream {
+class StreamManager<RxTxStream, Logger, kMateAddresses...>::Stream final {
  public:
   constexpr explicit Stream(
       StreamManager<RxTxStream, Logger, kMateAddresses...>& stream_manager);
