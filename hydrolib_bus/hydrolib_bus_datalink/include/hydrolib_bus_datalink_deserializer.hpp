@@ -62,7 +62,7 @@ class Deserializer final {
 };
 
 template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-class Deserializer<RxStream, Logger>::RxReader {
+class Deserializer<RxStream, Logger>::RxReader final {
  public:
   explicit RxReader(RxStream& stream);
   RxReader(const RxReader&) = delete;
@@ -81,7 +81,7 @@ class Deserializer<RxStream, Logger>::RxReader {
 };
 
 template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-class Deserializer<RxStream, Logger>::Synchronizer {
+class Deserializer<RxStream, Logger>::Synchronizer final {
  public:
   explicit Synchronizer(RxStream& stream, Logger& logger);
   Synchronizer(const Synchronizer&) = delete;
@@ -98,7 +98,7 @@ class Deserializer<RxStream, Logger>::Synchronizer {
 };
 
 template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-class Deserializer<RxStream, Logger>::MessageReader {
+class Deserializer<RxStream, Logger>::MessageReader final {
  public:
   explicit MessageReader(RxStream& stream, Logger& logger);
   MessageReader(const MessageReader&) = delete;

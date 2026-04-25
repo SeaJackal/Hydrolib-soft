@@ -26,20 +26,18 @@ class TestHydrolibBusDatalink : public ::testing::Test {
 
   hydrolib::bus::datalink::StreamManager<
       hydrolib::streams::mock::MockByteStream,
-      decltype(hydrolib::logger::mock_logger)>
+      decltype(hydrolib::logger::mock_logger), kDeserializerAddress>
       sender_manager{kSerializerAddress, stream, hydrolib::logger::mock_logger};
   hydrolib::bus::datalink::StreamManager<
       hydrolib::streams::mock::MockByteStream,
-      decltype(hydrolib::logger::mock_logger)>
+      decltype(hydrolib::logger::mock_logger), kSerializerAddress>
       receiver_manager{kDeserializerAddress, stream,
                        hydrolib::logger::mock_logger};
 
-  hydrolib::bus::datalink::Stream<hydrolib::streams::mock::MockByteStream,
-                                  decltype(hydrolib::logger::mock_logger)>
-      tx_stream{sender_manager, kDeserializerAddress};
-  hydrolib::bus::datalink::Stream<hydrolib::streams::mock::MockByteStream,
-                                  decltype(hydrolib::logger::mock_logger)>
-      rx_stream{receiver_manager, kSerializerAddress};
+  decltype(sender_manager)::Stream<kDeserializerAddress> tx_stream{
+      sender_manager};
+  decltype(receiver_manager)::Stream<kSerializerAddress> rx_stream{
+      receiver_manager};
 
   std::array<std::byte, kTestDataLength> test_data{};
 };
