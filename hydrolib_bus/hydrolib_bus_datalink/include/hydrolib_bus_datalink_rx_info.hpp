@@ -1,39 +1,66 @@
 #pragma once
 
-#include <array>
 #include <span>
 
 #include "hydrolib_bus_datalink_message.hpp"
 
 namespace hydrolib::bus::datalink {
 
-class MessageData {
+template <typename Allocator>
+class MessageData final {
  public:
   MessageData() = default;
   explicit MessageData(int length);
+  MessageData(const MessageData& other) = delete;
+  MessageData(MessageData&& other);
+  MessageData& operator=(const MessageData& other) = delete;
+  MessageData& operator=(MessageData&& other);
+  ~MessageData();
 
-  operator std::span<std::byte>();
-  operator std::span<const std::byte>() const;
+  operator std::span<std::byte>(); // NOLINT
+  operator std::span<const std::byte>() const; // NOLINT
 
  private:
-  int length_ = 0;
-  std::array<std::byte, kMaxDataLength>
-      data_{};  // TODO(vscode): make allocation
+  std::span<std::byte> data_;
 };
 
-struct MessageInfo {
+template <typename Allocator>
+struct MessageInfo final {
   AddressType src_address = std::byte(0);
-  MessageData data;
+  MessageData<Allocator> data;
 };
 
-inline MessageData::MessageData(int length) : length_(length) {}
+template <typename Allocator>
+inline MessageData<Allocator>::MessageData(int length)
+    : data_(Allocator::allocate(length), length) {}
 
-inline MessageData::operator std::span<std::byte>() {
-  return std::span(data_).subspan(0, length_);
+template <typename Allocator>
+inline MessageData<Allocator>::MessageData(MessageData&& other)
+    : data_(other.data_) {
+  other.data_ = {};
 }
 
-inline MessageData::operator std::span<const std::byte>() const {
-  return std::span(data_).subspan(0, length_);
+template <typename Allocator>
+inline MessageData<Allocator>& MessageData<Allocator>::operator=(
+    MessageData&& other) {
+  data_ = other.data_;
+  other.data_ = {};
+  return *this;
+}
+
+template <typename Allocator>
+inline MessageData<Allocator>::~MessageData() {
+  Allocator::deallocate(data_.data(), data_.size());
+}
+
+template <typename Allocator>
+inline MessageData<Allocator>::operator std::span<std::byte>() {
+  return data_;
+}
+
+template <typename Allocator>
+inline MessageData<Allocator>::operator std::span<const std::byte>() const {
+  return data_;
 }
 
 }  // namespace hydrolib::bus::datalink

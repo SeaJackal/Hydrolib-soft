@@ -1,16 +1,18 @@
 #pragma once
 
+#include <utility>
+
 namespace hydrolib {
 enum class ReturnCode { OK = 0, FAIL, NO_DATA, OVERFLOW, ERROR, TIMEOUT };
 
 template <typename T>
 class Expected {
  public:
-  Expected(const T& value);   // NOLINT
+  Expected(T&& value);        // NOLINT
   Expected(ReturnCode code);  // NOLINT
-  Expected(const T& value, ReturnCode code);
+  Expected(T&& value, ReturnCode code);
 
-  operator T();           // NOLINT
+  operator T() &&;        // NOLINT
   operator ReturnCode();  // NOLINT
   operator bool();        // NOLINT
 
@@ -20,18 +22,18 @@ class Expected {
 };
 
 template <typename T>
-Expected<T>::Expected(const T& value) : code_(ReturnCode::OK), value_(value) {}
+Expected<T>::Expected(T&& value) : code_(ReturnCode::OK), value_(std::move(value)) {}
 
 template <typename T>
 Expected<T>::Expected(ReturnCode code) : code_(code), value_() {}
 
 template <typename T>
-Expected<T>::Expected(const T& value, ReturnCode code)
-    : code_(code), value_(value) {}
+Expected<T>::Expected(T&& value, ReturnCode code)
+    : code_(code), value_(std::move(value)) {}
 
 template <typename T>
-Expected<T>::operator T() {
-  return value_;
+Expected<T>::operator T() && {
+  return std::move(value_);
 }
 
 template <typename T>

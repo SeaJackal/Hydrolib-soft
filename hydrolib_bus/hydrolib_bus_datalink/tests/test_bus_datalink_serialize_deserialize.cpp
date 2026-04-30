@@ -97,7 +97,7 @@ void SerializeDeserialize::SimpleExchange(const std::vector<std::byte>& data) {
   ASSERT_EQ(static_cast<hydrolib::ReturnCode>(result),
             hydrolib::ReturnCode::OK);
 
-  auto message = static_cast<hydrolib::bus::datalink::MessageInfo>(result);
+  auto message = static_cast<decltype(deserializer)::CurrentMessageInfo>(std::move(result));
   auto message_data = static_cast<std::span<std::byte>>(message.data);
   EXPECT_EQ(message.src_address, kSerializerAddress);
   ASSERT_EQ(message_data.size(), data.size());
@@ -193,7 +193,7 @@ TEST_P(SerializeDeserializeProgressive, ProgressiveExchange) {
   ASSERT_EQ(static_cast<hydrolib::ReturnCode>(result),
             hydrolib::ReturnCode::OK);
 
-  auto message = static_cast<hydrolib::bus::datalink::MessageInfo>(result);
+  auto message = static_cast<decltype(deserializer)::CurrentMessageInfo>(std::move(result));
   auto message_data = static_cast<std::span<std::byte>>(message.data);
   EXPECT_EQ(message.src_address, kSerializerAddress);
   ASSERT_EQ(message_data.size(), data.size());

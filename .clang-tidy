@@ -10,8 +10,13 @@ Checks: >
   performance-*,
   portability-*,
   readability-*,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -misc-const-correctness,
   -modernize-use-trailing-return-type,
-  -cppcoreguidelines-pro-bounds-constant-array-index
+  -performance-enum-size,
+  -portability-avoid-pragma-once,
+  -modernize-use-integer-sign-comparison,
+  -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,
 HeaderFilterRegex: ".*"
 CheckOptions:
   - key: misc-const-correctness.AnalyzeReferences

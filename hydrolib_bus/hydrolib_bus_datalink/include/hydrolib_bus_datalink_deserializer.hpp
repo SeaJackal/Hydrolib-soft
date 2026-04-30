@@ -8,14 +8,19 @@
 #include "hydrolib_bus_datalink_rx_info.hpp"
 #include "hydrolib_cobs.hpp"
 #include "hydrolib_crc.hpp"
+#include "hydrolib_dummy_allocator.hpp"
 #include "hydrolib_log_macro.hpp"
 #include "hydrolib_return_codes.hpp"
 #include "hydrolib_stream_concepts.hpp"
 
 namespace hydrolib::bus::datalink {
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
+
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator = DummyAllocator<kMaxDataLength, 2>>
 class Deserializer final {
  public:
+  using CurrentMessageInfo = MessageInfo<Allocator>;
+
   constexpr Deserializer(AddressType address, RxStream& rx_stream,
                          Logger& logger);
 
@@ -25,7 +30,7 @@ class Deserializer final {
   Deserializer& operator=(Deserializer&&) = delete;
   ~Deserializer() = default;
 
-  Expected<MessageInfo> Process();
+  Expected<CurrentMessageInfo> Process();
 
   [[nodiscard]] int GetLostPackages() const;
 
@@ -36,19 +41,15 @@ class Deserializer final {
 
   struct RxInfo {
     MessageHeader header{};
-    MessageData data;
+    MessageData<Allocator> data;
     std::byte crc{};
   };
 
-  enum class State {
-    kSynchronizing,
-    kReadingMessage,
-    kCheckingAddress,
-    kDecodingMessage
-  };
+  enum class State { kSynchronizing, kReadingMessage };
 
   static bool CheckAddress(MessageHeader header, AddressType self_address);
-  static std::optional<MessageInfo> DecodeMessage(RxInfo info, Logger& logger);
+  static std::optional<CurrentMessageInfo> DecodeMessage(RxInfo info,
+                                                         Logger& logger);
 
   Logger& logger_;
   AddressType self_address_;
@@ -61,8 +62,9 @@ class Deserializer final {
   int lost_packages_ = 0;
 };
 
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-class Deserializer<RxStream, Logger>::RxReader final {
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator>
+class Deserializer<RxStream, Logger, Allocator>::RxReader final {
  public:
   explicit RxReader(RxStream& stream);
   RxReader(const RxReader&) = delete;
@@ -80,8 +82,9 @@ class Deserializer<RxStream, Logger>::RxReader final {
   int current_length_ = 0;
 };
 
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-class Deserializer<RxStream, Logger>::Synchronizer final {
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator>
+class Deserializer<RxStream, Logger, Allocator>::Synchronizer final {
  public:
   explicit Synchronizer(RxStream& stream, Logger& logger);
   Synchronizer(const Synchronizer&) = delete;
@@ -97,8 +100,9 @@ class Deserializer<RxStream, Logger>::Synchronizer final {
   RxStream& stream_;
 };
 
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-class Deserializer<RxStream, Logger>::MessageReader final {
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator>
+class Deserializer<RxStream, Logger, Allocator>::MessageReader final {
  public:
   explicit MessageReader(RxStream& stream, Logger& logger);
   MessageReader(const MessageReader&) = delete;
@@ -126,19 +130,19 @@ class Deserializer<RxStream, Logger>::MessageReader final {
   RxInfo current_rx_info_;
 };
 
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-constexpr Deserializer<RxStream, Logger>::Deserializer(AddressType address,
-                                                       RxStream& rx_stream,
-                                                       Logger& logger)
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator>
+constexpr Deserializer<RxStream, Logger, Allocator>::Deserializer(
+    AddressType address, RxStream& rx_stream, Logger& logger)
     : logger_(logger),
       self_address_(address),
       synchronizer_(rx_stream, logger),
       message_reader_(rx_stream, logger) {}
 
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-Expected<MessageInfo> Deserializer<RxStream, Logger>::Process() {
-  RxInfo info;
-
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator>
+Expected<typename Deserializer<RxStream, Logger, Allocator>::CurrentMessageInfo>
+Deserializer<RxStream, Logger, Allocator>::Process() {
   while (true) {
     switch (current_state_) {
       case State::kSynchronizing: {
@@ -150,44 +154,42 @@ Expected<MessageInfo> Deserializer<RxStream, Logger>::Process() {
         break;
       }
       case State::kReadingMessage: {
-        auto result = message_reader_();
-        if (static_cast<ReturnCode>(result) != ReturnCode::OK) {
-          return static_cast<ReturnCode>(result);
+        auto read_result = message_reader_();
+        if (static_cast<ReturnCode>(read_result) != ReturnCode::OK) {
+          return static_cast<ReturnCode>(read_result);
         }
-        current_state_ = State::kCheckingAddress;
-        info = result;
-        break;
-      }
-      case State::kCheckingAddress: {
-        auto result = CheckAddress(info.header, self_address_);
-        if (!result) {
+        RxInfo info = std::move(read_result);
+
+        auto check_result = CheckAddress(info.header, self_address_);
+        if (!check_result) {
           current_state_ = State::kSynchronizing;
-        } else {
-          current_state_ = State::kDecodingMessage;
+          break;
         }
-        break;
-      }
-      case State::kDecodingMessage: {
-        auto result = DecodeMessage(info, logger_);
+
+        auto decode_result = DecodeMessage(std::move(info), logger_);
         current_state_ = State::kSynchronizing;
-        if (!result) {
+        if (!decode_result) {
           lost_packages_++;
           break;
         }
-        return *result;
+        return std::move(*decode_result);
       }
     }
   }
 }
 
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-int Deserializer<RxStream, Logger>::GetLostPackages() const {
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator>
+int Deserializer<RxStream, Logger, Allocator>::GetLostPackages() const {
   return lost_packages_;
 }
 
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-std::optional<MessageInfo> Deserializer<RxStream, Logger>::DecodeMessage(
-    RxInfo info, Logger& logger) {
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator>
+std::optional<
+    typename Deserializer<RxStream, Logger, Allocator>::CurrentMessageInfo>
+Deserializer<RxStream, Logger, Allocator>::DecodeMessage(RxInfo info,
+                                                         Logger& logger) {
   ReturnCode res = cobs::Decode<kMagicByte>(info.header.cobs_length, info.data);
   info.header.cobs_length = 0;
   if (res != ReturnCode::OK) {
@@ -206,28 +208,33 @@ std::optional<MessageInfo> Deserializer<RxStream, Logger>::DecodeMessage(
                 static_cast<int>(target_crc), static_cast<int>(info.crc));
     return {};
   }
-  return MessageInfo{info.header.src_address, info.data};
+  return CurrentMessageInfo{info.header.src_address, std::move(info.data)};
 }
 
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-bool Deserializer<RxStream, Logger>::CheckAddress(MessageHeader header,
-                                                  AddressType self_address) {
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator>
+bool Deserializer<RxStream, Logger, Allocator>::CheckAddress(
+    MessageHeader header, AddressType self_address) {
   return header.dest_address == self_address;
 }
 
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-Deserializer<RxStream, Logger>::RxReader::RxReader(RxStream& stream)
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator>
+Deserializer<RxStream, Logger, Allocator>::RxReader::RxReader(RxStream& stream)
     : stream_(stream) {}
 
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-void Deserializer<RxStream, Logger>::RxReader::Start(
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator>
+void Deserializer<RxStream, Logger, Allocator>::RxReader::Start(
     std::span<std::byte> buffer) {
   data_ = buffer;
   current_length_ = 0;
 }
 
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-hydrolib::ReturnCode Deserializer<RxStream, Logger>::RxReader::operator()() {
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator>
+hydrolib::ReturnCode
+Deserializer<RxStream, Logger, Allocator>::RxReader::operator()() {
   auto remaining_length =
       static_cast<int>(data_.size_bytes()) - current_length_;
   if (remaining_length <= 0) {
@@ -245,14 +252,16 @@ hydrolib::ReturnCode Deserializer<RxStream, Logger>::RxReader::operator()() {
   return ReturnCode::NO_DATA;
 }
 
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-Deserializer<RxStream, Logger>::Synchronizer::Synchronizer(RxStream& stream,
-                                                           Logger& logger)
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator>
+Deserializer<RxStream, Logger, Allocator>::Synchronizer::Synchronizer(
+    RxStream& stream, Logger& logger)
     : logger_(logger), stream_(stream) {}
 
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator>
 hydrolib::ReturnCode
-Deserializer<RxStream, Logger>::Synchronizer::operator()() {
+Deserializer<RxStream, Logger, Allocator>::Synchronizer::operator()() {
   while (true) {
     std::byte byte_buffer{};
     auto read_length = read(stream_, &byte_buffer, 1);
@@ -269,14 +278,16 @@ Deserializer<RxStream, Logger>::Synchronizer::operator()() {
   }
 }
 
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-Deserializer<RxStream, Logger>::MessageReader::MessageReader(RxStream& stream,
-                                                             Logger& logger)
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator>
+Deserializer<RxStream, Logger, Allocator>::MessageReader::MessageReader(
+    RxStream& stream, Logger& logger)
     : logger_(logger), reader_(stream) {}
 
-template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
-Expected<typename Deserializer<RxStream, Logger>::RxInfo>
-Deserializer<RxStream, Logger>::MessageReader::operator()() {
+template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger,
+          typename Allocator>
+Expected<typename Deserializer<RxStream, Logger, Allocator>::RxInfo>
+Deserializer<RxStream, Logger, Allocator>::MessageReader::operator()() {
   while (true) {
     auto result = reader_();
     if (result != ReturnCode::OK) {
@@ -297,9 +308,9 @@ Deserializer<RxStream, Logger>::MessageReader::operator()() {
           current_state_ = State::kStartReadingHeader;
           return ReturnCode::FAIL;
         }
-        current_rx_info_.data =
-            MessageData(current_rx_info_.header.length - sizeof(kMagicByte) -
-                        sizeof(MessageHeader) - kCRCLength);
+        current_rx_info_.data = MessageData<Allocator>(
+            current_rx_info_.header.length - sizeof(kMagicByte) -
+            sizeof(MessageHeader) - kCRCLength);
         current_state_ = State::kStartReadingMessage;
         break;
       }
@@ -320,7 +331,7 @@ Deserializer<RxStream, Logger>::MessageReader::operator()() {
       }
       case State::kReadingCheckSum: {
         current_state_ = State::kStartReadingHeader;
-        return current_rx_info_;
+        return std::move(current_rx_info_);
       }
     }
   }

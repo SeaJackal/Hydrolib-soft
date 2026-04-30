@@ -70,7 +70,7 @@ ReturnCode Serializer<TxStream, Logger>::Process(
   if (res < 0) {
     return ReturnCode::ERROR;
   }
-  if (res != current_message_.header.length) {
+  if (res != static_cast<int>(current_message_.header.length)) {
     return ReturnCode::OVERFLOW;
   }
   return ReturnCode::OK;

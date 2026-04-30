@@ -51,7 +51,7 @@ class StreamManager<RxTxStream, Logger, kMateAddresses...>::RxManager final {
   RxManager& operator=(RxManager&&) = delete;
   ~RxManager() = default;
 
-  void Push(MessageInfo info);
+  void Push(DeserializerType::CurrentMessageInfo info);
   std::span<std::byte> Pull(AddressType address, int length);
 
  private:
@@ -105,8 +105,9 @@ template <concepts::stream::ByteFullStreamConcept RxTxStream, typename Logger,
 ReturnCode StreamManager<RxTxStream, Logger, kMateAddresses...>::Process() {
   auto result = deserializer_.Process();
   if (result == ReturnCode::OK) {
-    auto message = static_cast<MessageInfo>(result);
-    rx_manager_.Push(message);
+    auto message = static_cast<DeserializerType::CurrentMessageInfo>(
+        std::move(result));
+    rx_manager_.Push(std::move(message));
     return ReturnCode::OK;
   }
   return result;
@@ -122,8 +123,8 @@ int StreamManager<RxTxStream, Logger, kMateAddresses...>::GetLostPackages()
 template <concepts::stream::ByteFullStreamConcept RxTxStream, typename Logger,
           AddressType... kMateAddresses>
 void StreamManager<RxTxStream, Logger, kMateAddresses...>::RxManager::Push(
-    MessageInfo info) {
-  for (int i = 0; i < sizeof...(kMateAddresses); i++) {
+    DeserializerType::CurrentMessageInfo info) {
+  for (int i = 0; i < static_cast<int>(sizeof...(kMateAddresses)); i++) {
     if (mailboxes_[i].address == info.src_address) {
       auto data = static_cast<std::span<const std::byte>>(info.data);
       mailboxes_[i].queue.Push(data.data(), data.size());
@@ -137,7 +138,7 @@ template <concepts::stream::ByteFullStreamConcept RxTxStream, typename Logger,
 std::span<std::byte>
 StreamManager<RxTxStream, Logger, kMateAddresses...>::RxManager::Pull(
     AddressType address, int length) {
-  for (int i = 0; i < sizeof...(kMateAddresses); i++) {
+  for (int i = 0; i < static_cast<int>(sizeof...(kMateAddresses)); i++) {
     if (mailboxes_[i].address == address) {
       length = std::min(length, mailboxes_[i].queue.GetLength());
       mailboxes_[i].queue.Pull(buffer_.data(), length);
