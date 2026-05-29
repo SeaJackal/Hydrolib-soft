@@ -13,9 +13,9 @@ class MockByteStream {
  public:
   MockByteStream();
 
-  std::size_t GetSize() const noexcept;
+  [[nodiscard]] std::size_t GetSize() const noexcept;
 
-  bool IsEmpty() const noexcept;
+  [[nodiscard]] bool IsEmpty() const noexcept;
 
   void Clear() noexcept;
 

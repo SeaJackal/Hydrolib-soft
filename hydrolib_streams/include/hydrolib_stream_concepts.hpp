@@ -1,5 +1,4 @@
-#ifndef HYDROLIB_STREAM_CONCEPTS_H_
-#define HYDROLIB_STREAM_CONCEPTS_H_
+#pragma once
 
 #include <concepts>
 #include <cstdint>
@@ -22,5 +21,3 @@ template <typename T>
 concept ByteFullStreamConcept =
     ByteWritableStreamConcept<T> && ByteReadableStreamConcept<T>;
 }  // namespace hydrolib::concepts::stream
-
-#endif
