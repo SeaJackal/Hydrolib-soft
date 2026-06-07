@@ -2,21 +2,14 @@
 
 #include <concepts>
 
+#include "hydrolib_fixed_point.hpp"
+#include "hydrolib_rotations.hpp"
+
 namespace hydrolib::sensors {
 
-struct IMUData {
-  int yaw_mdeg;
-  int pitch_mdeg;
-  int roll_mdeg;
-
-  int yaw_rate_mdeg_per_s;
-  int pitch_rate_mdeg_per_s;
-  int roll_rate_mdeg_per_s;
-};
-
-template <typename T>
+template <typename T, typename Number>
 concept IMUConcept = requires(T imu) {
-  { imu.GetIMUData() } -> std::same_as<IMUData>;
+  { imu.GetOrientation() } -> std::same_as<math::Rotation<Number>>;
 };
 
 }  // namespace hydrolib::sensors
