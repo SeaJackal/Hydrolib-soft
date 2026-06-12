@@ -3,7 +3,7 @@
 #include <array>
 
 namespace hydrolib::controlling {
-template <int FREQ_HZ, typename Number>
+template <int kFreqHz, typename Number>
 class PID {
  public:
   PID() = default;
@@ -16,7 +16,7 @@ class PID {
   void RefineOutput(Number output);
 
  private:
-  static constexpr Number kPeriod = 1.0 / FREQ_HZ;
+  static constexpr Number kPeriod = 1.0 / kFreqHz;
   static constexpr Number kDifferentialPeriod = kPeriod * 4;
 
   static constexpr Number kCurrentOutputCoeff =
@@ -39,34 +39,34 @@ class PID {
   std::array<Number, 2> output_ = {};
 };
 
-template <int FREQ_HZ, typename Number>
-void PID<FREQ_HZ, Number>::SetP(Number p_coeff) {
+template <int kFreqHz, typename Number>
+void PID<kFreqHz, Number>::SetP(Number p_coeff) {
   p_ = p_coeff;
   RecalculateCoefficients();
 }
 
-template <int FREQ_HZ, typename Number>
-void PID<FREQ_HZ, Number>::SetI(Number i_coeff) {
+template <int kFreqHz, typename Number>
+void PID<kFreqHz, Number>::SetI(Number i_coeff) {
   i_ = i_coeff;
   RecalculateCoefficients();
 }
 
-template <int FREQ_HZ, typename Number>
-void PID<FREQ_HZ, Number>::SetD(Number d_coeff) {
+template <int kFreqHz, typename Number>
+void PID<kFreqHz, Number>::SetD(Number d_coeff) {
   d_ = d_coeff;
   RecalculateCoefficients();
 }
 
-template <int FREQ_HZ, typename Number>
-Number PID<FREQ_HZ, Number>::Process(Number input) {
+template <int kFreqHz, typename Number>
+Number PID<kFreqHz, Number>::Process(Number input) {
   input_[2] = input_[1];
   input_[1] = input_[0];
   input_[0] = input;
 
   Number current_output =
-      (current_input_coeff_ * input_[0] + prev_input_coeff_ * input_[1] +
-       prev_prev_input_coeff_ * input_[2] - kPrevOutputCoeff * output_[0] -
-       kPrevPrevOutputCoeff * output_[1]) /
+      ((current_input_coeff_ * input_[0]) + (prev_input_coeff_ * input_[1]) +
+       (prev_prev_input_coeff_ * input_[2]) - (kPrevOutputCoeff * output_[0]) -
+       (kPrevPrevOutputCoeff * output_[1])) /
       kCurrentOutputCoeff;
 
   output_[1] = output_[0];
@@ -75,13 +75,13 @@ Number PID<FREQ_HZ, Number>::Process(Number input) {
   return current_output;
 }
 
-template <int FREQ_HZ, typename Number>
-void PID<FREQ_HZ, Number>::RefineOutput(Number output) {
+template <int kFreqHz, typename Number>
+void PID<kFreqHz, Number>::RefineOutput(Number output) {
   output_[0] = output;
 }
 
-template <int FREQ_HZ, typename Number>
-void PID<FREQ_HZ, Number>::RecalculateCoefficients() {
+template <int kFreqHz, typename Number>
+void PID<kFreqHz, Number>::RecalculateCoefficients() {
   current_input_coeff_ =
       (p_ + i_ * (kDifferentialPeriod + kPeriod / 2)) * kPeriod +
       (d_ + p_ * kDifferentialPeriod) * 2;

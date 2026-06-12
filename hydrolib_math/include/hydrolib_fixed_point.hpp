@@ -7,26 +7,27 @@
 #include <concepts>
 #include <cstdint>
 #include <numbers>
+#include <string_view>
 
 #include "hydrolib_return_codes.hpp"
 #include "hydrolib_stream_concepts.hpp"
 
 namespace hydrolib::math {
-template <int FRACTION_BITS>
+template <int kFractionBitsParam>
 class FixedPoint;
 }
 
-template <int FRACTION_BITS>
-hydrolib::math::FixedPoint<FRACTION_BITS> sin(
-    hydrolib::math::FixedPoint<FRACTION_BITS> value_rad);
+template <int kFractionBitsParam>
+hydrolib::math::FixedPoint<kFractionBitsParam> sin(  // NOLINT
+    hydrolib::math::FixedPoint<kFractionBitsParam> value_rad);
 
-template <int FRACTION_BITS>
-hydrolib::math::FixedPoint<FRACTION_BITS> cos(
-    hydrolib::math::FixedPoint<FRACTION_BITS> value_rad);
+template <int kFractionBitsParam>
+hydrolib::math::FixedPoint<kFractionBitsParam> cos(  // NOLINT
+    hydrolib::math::FixedPoint<kFractionBitsParam> value_rad);
 
-template <int FRACTION_BITS>
-hydrolib::math::FixedPoint<FRACTION_BITS> sqrt(
-    hydrolib::math::FixedPoint<FRACTION_BITS>
+template <int kFractionBitsParam>
+hydrolib::math::FixedPoint<kFractionBitsParam> sqrt(  // NOLINT
+    hydrolib::math::FixedPoint<kFractionBitsParam>
         value);  // TODO(vscode): fix accuracy
 
 namespace hydrolib::math {
@@ -34,7 +35,7 @@ template <typename T>
 concept ArithmeticConcept = requires(T first, T second) {
   { first + second } -> std::convertible_to<T>;
   { first - second } -> std::convertible_to<T>;
-  { first* second } -> std::convertible_to<T>;
+  { first * second } -> std::convertible_to<T>;
   { sqrt(first) } -> std::convertible_to<T>;
   { first / second } -> std::convertible_to<T>;
   { -first } -> std::convertible_to<T>;
@@ -44,34 +45,37 @@ concept ArithmeticConcept = requires(T first, T second) {
   { first /= second } -> std::same_as<T&>;
 };
 
-template <int FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS> DegToRad(
-    FixedPoint<FRACTION_BITS> value_deg);
+template <int kFractionBitsParam>
+constexpr FixedPoint<kFractionBitsParam> DegToRad(
+    FixedPoint<kFractionBitsParam> value_deg);
 
-template <int FRACTION_BITS>
+template <int kFractionBitsParam>
 class FixedPoint {
-  friend FixedPoint sqrt<FRACTION_BITS>(FixedPoint value);
-  friend FixedPoint sin<FRACTION_BITS>(FixedPoint value_rad);
-  friend FixedPoint cos<FRACTION_BITS>(FixedPoint value_rad);
+  friend FixedPoint sqrt<kFractionBitsParam>(FixedPoint value);     // NOLINT
+  friend FixedPoint sin<kFractionBitsParam>(FixedPoint value_rad);  // NOLINT
+  friend FixedPoint cos<kFractionBitsParam>(FixedPoint value_rad);  // NOLINT
 
   template <int>
-  friend constexpr int operator*(int first, FixedPoint<FRACTION_BITS> second);
+  friend constexpr int operator*(int first,
+                                 FixedPoint<kFractionBitsParam> second);
   template <int>
-  friend constexpr int operator/(int first, FixedPoint<FRACTION_BITS> second);
+  friend constexpr int operator/(int first,
+                                 FixedPoint<kFractionBitsParam> second);
   template <int>
   friend constexpr int& operator/=(int& first,
-                                   FixedPoint<FRACTION_BITS> second);
+                                   FixedPoint<kFractionBitsParam> second);
   template <int>
   friend constexpr int& operator*=(int& first,
-                                   FixedPoint<FRACTION_BITS> second);
+                                   FixedPoint<kFractionBitsParam> second);
   template <int>
   friend class FixedPoint;
 
  public:
-  static constexpr int kFractionBits = FRACTION_BITS;
-  static constexpr int kUpperNotIncludedBound = (INT_MAX >> FRACTION_BITS) + 1;
-  static constexpr int kLowerNotIncludedBound = INT_MIN >> FRACTION_BITS;
-  static constexpr double kLeastBitValue = 1.0 / (1 << FRACTION_BITS);
+  static constexpr int kFractionBits = kFractionBitsParam;
+  static constexpr int kUpperNotIncludedBound =
+      (INT_MAX >> kFractionBitsParam) + 1;
+  static constexpr int kLowerNotIncludedBound = INT_MIN >> kFractionBitsParam;
+  static constexpr double kLeastBitValue = 1.0 / (1 << kFractionBitsParam);
 
   constexpr FixedPoint();
   constexpr FixedPoint(int value);  // NOLINT
@@ -79,8 +83,8 @@ class FixedPoint {
   consteval FixedPoint(float value);        // NOLINT
   consteval FixedPoint(double value);       // NOLINT
   consteval FixedPoint(long double value);  // NOLINT
-  template <int OTHER_FRACTION_BITS>
-  constexpr explicit FixedPoint(FixedPoint<OTHER_FRACTION_BITS> value);
+  template <int kOtherFractionBits>
+  constexpr explicit FixedPoint(FixedPoint<kOtherFractionBits> value);
 
   explicit operator double() const;
   explicit operator int() const;
@@ -93,14 +97,14 @@ class FixedPoint {
   constexpr FixedPoint operator-() const;
   constexpr FixedPoint operator+(const FixedPoint& other) const;
   constexpr FixedPoint operator-(const FixedPoint& other) const;
-  template <int T>
-  constexpr FixedPoint operator*(FixedPoint<T> other) const;
-  template <int T>
-  constexpr FixedPoint operator/(FixedPoint<T> other) const;
-  template <int T>
-  constexpr FixedPoint& operator*=(FixedPoint<T> other);
-  template <int T>
-  constexpr FixedPoint& operator/=(FixedPoint<T> other);
+  template <int kOtherFractionBits>
+  constexpr FixedPoint operator*(FixedPoint<kOtherFractionBits> other) const;
+  template <int kOtherFractionBits>
+  constexpr FixedPoint operator/(FixedPoint<kOtherFractionBits> other) const;
+  template <int kOtherFractionBits>
+  constexpr FixedPoint& operator*=(FixedPoint<kOtherFractionBits> other);
+  template <int kOtherFractionBits>
+  constexpr FixedPoint& operator/=(FixedPoint<kOtherFractionBits> other);
   constexpr FixedPoint operator*(int other) const;
   constexpr FixedPoint operator/(int other) const;
   constexpr FixedPoint& operator*=(int other);
@@ -125,14 +129,14 @@ class FixedPoint {
   int value_;
 };
 
-template <int FRACTION_BITS>
-constexpr int operator*(int first, FixedPoint<FRACTION_BITS> second);
-template <int FRACTION_BITS>
-constexpr int operator/(int first, FixedPoint<FRACTION_BITS> second);
-template <int FRACTION_BITS>
-constexpr int& operator/=(int& first, FixedPoint<FRACTION_BITS> second);
-template <int FRACTION_BITS>
-constexpr int& operator*=(int& first, FixedPoint<FRACTION_BITS> second);
+template <int kFractionBitsParam>
+constexpr int operator*(int first, FixedPoint<kFractionBitsParam> second);
+template <int kFractionBitsParam>
+constexpr int operator/(int first, FixedPoint<kFractionBitsParam> second);
+template <int kFractionBitsParam>
+constexpr int& operator/=(int& first, FixedPoint<kFractionBitsParam> second);
+template <int kFractionBitsParam>
+constexpr int& operator*=(int& first, FixedPoint<kFractionBitsParam> second);
 
 class CORDICSupporter {
   friend class CORDICConstants;
@@ -171,260 +175,273 @@ class CORDICConstants {
 
 using FixedPointBase = FixedPoint<16>;  // NOLINT
 
-consteval FixedPointBase operator""_fp(long double value);
+consteval FixedPointBase operator""_fp(long double value);  // NOLINT
 
-template <int FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS>::FixedPoint() : value_(0) {}
+template <int kFractionBitsParam>
+constexpr FixedPoint<kFractionBitsParam>::FixedPoint() : value_(0) {}
 
-template <int FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS>::FixedPoint(int value)
-    : value_(value << FRACTION_BITS) {}
+template <int kFractionBitsParam>
+constexpr FixedPoint<kFractionBitsParam>::FixedPoint(int value)
+    : value_(value << kFractionBitsParam) {}
 
-template <int FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS>::FixedPoint(int value, int divider)
-    : value_((static_cast<int64_t>(value) << FRACTION_BITS) / divider) {}
+template <int kFractionBitsParam>
+constexpr FixedPoint<kFractionBitsParam>::FixedPoint(int value, int divider)
+    : value_((static_cast<int64_t>(value) << kFractionBitsParam) / divider) {}
 
-template <int FRACTION_BITS>
-consteval FixedPoint<FRACTION_BITS>::FixedPoint(float value)
-    : value_(static_cast<int>(value * (1 << FRACTION_BITS))) {}
+template <int kFractionBitsParam>
+consteval FixedPoint<kFractionBitsParam>::FixedPoint(float value)
+    : value_(static_cast<int>(value * (1 << kFractionBitsParam))) {}
 
-template <int FRACTION_BITS>
-consteval FixedPoint<FRACTION_BITS>::FixedPoint(double value)
-    : value_(static_cast<int>(value * (1 << FRACTION_BITS))) {}
+template <int kFractionBitsParam>
+consteval FixedPoint<kFractionBitsParam>::FixedPoint(double value)
+    : value_(static_cast<int>(value * (1 << kFractionBitsParam))) {}
 
-template <int FRACTION_BITS>
-consteval FixedPoint<FRACTION_BITS>::FixedPoint(long double value)
-    : value_(static_cast<int>(value * (1 << FRACTION_BITS))) {}
+template <int kFractionBitsParam>
+consteval FixedPoint<kFractionBitsParam>::FixedPoint(
+    long double value)  // NOLINT
+    : value_(static_cast<int>(value * (1 << kFractionBitsParam))) {}
 
-template <int FRACTION_BITS>
-template <int OTHER_FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS>::FixedPoint(
-    FixedPoint<OTHER_FRACTION_BITS> value)
+template <int kFractionBitsParam>
+template <int kOtherFractionBits>
+constexpr FixedPoint<kFractionBitsParam>::FixedPoint(
+    FixedPoint<kOtherFractionBits> value)
     : value_(0) {
-  if constexpr (FRACTION_BITS > OTHER_FRACTION_BITS) {
-    value_ = value.value_ << (FRACTION_BITS - OTHER_FRACTION_BITS);
+  if constexpr (kFractionBitsParam > kOtherFractionBits) {
+    value_ = value.value_ << (kFractionBitsParam - kOtherFractionBits);
   } else {
-    value_ = value.value_ >> (OTHER_FRACTION_BITS - FRACTION_BITS);
+    value_ = value.value_ >> (kOtherFractionBits - kFractionBitsParam);
   }
 }
 
-template <int FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::Abs() const {
-  FixedPoint<FRACTION_BITS> result;
+template <int kFractionBitsParam>
+constexpr FixedPoint<kFractionBitsParam> FixedPoint<kFractionBitsParam>::Abs()
+    const {
+  FixedPoint<kFractionBitsParam> result;
   result.value_ = value_ < 0 ? -value_ : value_;
   return result;
 }
 
-template <int FRACTION_BITS>
-[[nodiscard]] int32_t FixedPoint<FRACTION_BITS>::Serialize() const {
+template <int kFractionBitsParam>
+[[nodiscard]] int32_t FixedPoint<kFractionBitsParam>::Serialize() const {
   return static_cast<int32_t>(value_);
 }
 
-template <int FRACTION_BITS>
-FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::Deserialize(
+template <int kFractionBitsParam>
+FixedPoint<kFractionBitsParam> FixedPoint<kFractionBitsParam>::Deserialize(
     int32_t value) {
-  FixedPoint<FRACTION_BITS> result;
+  FixedPoint<kFractionBitsParam> result;
   result.value_ = static_cast<int>(value);
   return result;
 }
 
-template <int FRACTION_BITS>
-constexpr int FixedPoint<FRACTION_BITS>::GetAbsIntPart() const {
-  return (value_ < 0 ? -value_ : value_) >> FRACTION_BITS;
+template <int kFractionBitsParam>
+constexpr int FixedPoint<kFractionBitsParam>::GetAbsIntPart() const {
+  return (value_ < 0 ? -value_ : value_) >> kFractionBitsParam;
 }
 
-template <int FRACTION_BITS>
-constexpr int FixedPoint<FRACTION_BITS>::GetAbsFractionPart() const {
+template <int kFractionBitsParam>
+constexpr int FixedPoint<kFractionBitsParam>::GetAbsFractionPart() const {
   if (value_ < 0) {
-    return (~(value_ - 1)) & ((1 << FRACTION_BITS) - 1);
+    return (~(value_ - 1)) & ((1 << kFractionBitsParam) - 1);
   }
-  return value_ & ((1 << FRACTION_BITS) - 1);
+  return value_ & ((1 << kFractionBitsParam) - 1);
 }
 
-template <int FRACTION_BITS>
-FixedPoint<FRACTION_BITS>::operator double() const {
-  return static_cast<double>(value_) / (1 << FRACTION_BITS);
+template <int kFractionBitsParam>
+FixedPoint<kFractionBitsParam>::operator double() const {
+  return static_cast<double>(value_) / (1 << kFractionBitsParam);
 }
 
-template <int FRACTION_BITS>
-FixedPoint<FRACTION_BITS>::operator int() const {
+template <int kFractionBitsParam>
+FixedPoint<kFractionBitsParam>::operator int() const {
   if (value_ < 0) {
-    return -((-value_) >> FRACTION_BITS);
+    return -((-value_) >> kFractionBitsParam);
   }
-  return value_ >> FRACTION_BITS;
+  return value_ >> kFractionBitsParam;
 }
 
-template <int FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS>& FixedPoint<FRACTION_BITS>::operator+=(
-    const FixedPoint<FRACTION_BITS>& other) {
+template <int kFractionBitsParam>
+constexpr FixedPoint<kFractionBitsParam>&
+FixedPoint<kFractionBitsParam>::operator+=(
+    const FixedPoint<kFractionBitsParam>& other) {
   value_ += other.value_;
   return *this;
 }
 
-template <int FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS>& FixedPoint<FRACTION_BITS>::operator-=(
-    const FixedPoint<FRACTION_BITS>& other) {
+template <int kFractionBitsParam>
+constexpr FixedPoint<kFractionBitsParam>&
+FixedPoint<kFractionBitsParam>::operator-=(
+    const FixedPoint<kFractionBitsParam>& other) {
   *this += -other;
   return *this;
 }
 
-template <int FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator-()
-    const {
-  FixedPoint<FRACTION_BITS> result = *this;
+template <int kFractionBitsParam>
+constexpr FixedPoint<kFractionBitsParam>
+FixedPoint<kFractionBitsParam>::operator-() const {
+  FixedPoint<kFractionBitsParam> result = *this;
   result.value_ = -result.value_;
   return result;
 }
 
-template <int FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator+(
-    const FixedPoint<FRACTION_BITS>& other) const {
-  FixedPoint<FRACTION_BITS> result = *this;
+template <int kFractionBitsParam>
+constexpr FixedPoint<kFractionBitsParam>
+FixedPoint<kFractionBitsParam>::operator+(
+    const FixedPoint<kFractionBitsParam>& other) const {
+  FixedPoint<kFractionBitsParam> result = *this;
   result += other;
   return result;
 }
 
-template <int FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator-(
-    const FixedPoint<FRACTION_BITS>& other) const {
-  FixedPoint<FRACTION_BITS> result = *this;
+template <int kFractionBitsParam>
+constexpr FixedPoint<kFractionBitsParam>
+FixedPoint<kFractionBitsParam>::operator-(
+    const FixedPoint<kFractionBitsParam>& other) const {
+  FixedPoint<kFractionBitsParam> result = *this;
   result += -other;
   return result;
 }
 
-template <int FRACTION_BITS>
-template <int OTHER_FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator*(
-    FixedPoint<OTHER_FRACTION_BITS> other) const {
-  FixedPoint<FRACTION_BITS> result = *this;
-  int64_t result_value = (static_cast<int64_t>(result.value_) * other.value_) >>
-                         OTHER_FRACTION_BITS;
+template <int kFractionBitsParam>
+template <int kOtherFractionBits>
+constexpr FixedPoint<kFractionBitsParam>
+FixedPoint<kFractionBitsParam>::operator*(
+    FixedPoint<kOtherFractionBits> other) const {
+  FixedPoint<kFractionBitsParam> result = *this;
+  const int64_t result_value =
+      (static_cast<int64_t>(result.value_) * other.value_) >>
+      kOtherFractionBits;
   result.value_ = static_cast<int>(result_value);
   return result;
 }
 
-template <int FRACTION_BITS>
-template <int OTHER_FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator/(
-    FixedPoint<OTHER_FRACTION_BITS> other) const {
-  FixedPoint<FRACTION_BITS> result = *this;
-  int64_t result_value =
-      (static_cast<int64_t>(result.value_) << OTHER_FRACTION_BITS) /
+template <int kFractionBitsParam>
+template <int kOtherFractionBits>
+constexpr FixedPoint<kFractionBitsParam>
+FixedPoint<kFractionBitsParam>::operator/(
+    FixedPoint<kOtherFractionBits> other) const {
+  FixedPoint<kFractionBitsParam> result = *this;
+  const int64_t result_value =
+      (static_cast<int64_t>(result.value_) << kOtherFractionBits) /
       other.value_;
   result.value_ = static_cast<int>(result_value);
   return result;
 }
 
-template <int FRACTION_BITS>
-template <int OTHER_FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS>& FixedPoint<FRACTION_BITS>::operator*=(
-    FixedPoint<OTHER_FRACTION_BITS> other) {
+template <int kFractionBitsParam>
+template <int kOtherFractionBits>
+constexpr FixedPoint<kFractionBitsParam>&
+FixedPoint<kFractionBitsParam>::operator*=(
+    FixedPoint<kOtherFractionBits> other) {
   *this = *this * other;
   return *this;
 }
 
-template <int FRACTION_BITS>
-template <int OTHER_FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS>& FixedPoint<FRACTION_BITS>::operator/=(
-    FixedPoint<OTHER_FRACTION_BITS> other) {
+template <int kFractionBitsParam>
+template <int kOtherFractionBits>
+constexpr FixedPoint<kFractionBitsParam>&
+FixedPoint<kFractionBitsParam>::operator/=(
+    FixedPoint<kOtherFractionBits> other) {
   *this = *this / other;
   return *this;
 }
 
-template <int FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator*(
-    int other) const {
-  FixedPoint<FRACTION_BITS> result = *this;
+template <int kFractionBitsParam>
+constexpr FixedPoint<kFractionBitsParam>
+FixedPoint<kFractionBitsParam>::operator*(int other) const {
+  FixedPoint<kFractionBitsParam> result = *this;
   result.value_ = result.value_ * other;
   return result;
 }
 
-template <int FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::operator/(
-    int other) const {
-  FixedPoint<FRACTION_BITS> result = *this;
+template <int kFractionBitsParam>
+constexpr FixedPoint<kFractionBitsParam>
+FixedPoint<kFractionBitsParam>::operator/(int other) const {
+  FixedPoint<kFractionBitsParam> result = *this;
   result.value_ = result.value_ / other;
   return result;
 }
 
-template <int FRACTION_BITS>
-constexpr int operator*(int first, FixedPoint<FRACTION_BITS> second) {
+template <int kFractionBitsParam>
+constexpr int operator*(int first, FixedPoint<kFractionBitsParam> second) {
   return static_cast<int>((static_cast<int64_t>(first) * second.value_) >>
-                          FRACTION_BITS);
+                          kFractionBitsParam);
 }
 
-template <int FRACTION_BITS>
-constexpr int operator/(int first, FixedPoint<FRACTION_BITS> second) {
-  return static_cast<int>((static_cast<int64_t>(first) << FRACTION_BITS) /
+template <int kFractionBitsParam>
+constexpr int operator/(int first, FixedPoint<kFractionBitsParam> second) {
+  return static_cast<int>((static_cast<int64_t>(first) << kFractionBitsParam) /
                           second.value_);
 }
 
-template <int FRACTION_BITS>
-constexpr int& operator*=(int& first, FixedPoint<FRACTION_BITS> second) {
+template <int kFractionBitsParam>
+constexpr int& operator*=(int& first, FixedPoint<kFractionBitsParam> second) {
   first = first * second;
   return first;
 }
 
-template <int FRACTION_BITS>
-constexpr int& operator/=(int& first, FixedPoint<FRACTION_BITS> second) {
+template <int kFractionBitsParam>
+constexpr int& operator/=(int& first, FixedPoint<kFractionBitsParam> second) {
   first = first / second;
   return first;
 }
 
-template <int FRACTION_BITS>
-constexpr bool FixedPoint<FRACTION_BITS>::operator==(
+template <int kFractionBitsParam>
+constexpr bool FixedPoint<kFractionBitsParam>::operator==(
     const FixedPoint& other) const {
   return value_ == other.value_;
 }
 
-template <int FRACTION_BITS>
-constexpr bool FixedPoint<FRACTION_BITS>::operator!=(
+template <int kFractionBitsParam>
+constexpr bool FixedPoint<kFractionBitsParam>::operator!=(
     const FixedPoint& other) const {
   return value_ != other.value_;
 }
 
-template <int FRACTION_BITS>
-constexpr bool FixedPoint<FRACTION_BITS>::operator<(
+template <int kFractionBitsParam>
+constexpr bool FixedPoint<kFractionBitsParam>::operator<(
     const FixedPoint& other) const {
   return value_ < other.value_;
 }
 
-template <int FRACTION_BITS>
-constexpr bool FixedPoint<FRACTION_BITS>::operator<=(
+template <int kFractionBitsParam>
+constexpr bool FixedPoint<kFractionBitsParam>::operator<=(
     const FixedPoint& other) const {
   return value_ <= other.value_;
 }
 
-template <int FRACTION_BITS>
-constexpr bool FixedPoint<FRACTION_BITS>::operator>(
+template <int kFractionBitsParam>
+constexpr bool FixedPoint<kFractionBitsParam>::operator>(
     const FixedPoint& other) const {
   return value_ > other.value_;
 }
 
-template <int FRACTION_BITS>
-constexpr bool FixedPoint<FRACTION_BITS>::operator>=(
+template <int kFractionBitsParam>
+constexpr bool FixedPoint<kFractionBitsParam>::operator>=(
     const FixedPoint& other) const {
   return value_ >= other.value_;
 }
 
-consteval FixedPointBase operator""_fp(long double value) { return {value}; }
-
-template <int FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS> kPi = std::numbers::pi_v<long double>;
-constexpr FixedPointBase kDegsInPi = 180;
-
-template <int FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS> DegToRad(
-    FixedPoint<FRACTION_BITS> value_deg) {
-  return value_deg * kPi<FRACTION_BITS> / kDegsInPi;
+consteval FixedPointBase operator""_fp(long double value) {  // NOLINT
+  return {value};
 }
 
-template <int FRACTION_BITS>
+template <int kFractionBitsParam>
+constexpr FixedPoint<kFractionBitsParam> kPi = std::numbers::pi_v<double>;
+constexpr FixedPointBase kDegsInPi = 180;
+
+template <int kFractionBitsParam>
+constexpr FixedPoint<kFractionBitsParam> DegToRad(
+    FixedPoint<kFractionBitsParam> value_deg) {
+  return value_deg * kPi<kFractionBitsParam> / kDegsInPi;
+}
+
+template <int kFractionBitsParam>
 template <concepts::stream::ByteWritableStreamConcept DestType>
-ReturnCode FixedPoint<FRACTION_BITS>::ToBytes(DestType& buffer) const {
+ReturnCode FixedPoint<kFractionBitsParam>::ToBytes(DestType& buffer) const {
   if (value_ < 0) {
-    constexpr char minus_symbol = '-';
-    auto minus_res = write(buffer, &minus_symbol, 1);
+    constexpr char kMinusSymbol = '-';
+    auto minus_res = write(buffer, &kMinusSymbol, 1);
     if (minus_res == -1) {
       return ReturnCode::ERROR;
     }
@@ -435,9 +452,9 @@ ReturnCode FixedPoint<FRACTION_BITS>::ToBytes(DestType& buffer) const {
 
   int integer_part = GetAbsIntPart();
 
-  int fractional = (GetAbsFractionPart() * 1000) >> FRACTION_BITS;
-  int next_number =
-      ((GetAbsFractionPart() * 10000) >> FRACTION_BITS) - (fractional * 10);
+  int fractional = (GetAbsFractionPart() * 1000) >> kFractionBitsParam;
+  int next_number = ((GetAbsFractionPart() * 10000) >> kFractionBitsParam) -
+                    (fractional * 10);
   if (next_number >= 5) {
     fractional++;
   }
@@ -460,8 +477,8 @@ ReturnCode FixedPoint<FRACTION_BITS>::ToBytes(DestType& buffer) const {
   if (int_writing_result != int_convertion_result.ptr - integer_bytes.data()) {
     return ReturnCode::OVERFLOW;
   }
-  constexpr char point = '.';
-  auto point_res = write(buffer, &point, 1);
+  constexpr char kPoint = '.';
+  auto point_res = write(buffer, &kPoint, 1);
   if (point_res == -1) {
     return ReturnCode::ERROR;
   }
@@ -469,8 +486,9 @@ ReturnCode FixedPoint<FRACTION_BITS>::ToBytes(DestType& buffer) const {
     return ReturnCode::OVERFLOW;
   }
   if (fractional == 0) {
-    constexpr char null_fractional[] = "000";
-    int null_res = write(buffer, null_fractional, 3);
+    constexpr std::string_view kNullFractional = "000";
+    int null_res =
+        write(buffer, kNullFractional.data(), kNullFractional.size() - 1);
     if (null_res == -1) {
       return ReturnCode::ERROR;
     }
@@ -482,8 +500,8 @@ ReturnCode FixedPoint<FRACTION_BITS>::ToBytes(DestType& buffer) const {
   int nulls_counter = 1000 / 10;
   while (nulls_counter > fractional) {
     nulls_counter /= 10;
-    constexpr char null_char = '0';
-    auto null_res = write(buffer, &null_char, 1);
+    constexpr char kNullChar = '0';
+    auto null_res = write(buffer, &kNullChar, 1);
     if (null_res == -1) {
       return ReturnCode::ERROR;
     }
@@ -509,21 +527,20 @@ ReturnCode FixedPoint<FRACTION_BITS>::ToBytes(DestType& buffer) const {
 
 }  // namespace hydrolib::math
 
-template <int FRACTION_BITS>
-hydrolib::math::FixedPoint<FRACTION_BITS> sin(
-    hydrolib::math::FixedPoint<FRACTION_BITS> value_rad) {
-  auto full_circles =
-      static_cast<int>(value_rad / (hydrolib::math::kPi<FRACTION_BITS> * 2));
+template <int kFractionBitsParam>
+hydrolib::math::FixedPoint<kFractionBitsParam> sin(
+    hydrolib::math::FixedPoint<kFractionBitsParam> value_rad) {
+  auto full_circles = static_cast<int>(
+      value_rad / (hydrolib::math::kPi<kFractionBitsParam> * 2));
 
-  constexpr std::array<hydrolib::math::FixedPoint<FRACTION_BITS>, 7>
-      kMultiplesOfPi = {std::numbers::pi_v<long double> * 2,
-                        std::numbers::pi_v<long double> * 4,
-                        std::numbers::pi_v<long double> * 8,
-                        std::numbers::pi_v<long double> * 16,
-                        std::numbers::pi_v<long double> * 32,
-                        std::numbers::pi_v<long double> * 64,
-                        std::numbers::pi_v<long double> * 128};
-  hydrolib::math::FixedPoint<FRACTION_BITS> normalized_value_rad = value_rad;
+  constexpr std::array<hydrolib::math::FixedPoint<kFractionBitsParam>, 7>
+      kMultiplesOfPi = {
+          std::numbers::pi_v<double> * 2,  std::numbers::pi_v<double> * 4,
+          std::numbers::pi_v<double> * 8,  std::numbers::pi_v<double> * 16,
+          std::numbers::pi_v<double> * 32, std::numbers::pi_v<double> * 64,
+          std::numbers::pi_v<double> * 128};
+  hydrolib::math::FixedPoint<kFractionBitsParam> normalized_value_rad =
+      value_rad;
   int multiple_index = kMultiplesOfPi.size() - 1;
   while (full_circles != 0) {
     if (std::abs(full_circles) >= (1 << multiple_index)) {
@@ -539,24 +556,25 @@ hydrolib::math::FixedPoint<FRACTION_BITS> sin(
     }
   }
 
-  if (normalized_value_rad > hydrolib::math::kPi<FRACTION_BITS>) {
-    normalized_value_rad -= hydrolib::math::kPi<FRACTION_BITS> * 2;
-  } else if (normalized_value_rad < -hydrolib::math::kPi<FRACTION_BITS>) {
-    normalized_value_rad += hydrolib::math::kPi<FRACTION_BITS> * 2;
+  if (normalized_value_rad > hydrolib::math::kPi<kFractionBitsParam>) {
+    normalized_value_rad -= hydrolib::math::kPi<kFractionBitsParam> * 2;
+  } else if (normalized_value_rad < -hydrolib::math::kPi<kFractionBitsParam>) {
+    normalized_value_rad += hydrolib::math::kPi<kFractionBitsParam> * 2;
   }
 
-  if (normalized_value_rad > hydrolib::math::kPi<FRACTION_BITS> / 2) {
+  if (normalized_value_rad > hydrolib::math::kPi<kFractionBitsParam> / 2) {
     normalized_value_rad =
-        hydrolib::math::kPi<FRACTION_BITS> - normalized_value_rad;
-  } else if (normalized_value_rad < -hydrolib::math::kPi<FRACTION_BITS> / 2) {
+        hydrolib::math::kPi<kFractionBitsParam> - normalized_value_rad;
+  } else if (normalized_value_rad <
+             -hydrolib::math::kPi<kFractionBitsParam> / 2) {
     normalized_value_rad =
-        -hydrolib::math::kPi<FRACTION_BITS> - normalized_value_rad;
+        -hydrolib::math::kPi<kFractionBitsParam> - normalized_value_rad;
   }
 
   int current_diff =
       normalized_value_rad.value_ *
       (1 << (hydrolib::math::CORDICConstants::kTrigonometryFractionBits -
-             FRACTION_BITS));
+             kFractionBitsParam));
   int x_coordinate = hydrolib::math::CORDICConstants::kXShift;
   int y_coordinate = 0;
 
@@ -579,30 +597,30 @@ hydrolib::math::FixedPoint<FRACTION_BITS> sin(
     x_coordinate = new_x_coordinate;
     y_coordinate = new_y_coordinate;
   }
-  return hydrolib::math::FixedPoint<FRACTION_BITS>(
+  return hydrolib::math::FixedPoint<kFractionBitsParam>(
       y_coordinate,
       1 << hydrolib::math::CORDICConstants::kTrigonometryFractionBits);
 }
 
-template <int FRACTION_BITS>
-hydrolib::math::FixedPoint<FRACTION_BITS> cos(
-    hydrolib::math::FixedPoint<FRACTION_BITS> value_rad) {
+template <int kFractionBitsParam>
+hydrolib::math::FixedPoint<kFractionBitsParam> cos(
+    hydrolib::math::FixedPoint<kFractionBitsParam> value_rad) {
   if (value_rad > 0) {
-    value_rad -= hydrolib::math::kPi<FRACTION_BITS> * 2;
+    value_rad -= hydrolib::math::kPi<kFractionBitsParam> * 2;
   } else if (value_rad < 0) {
-    value_rad += hydrolib::math::kPi<FRACTION_BITS> * 2;
+    value_rad += hydrolib::math::kPi<kFractionBitsParam> * 2;
   }
-  return sin(value_rad + (hydrolib::math::kPi<FRACTION_BITS> / 2));
+  return sin(value_rad + (hydrolib::math::kPi<kFractionBitsParam> / 2));
 }
 
-template <int FRACTION_BITS>
-hydrolib::math::FixedPoint<FRACTION_BITS> sqrt(
-    hydrolib::math::FixedPoint<FRACTION_BITS> value) {
+template <int kFractionBitsParam>
+hydrolib::math::FixedPoint<kFractionBitsParam> sqrt(
+    hydrolib::math::FixedPoint<kFractionBitsParam> value) {
   if (value.value_ == 0) {
-    return hydrolib::math::FixedPoint<FRACTION_BITS>(0);
+    return hydrolib::math::FixedPoint<kFractionBitsParam>(0);
   }
 
-  int64_t target_sq = static_cast<int64_t>(value.value_) << FRACTION_BITS;
+  int64_t target_sq = static_cast<int64_t>(value.value_) << kFractionBitsParam;
 
   int low = 0;
   int high = INT_MAX;
