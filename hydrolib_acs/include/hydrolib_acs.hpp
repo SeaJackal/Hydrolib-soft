@@ -5,14 +5,15 @@
 
 #include "hydrolib_imu.hpp"
 #include "hydrolib_pid.hpp"
-#include "hydrolib_thrust_generator.hpp"
+#include "hydrolib_truster_complex.hpp"
 
 namespace hydrolib::controlling {
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 class ControlSystem {
  public:
-  ControlSystem(IMU &imu, ThrustGenerator &thrust_generator);
+  ControlSystem(IMU& imu, ThrustGenerator& thrust_generator);
 
   void SetControl(math::Rotation<Number> rotation,
                   math::Vector3D<Number> linear);
@@ -40,8 +41,8 @@ class ControlSystem {
   void Process();
 
  private:
-  IMU &imu_;
-  ThrustGenerator &thrust_generator_;
+  IMU& imu_;
+  ThrustGenerator& thrust_generator_;
 
   PID<FREQ_HZ, Number> yaw_pid_;
   PID<FREQ_HZ, Number> pitch_pid_;
@@ -56,13 +57,15 @@ class ControlSystem {
 };
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::ControlSystem(
-    IMU &imu, ThrustGenerator &thrust_generator)
+    IMU& imu, ThrustGenerator& thrust_generator)
     : imu_(imu), thrust_generator_(thrust_generator) {}
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::SetControl(
     math::Rotation<Number> rotation, math::Vector3D<Number> linear) {
   target_rotation_ = rotation;
@@ -70,106 +73,122 @@ void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::SetControl(
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::CloseYawContour() {
   is_yaw_closed_ = true;
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::ClosePitchContour() {
   is_pitch_closed_ = true;
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::CloseRollContour() {
   is_roll_closed_ = true;
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::OpenYawContour() {
   is_yaw_closed_ = false;
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::OpenPitchContour() {
   is_pitch_closed_ = false;
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::OpenRollContour() {
   is_roll_closed_ = false;
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::SetYawP(
     Number p_coeff) {
   yaw_pid_.SetP(p_coeff);
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::SetYawI(
     Number i_coeff) {
   yaw_pid_.SetI(i_coeff);
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::SetYawD(
     Number d_coeff) {
   yaw_pid_.SetD(d_coeff);
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::SetPitchP(
     Number p_coeff) {
   pitch_pid_.SetP(p_coeff);
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::SetPitchI(
     Number i_coeff) {
   pitch_pid_.SetI(i_coeff);
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::SetPitchD(
     Number d_coeff) {
   pitch_pid_.SetD(d_coeff);
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::SetRollP(
     Number p_coeff) {
   roll_pid_.SetP(p_coeff);
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::SetRollI(
     Number i_coeff) {
   roll_pid_.SetI(i_coeff);
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::SetRollD(
     Number d_coeff) {
   roll_pid_.SetD(d_coeff);
 }
 
 template <typename IMU, typename ThrustGenerator, int FREQ_HZ, typename Number>
-  requires sensors::IMUConcept<IMU, Number>
+  requires sensors::IMUConcept<IMU, Number> &&
+           ThrusterComplexConcept<ThrustGenerator, Number>
 void ControlSystem<IMU, ThrustGenerator, FREQ_HZ, Number>::Process() {
   math::Rotation<Number> current_orientation = imu_.GetOrientation();
   auto delta = target_rotation_ - current_orientation;

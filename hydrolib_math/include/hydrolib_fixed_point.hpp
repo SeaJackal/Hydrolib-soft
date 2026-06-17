@@ -488,7 +488,7 @@ ReturnCode FixedPoint<kFractionBitsParam>::ToBytes(DestType& buffer) const {
   if (fractional == 0) {
     constexpr std::string_view kNullFractional = "000";
     int null_res =
-        write(buffer, kNullFractional.data(), kNullFractional.size() - 1);
+        write(buffer, kNullFractional.data(), kNullFractional.size());
     if (null_res == -1) {
       return ReturnCode::ERROR;
     }

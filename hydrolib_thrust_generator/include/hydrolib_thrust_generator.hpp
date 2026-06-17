@@ -7,6 +7,7 @@
 #include "hydrolib_fixed_point.hpp"
 #include "hydrolib_linear_equations.hpp"
 #include "hydrolib_return_codes.hpp"
+#include "hydrolib_truster_complex.hpp"
 
 namespace hydrolib::controlling {
 
@@ -18,17 +19,6 @@ concept ThrusterConcept = requires(T thruster, int speed) {
 inline void Error([[maybe_unused]] const char* message) {
   int param = 0;
   [[maybe_unused]] int error = 1 / param;
-};
-
-template <typename Number>
-struct Control {
-  Number x_force;
-  Number y_force;
-  Number z_force;
-
-  Number x_torque;
-  Number y_torque;
-  Number z_torque;
 };
 
 template <ThrusterConcept Thruster, int THRUSTERS_COUNT,
