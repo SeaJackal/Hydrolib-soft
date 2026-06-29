@@ -61,13 +61,11 @@ void MotorController<Sensor, Motor>::Process() {
   auto current_time = std::chrono::steady_clock::now();
   auto current_angle = sensor_.GetPos();
   auto target_field_angle =
-      current_angle + math::kPi<16> * (target_speed_ < 0 ? -1 : 1) / 2;
+      (current_angle + math::kPi<16> * (target_speed_ < 0 ? -1 : 1) / 2) * 7;
 
-  auto a_part =
-      (kXtoA * cos(target_field_angle)) + (kYtoA * sin(target_field_angle));
-  auto b_part = (kXtoB * cos(target_field_angle));
-  auto c_part =
-      (kXtoC * cos(target_field_angle)) + (kYtoC * sin(target_field_angle));
+  auto a_part = sin(target_field_angle);
+  auto b_part = sin(target_field_angle + math::kPi<16> * 2 / 3);
+  auto c_part = sin(target_field_angle - math::kPi<16> * 2 / 3);
 
   current_speed_ = (current_angle - last_angle_) /
                    math::FixedPointBase(current_time - last_update_time_);

@@ -1,5 +1,4 @@
-#ifndef HYDROLIB_FUNC_CONCEPTS_H_
-#define HYDROLIB_FUNC_CONCEPTS_H_
+#pragma once
 
 #include <concepts>
 
@@ -13,5 +12,3 @@ template <typename ReturnType, typename... ArgTypes>
 ReturnType DummyFunc([[maybe_unused]] ArgTypes... args) {}
 
 }  // namespace hydrolib::concepts::func
-
-#endif

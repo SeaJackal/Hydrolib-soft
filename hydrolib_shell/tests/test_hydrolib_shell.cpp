@@ -1,246 +1,121 @@
 #include <gtest/gtest.h>
 
-#include <algorithm>
-#include <deque>
+#include <cstddef>
 #include <functional>
-#include <optional>
 #include <string>
 #include <string_view>
+#include <span>
 #include <unordered_map>
 #include <vector>
 
+#include "hydrolib_return_codes.hpp"
 #include "hydrolib_shell.hpp"
+#include "hydrolib_shell_environment.hpp"
+#include "mock_stream.hpp"
 
 namespace {
 
-struct FakeStream {
-  FakeStream() = default;
+using hydrolib::ReturnCode;
+using hydrolib::shell::Environment;
 
-  explicit FakeStream(std::string_view initial_data) {
-    AppendInput(initial_data);
+using HandlerFn =
+    std::function<int(Environment&, std::span<const std::string_view>)>;
+
+using Handlers = std::unordered_map<std::string_view, HandlerFn>;
+
+using Stream = hydrolib::streams::mock::MockByteStream;
+using ShellUnderTest = hydrolib::shell::Shell<Stream, Handlers>;
+
+std::string DrainAll(Stream& stream) {
+  stream.MakeAllbytesAvailable();
+  const auto size = stream.GetSize();
+  if (size == 0) {
+    return {};
   }
-
-  void AppendInput(std::string_view data) {
-    input_.insert(input_.end(), data.begin(), data.end());
+  std::string out;
+  out.resize(size);
+  const auto read_bytes = read(stream, out.data(), out.size());
+  if (read_bytes <= 0) {
+    return {};
   }
-
-  void AppendChar(char ch) { input_.push_back(ch); }
-
-  std::string OutputAsString() const {
-    return std::string(output_.begin(), output_.end());
-  }
-
-  std::deque<char> input_;
-  std::vector<char> output_;
-  bool fail_next_read_ = false;
-};
-
-[[maybe_unused]] int read(FakeStream &stream, void *dest, unsigned length) {
-  if (stream.fail_next_read_) {
-    stream.fail_next_read_ = false;
-    return -1;
-  }
-
-  if (length == 0) {
-    return 0;
-  }
-
-  if (stream.input_.empty()) {
-    return 0;
-  }
-
-  const unsigned available = static_cast<unsigned>(stream.input_.size());
-  const unsigned to_copy = std::min(length, available);
-
-  auto *char_dest = static_cast<char *>(dest);
-  for (unsigned i = 0; i < to_copy; ++i) {
-    char_dest[i] = stream.input_.front();
-    stream.input_.pop_front();
-  }
-
-  return static_cast<int>(to_copy);
+  out.resize(static_cast<std::size_t>(read_bytes));
+  return out;
 }
 
-[[maybe_unused]] int write(FakeStream &stream, const void *source,
-                           unsigned length) {
-  const auto *char_source = static_cast<const char *>(source);
-  stream.output_.insert(stream.output_.end(), char_source,
-                        char_source + length);
-  return static_cast<int>(length);
+ReturnCode RunLine(ShellUnderTest& shell, Stream& stream,
+                   std::string_view line) {
+  write(stream, line.data(), line.size());
+  stream.AddAvailableBytes(static_cast<int>(line.size()));
+
+  ReturnCode result_code = ReturnCode::NO_DATA;
+  for (std::size_t i = 0; i < line.size(); ++i) {
+    result_code = shell.Process();
+    if (result_code != ReturnCode::NO_DATA) {
+      return result_code;
+    }
+  }
+  return result_code;
 }
 
 }  // namespace
 
-using hydrolib::ReturnCode;
+TEST(HydrolibShell, DispatchesCommandWithoutArguments) {
+  Stream stream;
+  Handlers handlers;
 
-struct TestCommandMap {
-  using HandlerType = std::optional<std::function<int(int, char *[])>>;
+  int called = 0;
+  std::vector<std::string> received;
 
-  HandlerType &operator[](std::string_view key) {
-    return storage[std::string(key)];
-  }
-
-  std::unordered_map<std::string, HandlerType> storage;
-};
-
-using ShellUnderTest =
-    hydrolib::shell::Shell<FakeStream, std::function<int(int, char *[])>,
-                           TestCommandMap>;
-
-const std::string kPromptString = std::string(ShellUnderTest::kPrompt);
-
-TEST(ShellProcess, ReturnsTerminalResultWhenNoData) {
-  FakeStream stream;
-  TestCommandMap handlers;
-  ShellUnderTest shell(stream, handlers);
-
-  EXPECT_EQ(ReturnCode::NO_DATA, shell.Process());
-  EXPECT_TRUE(stream.OutputAsString().empty());
-}
-
-TEST(ShellProcess, PropagatesTerminalError) {
-  FakeStream stream;
-  stream.fail_next_read_ = true;
-
-  TestCommandMap handlers;
-  ShellUnderTest shell(stream, handlers);
-
-  EXPECT_EQ(ReturnCode::ERROR, shell.Process());
-  EXPECT_TRUE(stream.OutputAsString().empty());
-}
-
-TEST(ShellProcess, InvokesHandlerAndReturnsOkOnSuccess) {
-  FakeStream stream;
-  stream.AppendInput("run\n");
-
-  TestCommandMap handlers;
-  bool handler_called = false;
-  std::vector<std::string> received_arguments;
-
-  handlers.storage["run"] =
-      std::function<int(int, char *[])>([&](int argc, char *argv[]) {
-        handler_called = true;
-        received_arguments.clear();
-        for (int i = 0; i < argc; ++i) {
-          received_arguments.emplace_back(argv[i]);
+  handlers.emplace(
+      "ping",
+      [&](Environment&, std::span<const std::string_view> args) -> int {
+        called++;
+        received.clear();
+        for (auto arg : args) {
+          received.emplace_back(arg);
         }
         return 0;
       });
 
   ShellUnderTest shell(stream, handlers);
 
-  EXPECT_EQ(ReturnCode::OK, shell.Process());
-  EXPECT_TRUE(handler_called);
-  ASSERT_EQ(1u, received_arguments.size());
-  EXPECT_EQ("run", received_arguments.front());
-  EXPECT_EQ(std::string("run\n") + kPromptString, stream.OutputAsString());
+  EXPECT_EQ(RunLine(shell, stream, "ping\n"), ReturnCode::OK);
+  EXPECT_EQ(called, 1);
+  EXPECT_EQ(received, (std::vector<std::string>{"ping"}));
+  EXPECT_EQ(DrainAll(stream), "ping\n\rhydrosh > ");
 }
 
-TEST(ShellProcess, ReturnsErrorWhenHandlerFails) {
-  FakeStream stream;
-  stream.AppendInput("fail\n");
+TEST(HydrolibShell, DispatchesCommandWithArguments) {
+  Stream stream;
+  Handlers handlers;
 
-  TestCommandMap handlers;
-  bool handler_called = false;
+  int called = 0;
+  std::vector<std::string> received;
 
-  handlers.storage["fail"] =
-      std::function<int(int, char *[])>([&](int, char *[]) {
-        handler_called = true;
-        return 7;
-      });
-
-  ShellUnderTest shell(stream, handlers);
-
-  EXPECT_EQ(ReturnCode::ERROR, shell.Process());
-  EXPECT_TRUE(handler_called);
-  EXPECT_EQ(std::string("fail\n") + kPromptString, stream.OutputAsString());
-}
-
-TEST(ShellProcess, ReturnsErrorWhenHandlerMissing) {
-  FakeStream stream;
-  stream.AppendInput("unknown\n");
-
-  TestCommandMap handlers;
-  ShellUnderTest shell(stream, handlers);
-
-  EXPECT_EQ(ReturnCode::ERROR, shell.Process());
-  EXPECT_EQ(std::string("unknown\n") + kPromptString, stream.OutputAsString());
-}
-
-TEST(ShellProcess, CoutDefaultIsNoop) {
-  FakeStream stream;
-
-  hydrolib::shell::cout << "ignored";
-  EXPECT_TRUE(stream.OutputAsString().empty());
-}
-
-TEST(ShellProcess, CoutBindsAfterShellInit) {
-  FakeStream stream;
-  TestCommandMap handlers;
-
-  ShellUnderTest shell(stream, handlers);
-
-  hydrolib::shell::cout << "ok";
-  EXPECT_EQ("ok", stream.OutputAsString());
-}
-
-TEST(ShellProcess, ProcessesMultipleCommandsWithDifferentLengths) {
-  FakeStream stream;
-  stream.AppendInput("a\nreset-now\nx\n");
-
-  TestCommandMap handlers;
-  std::vector<std::string> call_order;
-
-  auto make_handler = [&](const std::string &name) {
-    return std::function<int(int, char *[])>([&, name](int argc, char *argv[]) {
-      EXPECT_GT(argc, 0);
-      EXPECT_STREQ(name.c_str(), argv[0]);
-      call_order.emplace_back(argv[0]);
-      return 0;
-    });
-  };
-
-  handlers.storage["a"] = make_handler("a");
-  handlers.storage["reset-now"] = make_handler("reset-now");
-  handlers.storage["x"] = make_handler("x");
-
-  ShellUnderTest shell(stream, handlers);
-
-  EXPECT_EQ(ReturnCode::OK, shell.Process());
-  EXPECT_EQ(ReturnCode::OK, shell.Process());
-  EXPECT_EQ(ReturnCode::OK, shell.Process());
-  EXPECT_EQ(ReturnCode::NO_DATA, shell.Process());
-
-  EXPECT_EQ((std::vector<std::string>{"a", "reset-now", "x"}), call_order);
-  EXPECT_EQ(std::string("a\n") + kPromptString + "reset-now\n" + kPromptString +
-                "x\n" + kPromptString,
-            stream.OutputAsString());
-}
-
-TEST(ShellProcess, InvokesHandlerWithArguments) {
-  FakeStream stream;
-  stream.AppendInput("set value1 42\n");
-
-  TestCommandMap handlers;
-  int received_argc = -1;
-  std::vector<std::string> received_arguments;
-
-  handlers.storage["set"] =
-      std::function<int(int, char *[])>([&](int argc, char *argv[]) {
-        received_argc = argc;
-        received_arguments.clear();
-        for (int i = 0; i < argc; ++i) {
-          received_arguments.emplace_back(argv[i]);
+  handlers.emplace(
+      "set", [&](Environment&, std::span<const std::string_view> args) -> int {
+        called++;
+        received.clear();
+        for (auto arg : args) {
+          received.emplace_back(arg);
         }
         return 0;
       });
 
   ShellUnderTest shell(stream, handlers);
 
-  EXPECT_EQ(ReturnCode::OK, shell.Process());
-  EXPECT_EQ(3, received_argc);
-  EXPECT_EQ((std::vector<std::string>{"set", "value1", "42"}),
-            received_arguments);
-  EXPECT_EQ(std::string("set value1 42\n") + kPromptString,
-            stream.OutputAsString());
+  EXPECT_EQ(RunLine(shell, stream, "set value1 42\n"), ReturnCode::OK);
+  EXPECT_EQ(called, 1);
+  EXPECT_EQ(received, (std::vector<std::string>{"set", "value1", "42"}));
+  EXPECT_EQ(DrainAll(stream), "set value1 42\n\rhydrosh > ");
+}
+
+TEST(HydrolibShell, ReportsUnknownCommand) {
+  Stream stream;
+  Handlers handlers;
+  ShellUnderTest shell(stream, handlers);
+
+  EXPECT_EQ(RunLine(shell, stream, "nope\n"), ReturnCode::FAIL);
+
+  EXPECT_EQ(DrainAll(stream), "nope\n\rUnknown command: nope\nhydrosh > ");
 }

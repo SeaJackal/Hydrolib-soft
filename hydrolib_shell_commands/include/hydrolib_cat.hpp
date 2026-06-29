@@ -23,6 +23,7 @@ class CatCommand {
 int Cat(int argc, char *argv[]);
 
 inline CatCommand::CatCommand(int argc, char *argv[]) {
+  optind = 0;
   const char *format_string = "-:hx";
   int opt = getopt(argc, argv, format_string);
   while (opt != -1) {

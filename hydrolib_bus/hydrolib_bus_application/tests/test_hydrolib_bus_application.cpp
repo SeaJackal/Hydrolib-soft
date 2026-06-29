@@ -2,8 +2,9 @@
 
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <cstring>
-#include <thread>
+#include <span>
 
 #include "hydrolib_bus_application_commands.hpp"
 #include "hydrolib_bus_application_master.hpp"
@@ -31,38 +32,42 @@ TestHydrolibBusApplication::TestHydrolibBusApplication()
   hydrolib::logger::mock_distributor.SetAllFilters(
       0, hydrolib::logger::LogLevel::DEBUG);
   for (int i = 0; i < TestPublicMemory::kPublicMemoryLength; i++) {
-    test_data[i] = i;
+    test_data[i] = static_cast<std::byte>(i);
   }
 }
 
-hydrolib::ReturnCode TestPublicMemory::Read(void *read_buffer, unsigned address,
-                                            unsigned length) {
-  if (address + length > kPublicMemoryLength) {
+hydrolib::ReturnCode TestPublicMemory::Read(std::span<std::byte> read_buffer,
+                                            int address) {
+  if (address + read_buffer.size() > kPublicMemoryLength) {
     return hydrolib::ReturnCode::FAIL;
   }
-  memcpy(read_buffer, &memory[address], length);
+  std::ranges::copy(
+      std::span<std::byte>(memory).subspan(address, read_buffer.size()),
+      read_buffer.begin());
   return hydrolib::ReturnCode::OK;
 }
 
-hydrolib::ReturnCode TestPublicMemory::Write(const void *write_buffer,
-                                             unsigned address,
-                                             unsigned length) {
-  if (address + length > kPublicMemoryLength) {
+hydrolib::ReturnCode TestPublicMemory::Write(
+    std::span<const std::byte> write_buffer, int address) {
+  if (address + write_buffer.size() > kPublicMemoryLength) {
     return hydrolib::ReturnCode::FAIL;
   }
-  memcpy(&memory[address], write_buffer, length);
+  std::ranges::copy(write_buffer,
+                    std::span<std::byte>(memory).subspan(address).begin());
   return hydrolib::ReturnCode::OK;
 }
 
 TEST_P(TestHydrolibBusApplication, WriteTest) {
   auto test_case = GetParam();
-  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> reference_data =
+  std::array<std::byte, TestPublicMemory::kPublicMemoryLength> reference_data =
       memory.memory;
   ASSERT_LE(test_case.address + test_case.length,
             TestPublicMemory::kPublicMemoryLength);
-  master.Write(test_data.data(), test_case.address, test_case.length);
-  memcpy(reference_data.data() + test_case.address, test_data.data(),
-         test_case.length);
+  master.RequestWrite(std::span<std::byte>(test_data.begin(), test_case.length),
+                      test_case.address);
+  std::ranges::copy(
+      std::span<std::byte>(test_data.begin(), test_case.length),
+      std::span<std::byte>(reference_data).subspan(test_case.address).begin());
   stream.MakeAllbytesAvailable();
   slave.Process();
   for (int i = 0; i < TestPublicMemory::kPublicMemoryLength; i++) {
@@ -71,14 +76,18 @@ TEST_P(TestHydrolibBusApplication, WriteTest) {
 }
 
 TEST_F(TestHydrolibBusApplication, WriteSeriaTest) {
-  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> reference_data =
+  std::array<std::byte, TestPublicMemory::kPublicMemoryLength> reference_data =
       memory.memory;
-  for (const auto &test_case : kTestCases) {
+  for (const auto& test_case : kTestCases) {
     ASSERT_LE(test_case.address + test_case.length,
               TestPublicMemory::kPublicMemoryLength);
-    master.Write(test_data.data(), test_case.address, test_case.length);
-    memcpy(reference_data.data() + test_case.address, test_data.data(),
-           test_case.length);
+    master.RequestWrite(
+        std::span<std::byte>(test_data.begin(), test_case.length),
+        test_case.address);
+    std::ranges::copy(std::span<std::byte>(test_data.begin(), test_case.length),
+                      std::span<std::byte>(reference_data)
+                          .subspan(test_case.address)
+                          .begin());
     stream.MakeAllbytesAvailable();
     slave.Process();
     for (int i = 0; i < TestPublicMemory::kPublicMemoryLength; i++) {
@@ -89,12 +98,12 @@ TEST_F(TestHydrolibBusApplication, WriteSeriaTest) {
 
 TEST_P(TestHydrolibBusApplication, ReadTest) {
   auto test_case = GetParam();
-  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+  std::array<std::byte, TestPublicMemory::kPublicMemoryLength> buffer{};
   ASSERT_LE(test_case.address + test_case.length,
             TestPublicMemory::kPublicMemoryLength);
-  memcpy(memory.memory.data(), test_data.data(),
-         TestPublicMemory::kPublicMemoryLength);
-  master.Read(buffer.data(), test_case.address, test_case.length);
+  std::ranges::copy(test_data, memory.memory.begin());
+  master.RequestRead(std::span<std::byte>(buffer.begin(), test_case.length),
+                     test_case.address);
   EXPECT_EQ(master.Process(), hydrolib::ReturnCode::NO_DATA);
   stream.MakeAllbytesAvailable();
   slave.Process();
@@ -111,11 +120,12 @@ TEST_P(TestHydrolibBusApplication, ReadTest) {
 TEST_F(TestHydrolibBusApplication, ReadSeriaTest) {
   memcpy(memory.memory.data(), test_data.data(),
          TestPublicMemory::kPublicMemoryLength);
-  for (const auto &test_case : kTestCases) {
-    std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+  for (const auto& test_case : kTestCases) {
+    std::array<std::byte, TestPublicMemory::kPublicMemoryLength> buffer{};
     ASSERT_LE(test_case.address + test_case.length,
               TestPublicMemory::kPublicMemoryLength);
-    master.Read(buffer.data(), test_case.address, test_case.length);
+    master.RequestRead(std::span<std::byte>(buffer.begin(), test_case.length),
+                       test_case.address);
     stream.MakeAllbytesAvailable();
     slave.Process();
     stream.MakeAllbytesAvailable();
@@ -131,13 +141,12 @@ TEST_F(TestHydrolibBusApplication, ReadSeriaTest) {
 
 TEST_F(TestHydrolibBusApplication, ReadTimeoutTest) {
   auto test_case = kTestCases[0];
-  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+  std::array<std::byte, TestPublicMemory::kPublicMemoryLength> buffer{};
   ASSERT_LE(test_case.address + test_case.length,
             TestPublicMemory::kPublicMemoryLength);
-  memcpy(memory.memory.data(), test_data.data(),
-         TestPublicMemory::kPublicMemoryLength);
+  std::ranges::copy(test_data, memory.memory.begin());
   auto start_time = std::chrono::steady_clock::now();
-  master.Read(buffer.data(), test_case.address, test_case.length);
+  master.RequestRead(buffer, test_case.address);
   while (std::chrono::steady_clock::now() - start_time <
          decltype(master)::kRequestTimeout) {
   }
@@ -154,13 +163,12 @@ TEST_F(TestHydrolibBusApplication, ReadTimeoutTest) {
 
 TEST_F(TestHydrolibBusApplication, ReadAlmostTimeoutTest) {
   auto test_case = kTestCases[0];
-  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+  std::array<std::byte, TestPublicMemory::kPublicMemoryLength> buffer{};
   ASSERT_LE(test_case.address + test_case.length,
             TestPublicMemory::kPublicMemoryLength);
-  memcpy(memory.memory.data(), test_data.data(),
-         TestPublicMemory::kPublicMemoryLength);
+  std::ranges::copy(test_data, memory.memory.begin());
   auto start_time = std::chrono::steady_clock::now();
-  master.Read(buffer.data(), test_case.address, test_case.length);
+  master.RequestRead(buffer, test_case.address);
   while (std::chrono::steady_clock::now() - start_time <
          decltype(master)::kRequestTimeout - 10ms) {
   }
@@ -174,14 +182,14 @@ TEST_F(TestHydrolibBusApplication, ReadAlmostTimeoutTest) {
 }
 
 TEST_F(TestHydrolibBusApplication,
-       MemoryAccessReadError) {  // TODO modernize mock
+       MemoryAccessReadError) {  // TODO: vscode - modernize mock
                                  // https://app.weeek.net/ws/701833/task/1065
-  unsigned address = TestPublicMemory::kPublicMemoryLength;
-  unsigned length = 1;
+  int address = TestPublicMemory::kPublicMemoryLength;
+  int length = 1;
 
-  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+  std::array<std::byte, TestPublicMemory::kPublicMemoryLength> buffer{};
 
-  master.Read(buffer.data(), address, length);
+  master.RequestRead(std::span<std::byte>(buffer.begin(), length), address);
   stream.MakeAllbytesAvailable();
   slave.Process();
 
@@ -190,12 +198,12 @@ TEST_F(TestHydrolibBusApplication,
 }
 
 TEST_F(TestHydrolibBusApplication, MemoryAccessWriteError) {
-  unsigned address = TestPublicMemory::kPublicMemoryLength;
-  unsigned length = 1;
+  int address = TestPublicMemory::kPublicMemoryLength;
+  int length = 1;
 
-  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+  std::array<std::byte, TestPublicMemory::kPublicMemoryLength> buffer{};
 
-  master.Write(buffer.data(), address, length);
+  master.RequestWrite(std::span<std::byte>(buffer.begin(), length), address);
   stream.MakeAllbytesAvailable();
   slave.Process();
 
@@ -203,18 +211,19 @@ TEST_F(TestHydrolibBusApplication, MemoryAccessWriteError) {
   EXPECT_EQ(master.Process(), hydrolib::ReturnCode::FAIL);
 }
 
-TEST_F(TestHydrolibBusApplication, WrongCommandsTest) {  // TODO think about it
-  unsigned address = 0;
-  unsigned length = 1;
+TEST_F(TestHydrolibBusApplication,
+       WrongCommandsTest) {  // TODO: vscode - think about it
+  int address = 0;
+  int length = 1;
 
-  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+  std::array<std::byte, TestPublicMemory::kPublicMemoryLength> buffer{};
 
-  master.Read(buffer.data(), address, length);
+  master.RequestRead(std::span<std::byte>(buffer.begin(), length), address);
   stream.Clear();
 
-  hydrolib::bus::application::MemoryAccessMessageBuffer wrong_command;
+  hydrolib::bus::application::MemoryAccessMessageBuffer wrong_command{};
 
-  wrong_command.header.command = hydrolib::bus::application::Command::ERROR;
+  wrong_command.header.command = hydrolib::bus::application::Command::kError;
   wrong_command.header.info.address = 0;
   wrong_command.header.info.length = 1;
 
@@ -227,7 +236,7 @@ TEST_F(TestHydrolibBusApplication, WrongCommandsTest) {  // TODO think about it
 
   EXPECT_EQ(master.Process(), hydrolib::ReturnCode::ERROR);
 
-  master.Read(buffer.data(), address, length);
+  master.RequestRead(std::span<std::byte>(buffer.begin(), length), address);
   stream.MakeAllbytesAvailable();
 
   slave.Process();
@@ -237,20 +246,21 @@ TEST_F(TestHydrolibBusApplication, WrongCommandsTest) {  // TODO think about it
 }
 
 TEST_F(TestHydrolibBusApplication, UnexpectedLenghtDataTest) {
-  unsigned address = 0;
-  unsigned requested_lenght = 1;
+  int address = 0;
+  int requested_lenght = 1;
 
-  std::array<uint8_t, TestPublicMemory::kPublicMemoryLength> buffer{};
+  std::array<std::byte, TestPublicMemory::kPublicMemoryLength> buffer{};
 
-  master.Read(buffer.data(), address, requested_lenght);
+  master.RequestRead(std::span<std::byte>(buffer.begin(), requested_lenght),
+                     address);
   stream.MakeAllbytesAvailable();
   slave.Process();
   stream.MakeAllbytesAvailable();
   stream.Clear();
 
-  hydrolib::bus::application::MemoryAccessMessageBuffer wrong_data;
+  hydrolib::bus::application::MemoryAccessMessageBuffer wrong_data{};
 
-  wrong_data.header.command = hydrolib::bus::application::Command::RESPONSE;
+  wrong_data.header.command = hydrolib::bus::application::Command::kResponse;
   wrong_data.header.info.address = 0;
   wrong_data.header.info.length = requested_lenght + 1;
 

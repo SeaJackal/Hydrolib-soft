@@ -2,5 +2,7 @@ add_library(HydrolibThrustGenerator INTERFACE)
 
 target_include_directories(HydrolibThrustGenerator INTERFACE include)
 
+target_link_libraries(HydrolibThrustGenerator INTERFACE HydrolibMath)
+
 include(${HYDROLIB_ROOT_DIR}/cmake/HydrolibGTest.cmake)
 hydrolib_add_tests_for_target(HydrolibThrustGenerator)

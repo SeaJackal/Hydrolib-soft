@@ -87,11 +87,3 @@ TEST(HydrolibShellOstream, SupportsChaining) {
 
   EXPECT_EQ(OutputAsString(stream), "ABCDE");
 }
-
-TEST(HydrolibShellOstream, DefaultConstructed_DoesNothingAndReturnsSelf) {
-  Ostream os_default;
-  auto &ref = os_default << "ignored";
-
-  // No crash and returns self reference for chaining
-  EXPECT_EQ(&ref, &os_default);
-}

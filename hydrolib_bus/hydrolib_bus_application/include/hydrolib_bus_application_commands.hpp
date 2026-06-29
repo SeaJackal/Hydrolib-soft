@@ -1,9 +1,10 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 namespace hydrolib::bus::application {
-enum class Command : uint8_t { WRITE, READ, RESPONSE, ERROR };
+enum class Command : uint8_t { kWrite, kRead, kResponse, kError };
 
 struct MemoryAccessInfo {
   uint8_t address;
@@ -21,12 +22,12 @@ constexpr unsigned kMaxMessageLength =
 
 struct MemoryAccessMessageBuffer {
   MemoryAccessHeader header;
-  uint8_t data[kMaxDataLength];  // NOLINT
+  std::byte data[kMaxDataLength];  // NOLINT
 } __attribute__((__packed__));
 
 struct ResponseMessageBuffer {
   Command command;
-  uint8_t data[kMaxDataLength];  // NOLINT
+  std::byte data[kMaxDataLength];  // NOLINT
 } __attribute__((__packed__));
 
 }  // namespace hydrolib::bus::application

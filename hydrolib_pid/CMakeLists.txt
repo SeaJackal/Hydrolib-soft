@@ -11,3 +11,5 @@ target_include_directories(HydrolibPID INTERFACE include)
 
 include(${HYDROLIB_ROOT_DIR}/cmake/HydrolibGTest.cmake)
 hydrolib_add_tests_for_target(HydrolibPID)
+
+target_link_libraries(HydrolibPID INTERFACE HydrolibMath)
