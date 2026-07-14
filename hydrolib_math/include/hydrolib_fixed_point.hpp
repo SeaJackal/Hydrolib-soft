@@ -223,13 +223,6 @@ constexpr FixedPoint<FRACTION_BITS>::FixedPoint(
                                 std::chrono::steady_clock::period::den) {}
 
 template <int FRACTION_BITS>
-constexpr FixedPoint<FRACTION_BITS>::FixedPoint(
-    std::chrono::steady_clock::duration duration)
-    : FixedPoint<FRACTION_BITS>(static_cast<int>(duration.count()) *
-                                    std::chrono::steady_clock::period::num,
-                                std::chrono::steady_clock::period::den) {}
-
-template <int FRACTION_BITS>
 constexpr FixedPoint<FRACTION_BITS> FixedPoint<FRACTION_BITS>::Abs() const {
   FixedPoint<FRACTION_BITS> result;
   result.value_ = value_ < 0 ? -value_ : value_;
