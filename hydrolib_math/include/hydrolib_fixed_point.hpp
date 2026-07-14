@@ -55,19 +55,18 @@ class FixedPoint {
   friend FixedPoint sqrt<kFractionBitsParam>(FixedPoint value);     // NOLINT
   friend FixedPoint sin<kFractionBitsParam>(FixedPoint value_rad);  // NOLINT
   friend FixedPoint cos<kFractionBitsParam>(FixedPoint value_rad);  // NOLINT
-
-  template <int>
+  template <int kOtherFractionBits>
   friend constexpr int operator*(int first,
-                                 FixedPoint<kFractionBitsParam> second);
-  template <int>
+                                 FixedPoint<kOtherFractionBits> second);
+  template <int kOtherFractionBits>
   friend constexpr int operator/(int first,
-                                 FixedPoint<kFractionBitsParam> second);
-  template <int>
+                                 FixedPoint<kOtherFractionBits> second);
+  template <int kOtherFractionBits>
   friend constexpr int& operator/=(int& first,
-                                   FixedPoint<kFractionBitsParam> second);
-  template <int>
+                                   FixedPoint<kOtherFractionBits> second);
+  template <int kOtherFractionBits>
   friend constexpr int& operator*=(int& first,
-                                   FixedPoint<kFractionBitsParam> second);
+                                   FixedPoint<kOtherFractionBits> second);
   template <int>
   friend class FixedPoint;
 
