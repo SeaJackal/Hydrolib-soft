@@ -148,10 +148,11 @@ inline const uint8_t &RingQueue<CAPACITY>::operator[](int index) const {
 template <int CAPACITY>
 inline int RingQueue<CAPACITY>::GetLength() const {
   unsigned head = head_;
-  if (tail_ >= head) {
-    return tail_ - head;
+  unsigned tail = tail_;
+  if (tail >= head) {
+    return tail - head;
   }
-  return tail_ + buffer_.size() - head;
+  return tail + buffer_.size() - head;
 }
 
 template <int CAPACITY>
