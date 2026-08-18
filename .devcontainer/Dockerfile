@@ -1,44 +1,36 @@
 FROM mcr.microsoft.com/devcontainers/base:jammy
 
-ARG USERNAME=hydrolib
-ARG UID=1000
-ARG GID=$UID
-
 ARG CMAKE_VERSION=3.25.2
 ARG CMAKE_ARCH=linux-x86_64
-ARG CLANGD_VERSION=22.1.2
-ARG CLANGD_ARCH=Linux-X64
+ARG LLVM_VERSION=19
 
-RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add - \
-    && echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-19 main" \
-    | sudo tee /etc/apt/sources.list.d/llvm.list \
-    && apt update -q \
-    && apt upgrade -q -y \
-    && apt install -y --no-install-recommends \
-    build-essential \
-    gdb \
-    libgtest-dev \
-    doxygen \
-    # clang-format-19 \
-    # clang-tidy-19 \
-    # clangd-19 \
-    lcov \
-    python3-pip \
-    && apt clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-    # && update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-19 100 \
-    # && update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-19 100 \
-    # && update-alternatives --install /usr/bin/clangd clangd /usr/bin/clangd-19 100
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN pip install compdb==0.2.0
-
-RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-${CMAKE_ARCH}.tar.gz \
-    && tar -xzf cmake-${CMAKE_VERSION}-${CMAKE_ARCH}.tar.gz \
-    && cp -r cmake-${CMAKE_VERSION}-${CMAKE_ARCH}/bin /usr/local/ \
-    && cp -r cmake-${CMAKE_VERSION}-${CMAKE_ARCH}/share /usr/local/ \
-    && rm -rf cmake-${CMAKE_VERSION}-${CMAKE_ARCH} cmake-${CMAKE_VERSION}-${CMAKE_ARCH}.tar.gz
-
-RUN wget https://github.com/llvm/llvm-project/releases/download/llvmorg-${CLANGD_VERSION}/LLVM-${CLANGD_VERSION}-${CLANGD_ARCH}.tar.xz \
-    && tar -xJf LLVM-${CLANGD_VERSION}-${CLANGD_ARCH}.tar.xz \
-    && cp -r LLVM-${CLANGD_VERSION}-${CLANGD_ARCH}/* /usr/local/ \
-    && rm -rf LLVM-${CLANGD_VERSION}-${CLANGD_ARCH} LLVM-${CLANGD_VERSION}-${CLANGD_ARCH}.tar.xz
+# Install clangd from its APT repository instead of unpacking the complete LLVM
+# distribution. Avoid upgrading the base image to keep builds small and stable.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        curl \
+        doxygen \
+        gdb \
+        lcov \
+        libgtest-dev \
+        python3-pip \
+    && curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key \
+        | gpg --dearmor -o /usr/share/keyrings/llvm-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] http://apt.llvm.org/jammy/ llvm-toolchain-jammy-${LLVM_VERSION} main" \
+        > /etc/apt/sources.list.d/llvm.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        clang-format-${LLVM_VERSION} \
+        clang-tidy-${LLVM_VERSION} \
+        clangd-${LLVM_VERSION} \
+    && update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-${LLVM_VERSION} 100 \
+    && update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-${LLVM_VERSION} 100 \
+    && update-alternatives --install /usr/bin/clangd clangd /usr/bin/clangd-${LLVM_VERSION} 100 \
+    && python3 -m pip install --no-cache-dir compdb==0.2.0 \
+    && curl -fsSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-${CMAKE_ARCH}.tar.gz" \
+        | tar -xz --strip-components=1 -C /usr/local \
+    && rm -rf /var/lib/apt/lists/*
