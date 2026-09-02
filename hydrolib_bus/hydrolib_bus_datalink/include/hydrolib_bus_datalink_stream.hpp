@@ -104,10 +104,10 @@ template <concepts::stream::ByteFullStreamConcept RxTxStream, typename Logger,
           AddressType... kMateAddresses>
 ReturnCode StreamManager<RxTxStream, Logger, kMateAddresses...>::Process() {
   auto result = deserializer_.Process();
-  if (result == ReturnCode::OK) {
+  if (result == ReturnCode::kOk) {
     auto message = static_cast<MessageInfo>(result);
     rx_manager_.Push(message);
-    return ReturnCode::OK;
+    return ReturnCode::kOk;
   }
   return result;
 }
@@ -171,7 +171,7 @@ template <AddressType kMateAddress>
 int StreamManager<RxTxStream, Logger, kMateAddresses...>::Stream<
     kMateAddress>::Write(std::span<const std::byte> data) {
   auto result = manager_->serializer_.Process(kMateAddress, data);
-  if (result == ReturnCode::OK) {
+  if (result == ReturnCode::kOk) {
     return static_cast<int>(data.size());
   }
   return -1;

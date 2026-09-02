@@ -16,7 +16,7 @@ class TestHydrolibRingQueueRead
 TestHydrolibRingQueueRead::TestHydrolibRingQueueRead() {
   for (int i = 0; i < kDefaultCapacity; i++) {
     hydrolib::ReturnCode filling_status = test_queue.PushByte(i);
-    EXPECT_EQ(filling_status, hydrolib::ReturnCode::OK);
+    EXPECT_EQ(filling_status, hydrolib::ReturnCode::kOk);
   }
 }
 
@@ -39,9 +39,9 @@ TEST_P(TestHydrolibRingQueueRead, Read) {
   hydrolib::ReturnCode read_status =
       test_queue.Read(data.data(), length, shift);
   if (length + shift > kDefaultCapacity) {
-    EXPECT_EQ(read_status, hydrolib::ReturnCode::FAIL);
+    EXPECT_EQ(read_status, hydrolib::ReturnCode::kFail);
   } else {
-    EXPECT_EQ(read_status, hydrolib::ReturnCode::OK);
+    EXPECT_EQ(read_status, hydrolib::ReturnCode::kOk);
 
     for (int i = 0; i < length; i++) {
       EXPECT_EQ(shift + i, data[i]);
@@ -59,16 +59,16 @@ TEST_P(TestHydrolibRingQueueRead, ReadShifted) {
   for (int i = 0; i < kDefaultCapacity / 2; i++) {
     hydrolib::ReturnCode filling_status =
         test_queue.PushByte(kDefaultCapacity + i);
-    EXPECT_EQ(filling_status, hydrolib::ReturnCode::OK);
+    EXPECT_EQ(filling_status, hydrolib::ReturnCode::kOk);
   }
 
   std::array<uint8_t, kDefaultCapacity> data{};
   hydrolib::ReturnCode read_status =
       test_queue.Read(data.data(), length, shift);
   if (length + shift > kDefaultCapacity) {
-    EXPECT_EQ(read_status, hydrolib::ReturnCode::FAIL);
+    EXPECT_EQ(read_status, hydrolib::ReturnCode::kFail);
   } else {
-    EXPECT_EQ(read_status, hydrolib::ReturnCode::OK);
+    EXPECT_EQ(read_status, hydrolib::ReturnCode::kOk);
 
     for (int i = 0; i < length; i++) {
       EXPECT_EQ(shift + i + (kDefaultCapacity / 2), data[i]);
@@ -88,7 +88,7 @@ TEST_F(TestHydrolibRingQueueRead, ReadByteShifted) {
   for (int i = 0; i < kDefaultCapacity / 2; i++) {
     hydrolib::ReturnCode filling_status =
         test_queue.PushByte(kDefaultCapacity + i);
-    EXPECT_EQ(filling_status, hydrolib::ReturnCode::OK);
+    EXPECT_EQ(filling_status, hydrolib::ReturnCode::kOk);
   }
 
   for (int i = 0; i < kDefaultCapacity; i++) {

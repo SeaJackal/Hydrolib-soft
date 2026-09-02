@@ -53,12 +53,12 @@ TEST_P(TerminalInputTest, ParsedLineMatches) {
   write(GetStream(), seq.data(), seq.size());
 
   for (std::size_t i = 0; i < seq.size(); ++i) {
-    ProcessNextSymbol(seq.substr(0, i + 1), hydrolib::ReturnCode::NO_DATA);
+    ProcessNextSymbol(seq.substr(0, i + 1), hydrolib::ReturnCode::kNoData);
   }
 
   constexpr std::string_view kEnter = "\n";
   write(GetStream(), kEnter.data(), 1);
-  ProcessNextSymbol(seq, hydrolib::ReturnCode::OK);
+  ProcessNextSymbol(seq, hydrolib::ReturnCode::kOk);
 }
 
 }  // namespace

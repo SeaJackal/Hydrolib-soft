@@ -68,12 +68,12 @@ ReturnCode Serializer<TxStream, Logger>::Process(
   int res =
       write(tx_stream_, &current_message_, current_message_.header.length);
   if (res < 0) {
-    return ReturnCode::ERROR;
+    return ReturnCode::kError;
   }
   if (res != current_message_.header.length) {
-    return ReturnCode::OVERFLOW;
+    return ReturnCode::kOverflow;
   }
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 
 }  // namespace hydrolib::bus::datalink

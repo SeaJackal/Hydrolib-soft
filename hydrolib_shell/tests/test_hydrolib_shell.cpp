@@ -47,10 +47,10 @@ ReturnCode RunLine(ShellUnderTest& shell, Stream& stream,
   write(stream, line.data(), line.size());
   stream.AddAvailableBytes(static_cast<int>(line.size()));
 
-  ReturnCode result_code = ReturnCode::NO_DATA;
+  ReturnCode result_code = ReturnCode::kNoData;
   for (std::size_t i = 0; i < line.size(); ++i) {
     result_code = shell.Process();
-    if (result_code != ReturnCode::NO_DATA) {
+    if (result_code != ReturnCode::kNoData) {
       return result_code;
     }
   }
@@ -79,7 +79,7 @@ TEST(HydrolibShell, DispatchesCommandWithoutArguments) {
 
   ShellUnderTest shell(stream, handlers);
 
-  EXPECT_EQ(RunLine(shell, stream, "ping\n"), ReturnCode::OK);
+  EXPECT_EQ(RunLine(shell, stream, "ping\n"), ReturnCode::kOk);
   EXPECT_EQ(called, 1);
   EXPECT_EQ(received, (std::vector<std::string>{"ping"}));
   EXPECT_EQ(DrainAll(stream), "ping\n\rhydrosh > ");
@@ -104,7 +104,7 @@ TEST(HydrolibShell, DispatchesCommandWithArguments) {
 
   ShellUnderTest shell(stream, handlers);
 
-  EXPECT_EQ(RunLine(shell, stream, "set value1 42\n"), ReturnCode::OK);
+  EXPECT_EQ(RunLine(shell, stream, "set value1 42\n"), ReturnCode::kOk);
   EXPECT_EQ(called, 1);
   EXPECT_EQ(received, (std::vector<std::string>{"set", "value1", "42"}));
   EXPECT_EQ(DrainAll(stream), "set value1 42\n\rhydrosh > ");
@@ -115,7 +115,7 @@ TEST(HydrolibShell, ReportsUnknownCommand) {
   Handlers handlers;
   ShellUnderTest shell(stream, handlers);
 
-  EXPECT_EQ(RunLine(shell, stream, "nope\n"), ReturnCode::FAIL);
+  EXPECT_EQ(RunLine(shell, stream, "nope\n"), ReturnCode::kFail);
 
   EXPECT_EQ(DrainAll(stream), "nope\n\rUnknown command: nope\nhydrosh > ");
 }

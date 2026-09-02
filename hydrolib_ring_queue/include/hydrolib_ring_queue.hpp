@@ -45,28 +45,28 @@ inline void RingQueue<CAPACITY>::Clear() {
 template <int CAPACITY>
 inline ReturnCode RingQueue<CAPACITY>::Drop(int number) {
   if (number > GetLength()) {
-    return ReturnCode::FAIL;
+    return ReturnCode::kFail;
   }
   head_ = (head_ + number) % CAPACITY;
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 
 template <int CAPACITY>
 inline ReturnCode RingQueue<CAPACITY>::PushByte(uint8_t byte) {
   if (IsFull()) {
-    return ReturnCode::FAIL;
+    return ReturnCode::kFail;
   }
 
   buffer_[tail_] = byte;
   tail_ = (tail_ + 1) % buffer_.size();
 
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 
 template <int CAPACITY>
 inline ReturnCode RingQueue<CAPACITY>::Push(const void *data, int data_length) {
   if (GetLength() + data_length > CAPACITY) {
-    return ReturnCode::FAIL;
+    return ReturnCode::kFail;
   }
 
   int forward_length = buffer_.size() - tail_;
@@ -80,25 +80,25 @@ inline ReturnCode RingQueue<CAPACITY>::Push(const void *data, int data_length) {
   }
   tail_ = (tail_ + data_length) % buffer_.size();
 
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 
 template <int CAPACITY>
 inline ReturnCode RingQueue<CAPACITY>::PullByte(uint8_t *byte) {
   if (IsEmpty()) {
-    return ReturnCode::FAIL;
+    return ReturnCode::kFail;
   }
 
   *byte = buffer_[head_];
   head_ = (head_ + 1) % buffer_.size();
 
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 
 template <int CAPACITY>
 inline ReturnCode RingQueue<CAPACITY>::Pull(void *data, int data_length) {
   if (GetLength() < data_length) {
-    return ReturnCode::FAIL;
+    return ReturnCode::kFail;
   }
 
   int forward_length = buffer_.size() - head_;
@@ -111,14 +111,14 @@ inline ReturnCode RingQueue<CAPACITY>::Pull(void *data, int data_length) {
   }
   head_ = (head_ + data_length) % buffer_.size();
 
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 
 template <int CAPACITY>
 inline ReturnCode RingQueue<CAPACITY>::Read(void *data, int data_length,
                                             int shift) const {
   if (shift + data_length > GetLength()) {
-    return ReturnCode::FAIL;
+    return ReturnCode::kFail;
   }
   int forward_length = buffer_.size() - head_;
   if (forward_length > shift) {
@@ -132,7 +132,7 @@ inline ReturnCode RingQueue<CAPACITY>::Read(void *data, int data_length,
   } else {
     memcpy(data, buffer_.data() + shift - forward_length, data_length);
   }
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 
 template <int CAPACITY>

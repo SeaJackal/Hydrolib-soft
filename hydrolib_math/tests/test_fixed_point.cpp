@@ -647,7 +647,7 @@ TEST_P(TestFixedPointToBytes, Base) {
   const auto expected_string = output_stream.str();
   hydrolib::streams::mock::MockByteStream stream;
 
-  EXPECT_EQ(value.ToBytes(stream), hydrolib::ReturnCode::OK);
+  EXPECT_EQ(value.ToBytes(stream), hydrolib::ReturnCode::kOk);
 
   std::string output;
   output.resize(stream.GetSize());

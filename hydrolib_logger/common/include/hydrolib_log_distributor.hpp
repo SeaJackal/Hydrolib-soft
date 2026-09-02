@@ -65,13 +65,13 @@ class LogDistributor {
 
     ReturnCode Push([[maybe_unused]] const char *source,
                     [[maybe_unused]] std::size_t length) const {
-      return ReturnCode::OK;
+      return ReturnCode::kOk;
     }
 
     ReturnCode SetLogFiltration([[maybe_unused]] unsigned depth,
                                 [[maybe_unused]] unsigned logger_id,
                                 [[maybe_unused]] LogLevel level) {
-      return ReturnCode::OK;
+      return ReturnCode::kOk;
     }
 
     void SetLogFiltrationsForAll([[maybe_unused]] unsigned logger_id,
@@ -120,7 +120,7 @@ ReturnCode LogDistributor<Streams...>::SetFilter(unsigned stream_number,
                                                  unsigned logger_id,
                                                  LogLevel level) {
   if (logger_id >= MAX_LOGGERS_COUNT) {
-    return ReturnCode::FAIL;
+    return ReturnCode::kFail;
   }
   return distributing_list_.head_node->SetLogFiltration(
       sizeof...(Streams) - 1 - stream_number, logger_id, level);
@@ -130,10 +130,10 @@ template <concepts::stream::ByteWritableStreamConcept... Streams>
 ReturnCode LogDistributor<Streams...>::SetAllFilters(unsigned logger_id,
                                                      LogLevel level) {
   if (logger_id >= MAX_LOGGERS_COUNT) {
-    return ReturnCode::FAIL;
+    return ReturnCode::kFail;
   }
   distributing_list_.head_node->SetLogFiltrationsForAll(logger_id, level);
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 
 template <concepts::stream::ByteWritableStreamConcept... Streams>
@@ -180,24 +180,24 @@ template <typename NextNode, concepts::stream::ByteWritableStreamConcept Stream,
           concepts::stream::ByteWritableStreamConcept... Streams_>
 ReturnCode LogDistributor<Streams...>::LogDistributingNode_<
     NextNode, Stream, Streams_...>::Push(const char *source, int length) const {
-  ReturnCode self_res = ReturnCode::OK;
-  ReturnCode other_res = ReturnCode::OK;
+  ReturnCode self_res = ReturnCode::kOk;
+  ReturnCode other_res = ReturnCode::kOk;
   if (next_node_) {
     other_res = next_node_->Push(source, length);
   }
   if (stream_enable_) {
     int write_count = write(output_stream_, source, length);
     if (write_count != length) {
-      self_res = ReturnCode::ERROR;
+      self_res = ReturnCode::kError;
     }
   }
-  if (self_res != ReturnCode::OK) {
+  if (self_res != ReturnCode::kOk) {
     return self_res;
   }
-  if (other_res != ReturnCode::OK) {
+  if (other_res != ReturnCode::kOk) {
     return other_res;
   }
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 
 template <concepts::stream::ByteWritableStreamConcept... Streams>
@@ -209,12 +209,12 @@ ReturnCode LogDistributor<Streams...>::LogDistributingNode_<
                                                      LogLevel level) {
   if (depth == 0) {
     level_filter_[logger_id] = level;
-    return ReturnCode::OK;
+    return ReturnCode::kOk;
   }
   if (next_node_) {
     return next_node_->SetLogFiltration(depth - 1, logger_id, level);
   } else {
-    return ReturnCode::FAIL;
+    return ReturnCode::kFail;
   }
 }
 

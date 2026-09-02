@@ -443,10 +443,10 @@ ReturnCode FixedPoint<kFractionBitsParam>::ToBytes(DestType& buffer) const {
     constexpr char kMinusSymbol = '-';
     auto minus_res = write(buffer, &kMinusSymbol, 1);
     if (minus_res == -1) {
-      return ReturnCode::ERROR;
+      return ReturnCode::kError;
     }
     if (minus_res != 1) {
-      return ReturnCode::OVERFLOW;
+      return ReturnCode::kOverflow;
     }
   }
 
@@ -472,30 +472,30 @@ ReturnCode FixedPoint<kFractionBitsParam>::ToBytes(DestType& buffer) const {
       write(buffer, integer_bytes.data(),
             int_convertion_result.ptr - integer_bytes.data());
   if (int_writing_result == -1) {
-    return ReturnCode::ERROR;
+    return ReturnCode::kError;
   }
   if (int_writing_result != int_convertion_result.ptr - integer_bytes.data()) {
-    return ReturnCode::OVERFLOW;
+    return ReturnCode::kOverflow;
   }
   constexpr char kPoint = '.';
   auto point_res = write(buffer, &kPoint, 1);
   if (point_res == -1) {
-    return ReturnCode::ERROR;
+    return ReturnCode::kError;
   }
   if (point_res != 1) {
-    return ReturnCode::OVERFLOW;
+    return ReturnCode::kOverflow;
   }
   if (fractional == 0) {
     constexpr std::string_view kNullFractional = "000";
     int null_res =
         write(buffer, kNullFractional.data(), kNullFractional.size());
     if (null_res == -1) {
-      return ReturnCode::ERROR;
+      return ReturnCode::kError;
     }
     if (null_res != 3) {
-      return ReturnCode::OVERFLOW;
+      return ReturnCode::kOverflow;
     }
-    return ReturnCode::OK;
+    return ReturnCode::kOk;
   }
   int nulls_counter = 1000 / 10;
   while (nulls_counter > fractional) {
@@ -503,10 +503,10 @@ ReturnCode FixedPoint<kFractionBitsParam>::ToBytes(DestType& buffer) const {
     constexpr char kNullChar = '0';
     auto null_res = write(buffer, &kNullChar, 1);
     if (null_res == -1) {
-      return ReturnCode::ERROR;
+      return ReturnCode::kError;
     }
     if (null_res != 1) {
-      return ReturnCode::OVERFLOW;
+      return ReturnCode::kOverflow;
     }
   }
   auto fract_convertion_result =
@@ -516,13 +516,13 @@ ReturnCode FixedPoint<kFractionBitsParam>::ToBytes(DestType& buffer) const {
       write(buffer, integer_bytes.data(),
             fract_convertion_result.ptr - integer_bytes.data());
   if (fract_writing_result == -1) {
-    return ReturnCode::ERROR;
+    return ReturnCode::kError;
   }
   if (fract_writing_result !=
       fract_convertion_result.ptr - integer_bytes.data()) {
-    return ReturnCode::OVERFLOW;
+    return ReturnCode::kOverflow;
   }
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 
 }  // namespace hydrolib::math

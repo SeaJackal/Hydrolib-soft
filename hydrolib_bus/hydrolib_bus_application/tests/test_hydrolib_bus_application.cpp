@@ -39,22 +39,22 @@ TestHydrolibBusApplication::TestHydrolibBusApplication()
 hydrolib::ReturnCode TestPublicMemory::Read(std::span<std::byte> read_buffer,
                                             int address) {
   if (address + read_buffer.size() > kPublicMemoryLength) {
-    return hydrolib::ReturnCode::FAIL;
+    return hydrolib::ReturnCode::kFail;
   }
   std::ranges::copy(
       std::span<std::byte>(memory).subspan(address, read_buffer.size()),
       read_buffer.begin());
-  return hydrolib::ReturnCode::OK;
+  return hydrolib::ReturnCode::kOk;
 }
 
 hydrolib::ReturnCode TestPublicMemory::Write(
     std::span<const std::byte> write_buffer, int address) {
   if (address + write_buffer.size() > kPublicMemoryLength) {
-    return hydrolib::ReturnCode::FAIL;
+    return hydrolib::ReturnCode::kFail;
   }
   std::ranges::copy(write_buffer,
                     std::span<std::byte>(memory).subspan(address).begin());
-  return hydrolib::ReturnCode::OK;
+  return hydrolib::ReturnCode::kOk;
 }
 
 TEST_P(TestHydrolibBusApplication, WriteTest) {
@@ -104,7 +104,7 @@ TEST_P(TestHydrolibBusApplication, ReadTest) {
   std::ranges::copy(test_data, memory.memory.begin());
   master.RequestRead(std::span<std::byte>(buffer.begin(), test_case.length),
                      test_case.address);
-  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::NO_DATA);
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::kNoData);
   stream.MakeAllbytesAvailable();
   slave.Process();
   stream.MakeAllbytesAvailable();
@@ -151,11 +151,11 @@ TEST_F(TestHydrolibBusApplication, ReadTimeoutTest) {
          decltype(master)::kRequestTimeout) {
   }
   stream.Clear();
-  EXPECT_EQ(hydrolib::ReturnCode::TIMEOUT, master.Process());
+  EXPECT_EQ(hydrolib::ReturnCode::kTimeout, master.Process());
   stream.MakeAllbytesAvailable();
   slave.Process();
   stream.MakeAllbytesAvailable();
-  EXPECT_EQ(hydrolib::ReturnCode::OK, master.Process());
+  EXPECT_EQ(hydrolib::ReturnCode::kOk, master.Process());
   for (int i = 0; i < test_case.length; i++) {
     EXPECT_EQ(buffer[i], memory.memory[test_case.address + i]);
   }
@@ -175,7 +175,7 @@ TEST_F(TestHydrolibBusApplication, ReadAlmostTimeoutTest) {
   stream.MakeAllbytesAvailable();
   slave.Process();
   stream.MakeAllbytesAvailable();
-  EXPECT_EQ(hydrolib::ReturnCode::OK, master.Process());
+  EXPECT_EQ(hydrolib::ReturnCode::kOk, master.Process());
   for (int i = 0; i < test_case.length; i++) {
     EXPECT_EQ(buffer[i], memory.memory[test_case.address + i]);
   }
@@ -194,7 +194,7 @@ TEST_F(TestHydrolibBusApplication,
   slave.Process();
 
   stream.MakeAllbytesAvailable();
-  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::ERROR);
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::kError);
 }
 
 TEST_F(TestHydrolibBusApplication, MemoryAccessWriteError) {
@@ -208,7 +208,7 @@ TEST_F(TestHydrolibBusApplication, MemoryAccessWriteError) {
   slave.Process();
 
   stream.MakeAllbytesAvailable();
-  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::FAIL);
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::kFail);
 }
 
 TEST_F(TestHydrolibBusApplication,
@@ -234,7 +234,7 @@ TEST_F(TestHydrolibBusApplication,
   slave.Process();
   stream.MakeAllbytesAvailable();
 
-  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::ERROR);
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::kError);
 
   master.RequestRead(std::span<std::byte>(buffer.begin(), length), address);
   stream.MakeAllbytesAvailable();
@@ -242,7 +242,7 @@ TEST_F(TestHydrolibBusApplication,
   slave.Process();
   stream.MakeAllbytesAvailable();
 
-  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::OK);
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::kOk);
 }
 
 TEST_F(TestHydrolibBusApplication, UnexpectedLenghtDataTest) {
@@ -268,5 +268,5 @@ TEST_F(TestHydrolibBusApplication, UnexpectedLenghtDataTest) {
         sizeof(hydrolib::bus::application::MemoryAccessHeader) + 1);
 
   stream.MakeAllbytesAvailable();
-  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::ERROR);
+  EXPECT_EQ(master.Process(), hydrolib::ReturnCode::kError);
 }

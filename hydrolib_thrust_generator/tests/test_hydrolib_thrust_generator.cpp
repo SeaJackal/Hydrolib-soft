@@ -13,7 +13,7 @@ class TestThruster {
  public:
   hydrolib::ReturnCode SetSpeed(int speed) {
     speed_ = speed;
-    return hydrolib::ReturnCode::OK;
+    return hydrolib::ReturnCode::kOk;
   }
 
   int GetSpeed() const { return speed_; }

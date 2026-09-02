@@ -56,38 +56,38 @@ constexpr Shell<Stream, Map>::Shell(Stream& stream, Map& handlers)
 template <concepts::stream::ByteFullStreamConcept Stream, CommandMapConcept Map>
 hydrolib::ReturnCode Shell<Stream, Map>::Process() {
   auto input_result = input_.Process();
-  if (input_result == hydrolib::ReturnCode::ERROR) {
-    return hydrolib::ReturnCode::ERROR;
+  if (input_result == hydrolib::ReturnCode::kError) {
+    return hydrolib::ReturnCode::kError;
   }
-  if (viewer_.Process(input_result) == hydrolib::ReturnCode::ERROR) {
-    return hydrolib::ReturnCode::ERROR;
-  }
-
-  if (input_result == hydrolib::ReturnCode::NO_DATA) {
-    return hydrolib::ReturnCode::NO_DATA;
+  if (viewer_.Process(input_result) == hydrolib::ReturnCode::kError) {
+    return hydrolib::ReturnCode::kError;
   }
 
-  if (viewer_.Enter() == hydrolib::ReturnCode::ERROR) {
-    return hydrolib::ReturnCode::ERROR;
+  if (input_result == hydrolib::ReturnCode::kNoData) {
+    return hydrolib::ReturnCode::kNoData;
+  }
+
+  if (viewer_.Enter() == hydrolib::ReturnCode::kError) {
+    return hydrolib::ReturnCode::kError;
   }
 
   auto command_info = parser::CommandInfo(parser::SplitToArgs(input_result));
 
   if (handlers_.find(command_info.GetCommand()) == handlers_.end()) {
     env_.cout << "Unknown command: " << command_info.GetCommand() << "\n";
-    if (viewer_.Welcome() == hydrolib::ReturnCode::ERROR) {
-      return hydrolib::ReturnCode::ERROR;
+    if (viewer_.Welcome() == hydrolib::ReturnCode::kError) {
+      return hydrolib::ReturnCode::kError;
     }
-    return hydrolib::ReturnCode::FAIL;
+    return hydrolib::ReturnCode::kFail;
   }
 
   last_error_code_ =
       handlers_[command_info.GetCommand()](env_, command_info.GetArgs());
 
-  if (viewer_.Welcome() == hydrolib::ReturnCode::ERROR) {
-    return hydrolib::ReturnCode::ERROR;
+  if (viewer_.Welcome() == hydrolib::ReturnCode::kError) {
+    return hydrolib::ReturnCode::kError;
   }
-  return hydrolib::ReturnCode::OK;
+  return hydrolib::ReturnCode::kOk;
 }
 
 }  // namespace hydrolib::shell

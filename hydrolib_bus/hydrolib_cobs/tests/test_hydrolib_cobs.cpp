@@ -76,6 +76,6 @@ TEST_P(TestCOBS, EncodeDecode) {
 
   auto result = hydrolib::cobs::Decode<std::byte(kMagicByte)>(
       encoded_length, std::as_writable_bytes(std::span(serialized_data)));
-  EXPECT_EQ(result, hydrolib::ReturnCode::OK);
+  EXPECT_EQ(result, hydrolib::ReturnCode::kOk);
   EXPECT_EQ(serialized_data, data);
 }

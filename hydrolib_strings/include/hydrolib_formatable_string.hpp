@@ -119,22 +119,22 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(DestType &buffer,
   requires ConvertibleToBytesConcept<T, DestType>
 {
   if (translated_length >= static_cast<int>(string_.size())) {
-    return ReturnCode::OK;
+    return ReturnCode::kOk;
   }
 
   int write_res = write(buffer, string_.data() + translated_length,
                         param_pos_diffs_[next_param_index]);
   if (write_res == -1) {
-    return ReturnCode::ERROR;
+    return ReturnCode::kError;
   }
   if (write_res != param_pos_diffs_[next_param_index]) {
-    return ReturnCode::OVERFLOW;
+    return ReturnCode::kOverflow;
   }
   translated_length += param_pos_diffs_[next_param_index] + (sizeof("{}") - 1);
   next_param_index++;
 
   auto write_integer_result = param.ToBytes(buffer);
-  if (write_integer_result != ReturnCode::OK) {
+  if (write_integer_result != ReturnCode::kOk) {
     return write_integer_result;
   }
 
@@ -149,16 +149,16 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(DestType &buffer,
                                                          int param,
                                                          Ts... others) const {
   if (translated_length >= static_cast<int>(string_.size())) {
-    return ReturnCode::OK;
+    return ReturnCode::kOk;
   }
 
   int write_res = write(buffer, string_.data() + translated_length,
                         param_pos_diffs_[next_param_index]);
   if (write_res == -1) {
-    return ReturnCode::ERROR;
+    return ReturnCode::kError;
   }
   if (write_res != param_pos_diffs_[next_param_index]) {
-    return ReturnCode::OVERFLOW;
+    return ReturnCode::kOverflow;
   }
   translated_length += param_pos_diffs_[next_param_index] + (sizeof("{}") - 1);
   next_param_index++;
@@ -170,10 +170,10 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(DestType &buffer,
   auto writing_result = write(buffer, integer_bytes.data(),
                               convertion_result.ptr - integer_bytes.data());
   if (writing_result == -1) {
-    return ReturnCode::ERROR;
+    return ReturnCode::kError;
   }
   if (writing_result != convertion_result.ptr - integer_bytes.data()) {
-    return ReturnCode::OVERFLOW;
+    return ReturnCode::kOverflow;
   }
 
   return ToBytes_(buffer, next_param_index, translated_length, others...);
@@ -188,16 +188,16 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(DestType &buffer,
                                                          String param,
                                                          Ts... others) const {
   if (translated_length >= static_cast<int>(string_.size())) {
-    return ReturnCode::OK;
+    return ReturnCode::kOk;
   }
 
   int write_res = write(buffer, string_.data() + translated_length,
                         param_pos_diffs_[next_param_index]);
   if (write_res == -1) {
-    return ReturnCode::ERROR;
+    return ReturnCode::kError;
   }
   if (write_res != param_pos_diffs_[next_param_index]) {
-    return ReturnCode::OVERFLOW;
+    return ReturnCode::kOverflow;
   }
   translated_length += param_pos_diffs_[next_param_index] + 2;
   next_param_index++;
@@ -205,10 +205,10 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(DestType &buffer,
   write_res =
       write(buffer, static_cast<const char *>(param), param.GetLength());
   if (write_res == -1) {
-    return ReturnCode::ERROR;
+    return ReturnCode::kError;
   }
   if (write_res != param.GetLength()) {
-    return ReturnCode::OVERFLOW;
+    return ReturnCode::kOverflow;
   }
 
   return ToBytes_(buffer, next_param_index, translated_length, others...);
@@ -222,12 +222,12 @@ ReturnCode StaticFormatableString<ArgTypes...>::ToBytes_(
   int write_res = write(buffer, string_.data() + translated_length,
                         string_.size() - translated_length);
   if (write_res == -1) {
-    return ReturnCode::ERROR;
+    return ReturnCode::kError;
   }
   if (write_res != static_cast<int>(string_.size() - translated_length)) {
-    return ReturnCode::OVERFLOW;
+    return ReturnCode::kOverflow;
   }
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 
 template <typename... ArgTypes>

@@ -143,7 +143,7 @@ Expected<MessageInfo> Deserializer<RxStream, Logger>::Process() {
     switch (current_state_) {
       case State::kSynchronizing: {
         auto result = synchronizer_();
-        if (result != ReturnCode::OK) {
+        if (result != ReturnCode::kOk) {
           return result;
         }
         current_state_ = State::kReadingMessage;
@@ -151,7 +151,7 @@ Expected<MessageInfo> Deserializer<RxStream, Logger>::Process() {
       }
       case State::kReadingMessage: {
         auto result = message_reader_();
-        if (static_cast<ReturnCode>(result) != ReturnCode::OK) {
+        if (static_cast<ReturnCode>(result) != ReturnCode::kOk) {
           return static_cast<ReturnCode>(result);
         }
         current_state_ = State::kCheckingAddress;
@@ -190,7 +190,7 @@ std::optional<MessageInfo> Deserializer<RxStream, Logger>::DecodeMessage(
     RxInfo info, Logger& logger) {
   ReturnCode res = cobs::Decode<kMagicByte>(info.header.cobs_length, info.data);
   info.header.cobs_length = 0;
-  if (res != ReturnCode::OK) {
+  if (res != ReturnCode::kOk) {
     LOG_WARNING(logger, "COBS error");
     return {};
   }
@@ -231,18 +231,18 @@ hydrolib::ReturnCode Deserializer<RxStream, Logger>::RxReader::operator()() {
   auto remaining_length =
       static_cast<int>(data_.size_bytes()) - current_length_;
   if (remaining_length <= 0) {
-    return ReturnCode::OK;
+    return ReturnCode::kOk;
   }
   auto read_length =
       read(stream_, data_.subspan(current_length_).data(), remaining_length);
   if (read_length < 0) {
-    return ReturnCode::ERROR;
+    return ReturnCode::kError;
   }
   current_length_ += read_length;
   if (read_length == remaining_length) {
-    return ReturnCode::OK;
+    return ReturnCode::kOk;
   }
-  return ReturnCode::NO_DATA;
+  return ReturnCode::kNoData;
 }
 
 template <concepts::stream::ByteReadableStreamConcept RxStream, typename Logger>
@@ -257,13 +257,13 @@ Deserializer<RxStream, Logger>::Synchronizer::operator()() {
     std::byte byte_buffer{};
     auto read_length = read(stream_, &byte_buffer, 1);
     if (read_length < 0) {
-      return ReturnCode::ERROR;
+      return ReturnCode::kError;
     }
     if (read_length == 0) {
-      return ReturnCode::NO_DATA;
+      return ReturnCode::kNoData;
     }
     if (byte_buffer == kMagicByte) {
-      return ReturnCode::OK;
+      return ReturnCode::kOk;
     }
     LOG_WARNING(logger_, "Rubbish byte");
   }
@@ -279,7 +279,7 @@ Expected<typename Deserializer<RxStream, Logger>::RxInfo>
 Deserializer<RxStream, Logger>::MessageReader::operator()() {
   while (true) {
     auto result = reader_();
-    if (result != ReturnCode::OK) {
+    if (result != ReturnCode::kOk) {
       return result;
     }
     switch (current_state_) {
@@ -295,7 +295,7 @@ Deserializer<RxStream, Logger>::MessageReader::operator()() {
           LOG_WARNING(logger_, "Wrong length: {}",
                       current_rx_info_.header.length);
           current_state_ = State::kStartReadingHeader;
-          return ReturnCode::FAIL;
+          return ReturnCode::kFail;
         }
         current_rx_info_.data =
             MessageData(current_rx_info_.header.length - sizeof(kMagicByte) -

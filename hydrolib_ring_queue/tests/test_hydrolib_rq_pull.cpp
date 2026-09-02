@@ -19,11 +19,11 @@ TEST_P(TestHydrolibRingQueuePull, Pull) {
 
   hydrolib::ReturnCode push_status =
       test_queue.Push(data.data(), kDefaultCapacity);
-  EXPECT_EQ(push_status, hydrolib::ReturnCode::OK);
+  EXPECT_EQ(push_status, hydrolib::ReturnCode::kOk);
 
   std::array<uint8_t, kDefaultCapacity> out{};
   hydrolib::ReturnCode pull_status = test_queue.Pull(out.data(), length);
-  EXPECT_EQ(pull_status, hydrolib::ReturnCode::OK);
+  EXPECT_EQ(pull_status, hydrolib::ReturnCode::kOk);
   EXPECT_EQ(kDefaultCapacity - length, test_queue.GetLength());
 
   for (int i = 0; i < length; i++) {
@@ -37,18 +37,18 @@ TEST_P(TestHydrolibRingQueuePull, PullShifted) {
 
   for (int i = 0; i < kDefaultCapacity / 2; i++) {
     hydrolib::ReturnCode filling_status = test_queue.PushByte(0);
-    EXPECT_EQ(filling_status, hydrolib::ReturnCode::OK);
+    EXPECT_EQ(filling_status, hydrolib::ReturnCode::kOk);
   }
 
   test_queue.Drop(kDefaultCapacity / 2);
 
   hydrolib::ReturnCode push_status =
       test_queue.Push(data.data(), kDefaultCapacity);
-  EXPECT_EQ(push_status, hydrolib::ReturnCode::OK);
+  EXPECT_EQ(push_status, hydrolib::ReturnCode::kOk);
 
   std::array<uint8_t, kDefaultCapacity> out{};
   hydrolib::ReturnCode pull_status = test_queue.Pull(out.data(), length);
-  EXPECT_EQ(pull_status, hydrolib::ReturnCode::OK);
+  EXPECT_EQ(pull_status, hydrolib::ReturnCode::kOk);
   EXPECT_EQ(kDefaultCapacity - length, test_queue.GetLength());
 
   for (int i = 0; i < length; i++) {
@@ -61,17 +61,17 @@ TEST_P(TestHydrolibRingQueuePull, PullOverSimple) {
   ASSERT_LE(length, TestHydrolibRingQueue::kDefaultCapacity);
 
   hydrolib::ReturnCode push_status = test_queue.Push(data.data(), length);
-  EXPECT_EQ(push_status, hydrolib::ReturnCode::OK);
+  EXPECT_EQ(push_status, hydrolib::ReturnCode::kOk);
 
   std::array<uint8_t, kDefaultCapacity> out{};
   hydrolib::ReturnCode pull_status = test_queue.Pull(out.data(), length + 1);
-  EXPECT_EQ(pull_status, hydrolib::ReturnCode::FAIL);
+  EXPECT_EQ(pull_status, hydrolib::ReturnCode::kFail);
   EXPECT_EQ(length, test_queue.GetLength());
 }
 
 TEST_F(TestHydrolibRingQueue, PullEmpty) {
   std::array<uint8_t, kDefaultCapacity> out{};
   hydrolib::ReturnCode pull_status = test_queue.Pull(out.data(), 1);
-  EXPECT_EQ(pull_status, hydrolib::ReturnCode::FAIL);
+  EXPECT_EQ(pull_status, hydrolib::ReturnCode::kFail);
   EXPECT_EQ(0, test_queue.GetLength());
 }

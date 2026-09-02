@@ -66,12 +66,12 @@ template <concepts::stream::ByteFullStreamConcept Stream>
 ReturnCode Viewer<Stream>::WriteToStream(std::string_view str) {
   auto result = write(stream_, str.data(), str.size());
   if (result == -1) {
-    return ReturnCode::ERROR;
+    return ReturnCode::kError;
   }
   if (result < str.size()) {
-    return ReturnCode::OVERFLOW;
+    return ReturnCode::kOverflow;
   }
   assert(result == str.size() && "write failed");
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 }  // namespace hydrolib::shell

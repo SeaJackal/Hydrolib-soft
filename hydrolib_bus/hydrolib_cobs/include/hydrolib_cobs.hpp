@@ -39,10 +39,10 @@ int Encode(std::span<std::byte> data) {
 template <std::byte kMagicByteValue>
 ReturnCode Decode(int first_encoded_byte, std::span<std::byte> data) {
   if (first_encoded_byte == UINT8_MAX) {
-    return ReturnCode::OK;
+    return ReturnCode::kOk;
   }
   if (first_encoded_byte >= static_cast<int>(data.size())) {
-    return ReturnCode::ERROR;
+    return ReturnCode::kError;
   }
   int current_appearance = first_encoded_byte;
   while (data[current_appearance] != std::byte(0)) {
@@ -51,10 +51,10 @@ ReturnCode Decode(int first_encoded_byte, std::span<std::byte> data) {
     data[current_appearance] = kMagicByteValue;
     current_appearance = next_appearance;
     if (current_appearance >= static_cast<int>(data.size())) {
-      return ReturnCode::ERROR;
+      return ReturnCode::kError;
     }
   }
   data[current_appearance] = kMagicByteValue;
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 };  // namespace hydrolib::cobs

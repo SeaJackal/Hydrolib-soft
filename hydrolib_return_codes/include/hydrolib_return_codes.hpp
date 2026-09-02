@@ -1,7 +1,8 @@
 #pragma once
 
+#include <string_view>
 namespace hydrolib {
-enum class ReturnCode { OK = 0, FAIL, NO_DATA, OVERFLOW, ERROR, TIMEOUT };
+enum class ReturnCode { kOk = 0, kFail, kNoData, kOverflow, kError, kTimeout };
 
 template <typename T>
 class Expected {
@@ -19,8 +20,13 @@ class Expected {
   T value_;
 };
 
+constexpr void CompileTimeAssert(bool assertion,
+                                 [[maybe_unused]] std::string_view message) {
+  [[maybe_unused]] int error = 1 / static_cast<int>(assertion);
+}
+
 template <typename T>
-Expected<T>::Expected(const T& value) : code_(ReturnCode::OK), value_(value) {}
+Expected<T>::Expected(const T& value) : code_(ReturnCode::kOk), value_(value) {}
 
 template <typename T>
 Expected<T>::Expected(ReturnCode code) : code_(code), value_() {}
@@ -41,6 +47,6 @@ Expected<T>::operator ReturnCode() {
 
 template <typename T>
 Expected<T>::operator bool() {
-  return code_ == ReturnCode::OK;
+  return code_ == ReturnCode::kOk;
 }
 }  // namespace hydrolib

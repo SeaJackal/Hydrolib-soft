@@ -74,7 +74,7 @@ ReturnCode Log<ArgTypes...>::ToBytes(const char *format_string,
   while (format_string[format_index]) {
     if (format_string[format_index] == '%') {
       ReturnCode burst_res = BurstWrite_(buffer, burst_start, burst_length);
-      if (burst_res != ReturnCode::OK) {
+      if (burst_res != ReturnCode::kOk) {
         return burst_res;
       }
 
@@ -83,7 +83,7 @@ ReturnCode Log<ArgTypes...>::ToBytes(const char *format_string,
       switch (format_string[format_index]) {
         case LogInfo::SpecialSymbols::MESSAGE: {
           ReturnCode message_res = TranslateMessage_(buffer, other...);
-          if (message_res != ReturnCode::OK) {
+          if (message_res != ReturnCode::kOk) {
             return message_res;
           }
           format_index++;
@@ -92,7 +92,7 @@ ReturnCode Log<ArgTypes...>::ToBytes(const char *format_string,
 
         case LogInfo::SpecialSymbols::LEVEL: {
           ReturnCode level_res = TranslateLevel_(buffer);
-          if (level_res != ReturnCode::OK) {
+          if (level_res != ReturnCode::kOk) {
             return level_res;
           }
           format_index++;
@@ -100,14 +100,14 @@ ReturnCode Log<ArgTypes...>::ToBytes(const char *format_string,
         }
         case LogInfo::SpecialSymbols::SOURCE_PROCESS: {
           ReturnCode source_res = TranslateSource_(buffer);
-          if (source_res != ReturnCode::OK) {
+          if (source_res != ReturnCode::kOk) {
             return source_res;
           }
           format_index++;
           break;
         }
         default:
-          return ReturnCode::ERROR;
+          return ReturnCode::kError;
       }
     } else {
       if (burst_length == 0) {
@@ -118,10 +118,10 @@ ReturnCode Log<ArgTypes...>::ToBytes(const char *format_string,
     }
   }
   ReturnCode burst_res = BurstWrite_(buffer, burst_start, burst_length);
-  if (burst_res != ReturnCode::OK) {
+  if (burst_res != ReturnCode::kOk) {
     return burst_res;
   }
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 
 template <typename... ArgTypes>
@@ -158,17 +158,17 @@ ReturnCode Log<ArgTypes...>::TranslateLevel_(DestType &buffer) const {
       str_length = sizeof(LogInfo::CRITICAL_STR) - 1;
       break;
     default:
-      return ReturnCode::ERROR;
+      return ReturnCode::kError;
   };
 
   int res = write(buffer, level_str, str_length);
   if (res == -1) {
-    return ReturnCode::OVERFLOW;
+    return ReturnCode::kOverflow;
   }
   if (res != str_length) {
-    return ReturnCode::ERROR;
+    return ReturnCode::kError;
   }
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 
 template <typename... ArgTypes>
@@ -178,12 +178,12 @@ ReturnCode Log<ArgTypes...>::TranslateSource_(DestType &buffer) const {
 
   int res = write(buffer, process_name, source_length);
   if (res == -1) {
-    return ReturnCode::OVERFLOW;
+    return ReturnCode::kOverflow;
   }
   if (res != source_length) {
-    return ReturnCode::ERROR;
+    return ReturnCode::kError;
   }
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 
 template <typename... ArgTypes>
@@ -194,14 +194,14 @@ ReturnCode Log<ArgTypes...>::BurstWrite_(DestType &buffer,
   if (burst_length != 0) {
     int res = write(buffer, burst_start, burst_length);
     if (res == -1) {
-      return ReturnCode::OVERFLOW;
+      return ReturnCode::kOverflow;
     }
     if (res != burst_length) {
-      return ReturnCode::ERROR;
+      return ReturnCode::kError;
     }
     burst_length = 0;
   }
-  return ReturnCode::OK;
+  return ReturnCode::kOk;
 }
 
 }  // namespace hydrolib::logger

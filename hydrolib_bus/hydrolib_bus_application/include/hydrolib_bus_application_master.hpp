@@ -50,7 +50,7 @@ constexpr Master<TxRxStream, Logger>::Master(TxRxStream& stream, Logger& logger)
 template <concepts::stream::ByteFullStreamConcept TxRxStream, typename Logger>
 hydrolib::ReturnCode Master<TxRxStream, Logger>::Process() {
   if (requested_data_.empty()) {
-    return hydrolib::ReturnCode::FAIL;
+    return hydrolib::ReturnCode::kFail;
   }  // TODO: vscode - fix FAIL after Write
      // https://app.weeek.net/ws/701833/task/1066
 
@@ -58,12 +58,12 @@ hydrolib::ReturnCode Master<TxRxStream, Logger>::Process() {
     LOG_ERROR(logger_, "Request timeout");
     write(stream_, &tx_buffer_, sizeof(MemoryAccessHeader));
     last_request_time_ = std::chrono::steady_clock::now();
-    return hydrolib::ReturnCode::TIMEOUT;
+    return hydrolib::ReturnCode::kTimeout;
   }
 
   int read_length = read(stream_, &rx_buffer_, kMaxMessageLength);
   if (read_length == 0) {
-    return hydrolib::ReturnCode::NO_DATA;
+    return hydrolib::ReturnCode::kNoData;
   }
 
   switch (rx_buffer_.command) {
@@ -71,21 +71,21 @@ hydrolib::ReturnCode Master<TxRxStream, Logger>::Process() {
       if (static_cast<int>(requested_data_.size() + sizeof(Command)) !=
           read_length) {  // TODO: vscode
                           // - https://app.weeek.net/ws/701833/task/1067
-        return hydrolib::ReturnCode::ERROR;
+        return hydrolib::ReturnCode::kError;
       }
       std::ranges::copy(
           std::span<std::byte>(static_cast<std::byte*>(rx_buffer_.data),
                                requested_data_.size()),
           requested_data_.begin());
       requested_data_ = {};
-      return hydrolib::ReturnCode::OK;
+      return hydrolib::ReturnCode::kOk;
     case Command::kError:  // TODO: vscode - make different reaction for
                            // different errors
     case Command::kRead:
     case Command::kWrite:
     default:
       LOG_WARNING(logger_, "Wrong command");
-      return hydrolib::ReturnCode::ERROR;
+      return hydrolib::ReturnCode::kError;
   }
 }
 

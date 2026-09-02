@@ -39,10 +39,10 @@ Expected<std::string_view> Input<Stream>::Process() {
   const auto read_length = read(stream_, &last_char, 1);
   if (read_length == 0) {
     return {static_cast<std::string_view>(command_str_),
-            hydrolib::ReturnCode::NO_DATA};
+            hydrolib::ReturnCode::kNoData};
   }
   if (read_length < 0) {
-    return hydrolib::ReturnCode::ERROR;
+    return hydrolib::ReturnCode::kError;
   }
   const auto result = InterpretChar(last_char);
   return {static_cast<std::string_view>(command_str_), result};
@@ -58,7 +58,7 @@ hydrolib::ReturnCode Input<Stream>::InterpretChar(char last_char) {
       }
       break;
     case '\n':
-      return hydrolib::ReturnCode::OK;
+      return hydrolib::ReturnCode::kOk;
     default:
       // if (current_command_string_length_ >= kMaxCommandLength) {
       //   return hydrolib::ReturnCode::OVERFLOW;
@@ -66,6 +66,6 @@ hydrolib::ReturnCode Input<Stream>::InterpretChar(char last_char) {
       command_str_.Push(&last_char, 1);
       break;
   }
-  return hydrolib::ReturnCode::NO_DATA;
+  return hydrolib::ReturnCode::kNoData;
 }
 }  // namespace hydrolib::shell

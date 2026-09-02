@@ -37,7 +37,7 @@ class TerminalViewTest : public ::testing::TestWithParam<std::string> {
   void ProcessNextSymbol(std::string_view seq_prefix) {
     const auto pty = dev_.Process(seq_prefix);
 
-    EXPECT_EQ(view_.Process(pty.to_program), hydrolib::ReturnCode::OK);
+    EXPECT_EQ(view_.Process(pty.to_program), hydrolib::ReturnCode::kOk);
     view_accum_.append(DrainStream());
     EXPECT_EQ(view_accum_, pty.to_echo);
   }

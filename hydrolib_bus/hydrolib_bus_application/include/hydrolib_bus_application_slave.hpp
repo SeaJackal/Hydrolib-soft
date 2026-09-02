@@ -62,7 +62,7 @@ void Slave<Memory, Logger, TxRxStream>::Process() {
           std::span<std::byte>(static_cast<std::byte*>(tx_buffer_.data),
                                rx_buffer_.header.info.length),
           rx_buffer_.header.info.address);
-      if (res == ReturnCode::OK) {
+      if (res == ReturnCode::kOk) {
         LOG_INFO(logger_, "Transmitting {} bytes from {}",
                  rx_buffer_.header.info.length, rx_buffer_.header.info.address);
         tx_buffer_.command = Command::kResponse;
@@ -83,7 +83,7 @@ void Slave<Memory, Logger, TxRxStream>::Process() {
                             static_cast<const std::byte*>(rx_buffer_.data),
                             rx_buffer_.header.info.length),
                         rx_buffer_.header.info.address);
-      if (res != ReturnCode::OK) {
+      if (res != ReturnCode::kOk) {
         LOG_WARNING(logger_, "Can't write {} bytes to {}",
                     rx_buffer_.header.info.length,
                     rx_buffer_.header.info.address);

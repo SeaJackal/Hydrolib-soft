@@ -95,7 +95,7 @@ void SerializeDeserialize::SimpleExchange(const std::vector<std::byte>& data) {
   auto result = deserializer.Process();
 
   ASSERT_EQ(static_cast<hydrolib::ReturnCode>(result),
-            hydrolib::ReturnCode::OK);
+            hydrolib::ReturnCode::kOk);
 
   auto message = static_cast<hydrolib::bus::datalink::MessageInfo>(result);
   auto message_data = static_cast<std::span<std::byte>>(message.data);
@@ -183,7 +183,7 @@ TEST_P(SerializeDeserializeProgressive, ProgressiveExchange) {
   while (sum < static_cast<int>(available_bytes)) {
     auto result = deserializer.Process();
     ASSERT_EQ(static_cast<hydrolib::ReturnCode>(result),
-              hydrolib::ReturnCode::NO_DATA);
+              hydrolib::ReturnCode::kNoData);
     auto available_bytes = func();
     stream.AddAvailableBytes(available_bytes);
     sum += available_bytes;
@@ -191,7 +191,7 @@ TEST_P(SerializeDeserializeProgressive, ProgressiveExchange) {
 
   auto result = deserializer.Process();
   ASSERT_EQ(static_cast<hydrolib::ReturnCode>(result),
-            hydrolib::ReturnCode::OK);
+            hydrolib::ReturnCode::kOk);
 
   auto message = static_cast<hydrolib::bus::datalink::MessageInfo>(result);
   auto message_data = static_cast<std::span<std::byte>>(message.data);
