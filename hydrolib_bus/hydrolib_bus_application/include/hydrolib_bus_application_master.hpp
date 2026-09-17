@@ -118,6 +118,12 @@ void Master<TxRxStream, Distributor>::Write(const void *data, unsigned address,
     memcpy(tx_buffer_ + sizeof(MemoryAccessHeader), data, length);
 
     write(stream_, tx_buffer_, sizeof(MemoryAccessHeader) + length);
+    LOG(
+        logger_,
+        logger::LogLevel::DEBUG,
+        "MASTER WRITE: address={}, length={}",
+        address,
+        length);
 }
 
 } // namespace hydrolib::bus::application
